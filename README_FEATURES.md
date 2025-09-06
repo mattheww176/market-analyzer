@@ -17,6 +17,7 @@ A comprehensive Python-based stock analysis tool with advanced technical indicat
   - [📊 Data Export & Reporting](#-data-export--reporting)
   - [🔄 Batch Processing](#-batch-processing)
   - [⚙️ Advanced Configuration](#️-advanced-configuration)
+- [⚡ Quick Command Reference](#-quick-command-reference)
 - [🛠️ Technical Implementation](#️-technical-implementation)
 - [🎯 Use Cases](#-use-cases)
 - [📋 Command Line Interface](#-command-line-interface)
@@ -35,6 +36,87 @@ A comprehensive Python-based stock analysis tool with advanced technical indicat
   - [Understanding Git Terms](#understanding-git-terms)
   - [Troubleshooting](#troubleshooting)
   - [🆘 Emergency Checklist](#-emergency-checklist)
+
+---
+
+## ⚡ Quick Start Commands
+
+**🚀 Start the analyzer (Interactive Mode - Recommended):**
+```bash
+python3 market_analyzer.py
+```
+*Then follow the interactive prompts to select your analysis type and enter stock symbols.*
+
+**📋 Direct Feature Commands:**
+
+**📊 Basic Stock Analysis**
+```bash
+python3 market_analyzer.py
+# Will prompt: "Enter stock ticker:"
+```
+
+**🎯 Get Trading Signals**
+```bash
+python3 market_analyzer.py --show-signals
+# Will prompt: "Enter stock ticker:"
+```
+
+**🔮 Price Predictions**
+```bash
+python3 market_analyzer.py --predictions
+# Will prompt: "Enter stock ticker:"
+```
+
+**📈 Momentum Analysis**
+```bash
+python3 market_analyzer.py --momentum
+# Will prompt: "Enter stock ticker:"
+```
+
+**🔍 Market Momentum Scanner** *(finds high-momentum stocks)*
+```bash
+python3 market_analyzer.py --scan-market
+```
+
+**📈 Breakout Scanner** *(finds stocks breaking to new highs)*
+```bash
+python3 market_analyzer.py --scan-breakouts
+```
+
+**🎯 Price Targets**
+```bash
+python3 market_analyzer.py --price-targets
+# Will prompt: "Enter stock ticker:"
+```
+
+**🏢 Company Information**
+```bash
+python3 market_analyzer.py --info --sector-info
+# Will prompt: "Enter stock ticker:"
+```
+
+**📊 Risk Analysis**
+```bash
+python3 market_analyzer.py --drawdown --rolling-vol
+# Will prompt: "Enter stock ticker:"
+```
+
+**🔄 Multiple Stocks (Batch)**
+```bash
+python3 market_analyzer.py --batch "AAPL,NVDA,TSLA"
+```
+
+**📧 Email Reports**
+```bash
+python3 market_analyzer.py --email-report --email-to your@email.com
+# Will prompt: "Enter stock ticker:"
+```
+
+**🔄 Combined Analysis**
+```bash
+python3 market_analyzer.py --momentum --predictions --price-targets
+# Will prompt: "Enter stock ticker:"
+```
 
 ---
 
@@ -177,43 +259,44 @@ A comprehensive Python-based stock analysis tool with advanced technical indicat
 - Statistical analysis
 - Custom indicator development
 
-## 📋 Command Line Interface
+## 📋 Interactive Usage Guide
 
-### Single Stock Analysis
+### 🎯 Single Stock Analysis
 ```bash
-# Basic analysis
-python market_analyzer.py --ticker AAPL
-
-# With predictions and momentum
-python market_analyzer.py --ticker NVDA --predictions --momentum
-
-# Price targets and sector info
-python market_analyzer.py --ticker TSLA --price-targets --sector-info
+python market_analyzer.py
+# Follow these prompts:
+# 1. Enter stock symbol: AAPL
+# 2. Choose analysis type:
+#    - Basic technical analysis
+#    - With predictions and momentum
+#    - Price targets and sector info
 ```
 
-### Market Scanning
+### 🔍 Market Scanning
 ```bash
-# Momentum scanner
-python market_analyzer.py --market-scan
-
-# Breakout scanner
-python market_analyzer.py --breakout-scan
-
-# Combined analysis
-python market_analyzer.py --ticker AAPL --momentum --predictions --price-targets
+python market_analyzer.py
+# Select from menu:
+# 1. Market momentum scanner - finds high-momentum stocks
+# 2. Breakout scanner - identifies breakout opportunities
+# 3. Combined analysis - comprehensive multi-feature analysis
 ```
 
-### Batch Processing
+### 🔄 Batch Processing
 ```bash
-# Multiple stocks
-python market_analyzer.py --batch "AAPL,TSLA,NVDA,MSFT" --batch-summary-only
-
-# With email reporting
-python market_analyzer.py --ticker AAPL --email your@email.com
-
-# SMS alerts
-python market_analyzer.py --ticker NVDA --sms +1234567890
+python market_analyzer.py
+# Choose batch options:
+# 1. Multiple stocks: Enter "AAPL,TSLA,NVDA,MSFT"
+# 2. Summary mode: Select "batch summary only"
+# 3. Email reports: Provide email when prompted
+# 4. SMS alerts: Enter phone number when prompted
 ```
+
+### 💡 Pro Tips for Interactive Mode
+- **Quick Entry**: Type stock symbols directly when prompted
+- **Multiple Features**: Select multiple analysis options in sequence
+- **Batch Mode**: Use comma-separated symbols for multiple stocks
+- **Export Options**: Choose CSV/Excel export when prompted
+- **Notifications**: Set up email/SMS alerts during analysis
 
 ## 🔧 Integration Capabilities
 
