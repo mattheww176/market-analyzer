@@ -1,0 +1,8 @@
+yfinance>=0.2.18
+matplotlib>=3.7.0
+pandas>=2.0.0
+numpy>=1.24.0
+mplfinance>=0.12.9b7
+scipy>=1.10.0
+smtplib
+email
