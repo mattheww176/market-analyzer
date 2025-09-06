@@ -2,6 +2,42 @@
 
 A comprehensive Python-based stock analysis tool with advanced technical indicators, predictive modeling, and market scanning capabilities.
 
+## Table of Contents
+
+### 📊 Features Documentation
+- [🚀 Core Features Overview](#-core-features-overview)
+  - [📊 Technical Analysis Suite](#-technical-analysis-suite)
+  - [🎯 Trading Signals & Strategy](#-trading-signals--strategy)
+  - [🔮 Predictive Analytics](#-predictive-analytics)
+  - [📈 Advanced Momentum Analysis](#-advanced-momentum-analysis)
+  - [🔍 Market Scanning Tools](#-market-scanning-tools)
+  - [📊 Risk & Performance Metrics](#-risk--performance-metrics)
+  - [📈 Visualization & Charts](#-visualization--charts)
+  - [🏢 Company Fundamentals](#-company-fundamentals)
+  - [📊 Data Export & Reporting](#-data-export--reporting)
+  - [🔄 Batch Processing](#-batch-processing)
+  - [⚙️ Advanced Configuration](#️-advanced-configuration)
+- [🛠️ Technical Implementation](#️-technical-implementation)
+- [🎯 Use Cases](#-use-cases)
+- [📋 Command Line Interface](#-command-line-interface)
+- [🔧 Integration Capabilities](#-integration-capabilities)
+- [📊 Output Examples](#-output-examples)
+- [🚀 Advanced Features](#-advanced-features)
+
+### 🚨 Git Recovery Guide
+- [Git File Recovery Guide 🚨](#git-file-recovery-guide-)
+  - [Quick Recovery Commands](#quick-recovery-commands)
+  - [Complete Git Tutorial for Beginners](#complete-git-tutorial-for-beginners)
+  - [Essential Recovery Commands](#essential-recovery-commands)
+  - [Advanced Recovery](#advanced-recovery)
+  - [Git Best Practices](#git-best-practices)
+  - [Emergency Commands Reference](#emergency-commands-reference)
+  - [Understanding Git Terms](#understanding-git-terms)
+  - [Troubleshooting](#troubleshooting)
+  - [🆘 Emergency Checklist](#-emergency-checklist)
+
+---
+
 ## 🚀 Core Features Overview
 
 ### 📊 Technical Analysis Suite
