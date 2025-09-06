@@ -1,29 +1,85 @@
-# Market Analyzer - Complete Features Guide
+# 📈 Market Analyzer - Complete Features Guide
 
 A comprehensive Python-based stock analysis tool with advanced technical indicators, predictive modeling, and market scanning capabilities.
 
-## Table of Contents
+---
 
-### 📊 Features Documentation
-- [🚀 Core Features Overview](#-core-features-overview)
-  - [📊 Technical Analysis Suite](#-technical-analysis-suite)
-  - [🎯 Trading Signals & Strategy](#-trading-signals--strategy)
-  - [🔮 Predictive Analytics](#-predictive-analytics)
-  - [📈 Advanced Momentum Analysis](#-advanced-momentum-analysis)
-  - [🔍 Market Scanning Tools](#-market-scanning-tools)
-  - [📊 Risk & Performance Metrics](#-risk--performance-metrics)
-  - [📈 Visualization & Charts](#-visualization--charts)
-  - [🏢 Company Fundamentals](#-company-fundamentals)
-  - [📊 Data Export & Reporting](#-data-export--reporting)
-  - [🔄 Batch Processing](#-batch-processing)
-  - [⚙️ Advanced Configuration](#️-advanced-configuration)
-- [⚡ Quick Command Reference](#-quick-command-reference)
-- [🛠️ Technical Implementation](#️-technical-implementation)
-- [🎯 Use Cases](#-use-cases)
-- [📋 Command Line Interface](#-command-line-interface)
-- [🔧 Integration Capabilities](#-integration-capabilities)
-- [📊 Output Examples](#-output-examples)
-- [🚀 Advanced Features](#-advanced-features)
+## 📑 Table of Contents
+
+### 🚀 Getting Started
+- [Quick Start Guide](#-quick-start-guide)
+- [Installation](#-installation)
+- [Basic Usage](#-basic-usage)
+
+### ⚡ Quick Start Guide
+- [Quick Commands Cheat Sheet](#-quick-commands-cheat-sheet)
+- [Interactive Mode](#-interactive-mode-recommended)
+- [Command Line Reference](#-command-line-reference)
+  - [Core Commands](#-core-commands)
+  - [Analysis Options](#-analysis-options)
+  - [Charting Options](#-charting-options)
+  - [Output Options](#-output-options)
+
+### 📊 Core Features
+- [Technical Analysis Suite](#-technical-analysis-suite)
+- [Trading Signals & Strategy](#-trading-signals--strategy)
+- [Predictive Analytics](#-predictive-analytics)
+- [Market Scanning Tools](#-market-scanning-tools)
+- [Risk & Performance Metrics](#-risk--performance-metrics)
+
+### 🛠️ Usage & Examples
+- [Use Cases](#-use-cases)
+  - [Day Trading](#-day-trading)
+  - [Swing Trading](#-swing-trading)
+  - [Long-term Investing](#-long-term-investing)
+- [Example Workflows](#-example-workflows)
+- [Output Examples](#-output-examples)
+
+### 🔧 Advanced Topics
+- [Technical Implementation](#-technical-implementation)
+- [Integration Capabilities](#-integration-capabilities)
+- [Advanced Configuration](#️-advanced-configuration)
+- [Batch Processing](#-batch-processing)
+- [Data Export & Reporting](#-data-export--reporting)
+
+## 📚 Command Line Reference
+
+### 🔍 Core Commands
+- `python3 market_analyzer.py` - Start in interactive mode
+- `--ticker SYMBOL` - Analyze a specific stock (e.g., AAPL, MSFT)
+- `--batch "SYM1,SYM2"` - Analyze multiple stocks (e.g., "AAPL,MSFT,GOOG")
+
+### 📈 Analysis Options
+- `--momentum` - Perform momentum analysis
+- `--predictions` - Generate price predictions
+- `--price-targets` - Calculate price targets
+- `--scan-market` - Scan for high-momentum stocks
+- `--scan-breakouts` - Find stocks breaking out
+- `--backtest` - Run backtest on signals
+- `--custom-stats` - Show custom date range stats
+- `--latest N` - Show last N days of data
+
+### 📊 Charting Options
+- `--skip-plot` - Skip all charts
+- `--cumulative` - Show cumulative returns
+- `--histogram` - Show returns histogram
+- `--drawdown` - Show drawdown chart
+- `--rolling-vol` - Show rolling volatility
+
+### 💾 Output Options
+- `--export-excel` - Export to Excel
+- `--summary-only` - Show only summary
+- `--signal-summary-only` - Show only signals
+- `--batch-summary-only` - Summary in batch mode
+
+### 🔧 Configuration
+- `--info` - Show company info
+- `--sector-info` - Include sector data
+- `--explain` - Show tool explanation
+
+### 📚 Additional Reference
+- [API Documentation](#-api-documentation)
+- [Troubleshooting](#-troubleshooting)
 
 ### 🚨 Git Recovery Guide
 - [Git File Recovery Guide 🚨](#git-file-recovery-guide-)
@@ -39,83 +95,93 @@ A comprehensive Python-based stock analysis tool with advanced technical indicat
 
 ---
 
-## ⚡ Quick Start Commands
+## 🚀 Quick Start Guide
 
-**🚀 Start the analyzer (Interactive Mode - Recommended):**
+### 🎯 Quick Commands Cheat Sheet
+
+| Feature | Command |
+|---------|---------|
+| **Interactive Mode** | `python3 market_analyzer.py` |
+| **Momentum Scanner** | `python3 market_analyzer.py --scan-market` |
+| **Breakout Scanner** | `python3 market_analyzer.py --scan-breakouts` |
+| **Stock Analysis** | `python3 market_analyzer.py --momentum --predictions` |
+
+### ⚡ Quick Start Commands
+
+### 🔄 Interactive Mode (Recommended)
 ```bash
 python3 market_analyzer.py
 ```
-*Then follow the interactive prompts to select your analysis type and enter stock symbols.*
+*Follow the interactive prompts to select your analysis type and enter stock symbols.*
 
-**📋 Direct Feature Commands:**
+---
 
-**📊 Basic Stock Analysis**
+## 📋 Direct Feature Commands
+
+### 📊 Stock Analysis
+
+#### Basic Analysis
 ```bash
 python3 market_analyzer.py
 # Will prompt: "Enter stock ticker:"
 ```
 
-**🎯 Get Trading Signals**
+#### Technical Indicators
 ```bash
+# Get trading signals
 python3 market_analyzer.py --show-signals
-# Will prompt: "Enter stock ticker:"
-```
 
-**🔮 Price Predictions**
-```bash
+# View price predictions
 python3 market_analyzer.py --predictions
-# Will prompt: "Enter stock ticker:"
-```
 
-**📈 Momentum Analysis**
-```bash
+# Run momentum analysis
 python3 market_analyzer.py --momentum
-# Will prompt: "Enter stock ticker:"
+
+# Get price targets
+python3 market_analyzer.py --price-targets
 ```
 
-**🔍 Market Momentum Scanner** *(finds high-momentum stocks)*
+### 🔍 Market Scanners
+
+#### Momentum Scanner
 ```bash
+# Find high-momentum stocks
 python3 market_analyzer.py --scan-market
 ```
 
-**📈 Breakout Scanner** *(finds stocks breaking to new highs)*
+#### Breakout Scanner
 ```bash
+# Find stocks breaking to new highs
 python3 market_analyzer.py --scan-breakouts
 ```
 
-**🎯 Price Targets**
-```bash
-python3 market_analyzer.py --price-targets
-# Will prompt: "Enter stock ticker:"
-```
+### 📈 Advanced Features
 
-**🏢 Company Information**
+#### Company & Risk Analysis
 ```bash
+# View company information
 python3 market_analyzer.py --info --sector-info
-# Will prompt: "Enter stock ticker:"
-```
 
-**📊 Risk Analysis**
-```bash
-python3 market_analyzer.py --drawdown --rolling-vol
-# Will prompt: "Enter stock ticker:"
-```
+# Run risk analysis
+python3 market_analyzer.py --drawdown --rolling-voln```
 
-**🔄 Multiple Stocks (Batch)**
+#### Batch Processing
 ```bash
+# Analyze multiple stocks
 python3 market_analyzer.py --batch "AAPL,NVDA,TSLA"
 ```
 
-**📧 Email Reports**
+#### Reporting
 ```bash
+# Email analysis report
 python3 market_analyzer.py --email-report --email-to your@email.com
-# Will prompt: "Enter stock ticker:"
 ```
 
-**🔄 Combined Analysis**
+### 🎯 Combined Analysis Examples
+
 ```bash
+# Full analysis with momentum, predictions and price targets
 python3 market_analyzer.py --momentum --predictions --price-targets
-# Will prompt: "Enter stock ticker:"
 ```
 
 ---
