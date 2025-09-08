@@ -61,10 +61,18 @@ A comprehensive Python-based stock analysis tool with advanced technical indicat
 
 ### 📊 Charting Options
 - `--skip-plot` - Skip all charts
-- `--cumulative` - Show cumulative returns
-- `--histogram` - Show returns histogram
-- `--drawdown` - Show drawdown chart
-- `--rolling-vol` - Show rolling volatility
+- `--cumulative` - Show cumulative returns in a separate window
+- `--histogram` - Show returns histogram in a separate window
+- `--drawdown` - Show drawdown chart in a separate window
+- `--rolling-vol` - Show rolling volatility in a separate window
+- `--interactive` - Show interactive candlestick chart with volume (opens in a web browser)
+
+#### Chart Display Behavior
+By default, technical analysis charts (Price/MA/BB, RSI, MACD, Volume) are displayed in separate popup windows. Each chart will block script execution until closed. This allows for better examination of each indicator.
+
+To close all chart windows and continue script execution, simply close each window. The script will proceed once all chart windows are closed.
+
+For batch processing or automated workflows, use `--skip-plot` to disable all chart displays.
 
 ### 💾 Output Options
 - `--export-excel` - Export to Excel
@@ -94,6 +102,23 @@ A comprehensive Python-based stock analysis tool with advanced technical indicat
   - [🆘 Emergency Checklist](#-emergency-checklist)
 
 ---
+
+## 🎯 Interactive Chart Features
+
+### Interactive Chart Controls
+- **Zoom**: Click and drag to select an area or use the mouse wheel
+- **Pan**: Click and drag to move the chart
+- **Reset View**: Double-click to reset the view
+- **Range Selector**: Buttons at the bottom for quick time period selection
+- **Hover**: Hover over data points to see detailed information
+- **Legend**: Click on legend items to toggle indicators on/off
+
+### Example Command
+```bash
+# Show interactive chart for a stock
+python3 market_analyzer.py --interactive
+# Will prompt for stock ticker and analysis options
+```
 
 ## 🚀 Quick Start Guide
 
@@ -189,6 +214,11 @@ python3 market_analyzer.py --momentum --predictions --price-targets
 ## 🚀 Core Features Overview
 
 ### 📊 Technical Analysis Suite
+- **Interactive Charts**: Dynamic, zoomable candlestick charts with volume and indicators
+  - Hover tooltips with detailed price and indicator values
+  - Toggle indicators on/off
+  - Range selector for different time periods
+  - Volume bars colored by price movement
 - **Moving Averages**: 20-day, 50-day, and 200-day moving averages
 - **RSI (Relative Strength Index)**: 14-period RSI with overbought/oversold signals
 - **MACD**: Moving Average Convergence Divergence with signal line crossovers

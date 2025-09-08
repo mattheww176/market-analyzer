@@ -3,8 +3,42 @@ import pandas as pd
 import numpy as np
 import os
 import matplotlib
-matplotlib.use('TkAgg')  # Set backend for interactive plots
-import matplotlib.pyplot as plt
+# Try to use Qt5Agg backend first, as it's more reliable
+import sys
+import platform
+
+# Set the backend before importing pyplot
+if 'matplotlib.pyplot' in sys.modules:
+    # If pyplot is already imported, we need to restart the kernel
+    print("\n⚠️ matplotlib.pyplot already imported. Please restart the Python kernel and try again.")
+    sys.exit(1)
+
+try:
+    # Try Qt5Agg first (most reliable for interactive plots)
+    matplotlib.use('Qt5Agg')
+    import matplotlib.pyplot as plt
+    print("\nℹ️ Using Qt5Agg backend for plotting")
+    
+    # Enable interactive mode
+    plt.ion()
+    
+except Exception as e:
+    print(f"\n⚠️ Could not use Qt5Agg: {e}")
+    
+    # Fall back to the default backend
+    import matplotlib.pyplot as plt
+    print("⚠️ Using default matplotlib backend. Plots may not display.")
+    print("   To fix this, install PyQt5: pip install PyQt5")
+
+# Try to use IPython's display if available
+try:
+    from IPython import get_ipython
+    ipython = get_ipython()
+    if ipython is not None:
+        ipython.magic('matplotlib inline')
+        print("\nℹ️ Using IPython inline display for plots")
+except:
+    pass  # Not in IPython, continue with standard matplotlib
 from datetime import datetime, timedelta
 import sys
 import smtplib
@@ -13,15 +47,13 @@ from email.mime.multipart import MIMEMultipart
 import argparse
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 try:
     from twilio.rest import Client
     TWILIO_AVAILABLE = True
 except ImportError:
     TWILIO_AVAILABLE = False
-try:
-    from mlb_predictor import load_mlb_data, preprocess_data, train_model, predict_next_game_stats
-except ImportError:
-    print("mlb_predictor.py not found.  MLB functionality will be disabled.")
 
 # ---------------------------
 # Technical Indicator Functions
@@ -584,108 +616,122 @@ def scan_breakout_stocks(lookback_days=20):
     return breakout_stocks[:10]
 
 def predict_stock_prices(data, ticker, days_ahead=[1, 3, 7, 14]):
-    """Predict future stock prices using Linear Regression."""
+    """
+    Predict future stock prices using multiple technical indicators and market context.
     
-    # Prepare data for prediction
-    prices = data['Close'].dropna()
-    if len(prices) < 30:
-        print(f"\n⚠️ Not enough data for predictions (need at least 30 days, have {len(prices)})")
-        return None
-    
-    # Use last 30 days for prediction
-    recent_prices = prices.tail(30).values
-    days = np.arange(len(recent_prices)).reshape(-1, 1)
-    
-    # Train linear regression model
-    model = LinearRegression()
-    model.fit(days, recent_prices)
-    
-    # Calculate model accuracy
-    predictions_train = model.predict(days)
-    r2 = r2_score(recent_prices, predictions_train)
-    
-    # Determine confidence level based on R²
-    if r2 > 0.7:
-        confidence = "High"
-        confidence_emoji = "🟢"
-    elif r2 > 0.4:
-        confidence = "Medium" 
-        confidence_emoji = "🟡"
-    else:
-        confidence = "Low"
-        confidence_emoji = "🔴"
-    
-    # Get current price for reference
-    current_price = prices.iloc[-1]
-    if hasattr(current_price, 'item'):
-        current_price = current_price.item()
-    future_days = np.array([[len(recent_prices) + d - 1] for d in days_ahead])
-    future_prices = model.predict(future_days)
-    
-    # Determine trend direction
-    slope = model.coef_[0]
-    if slope > 0.5:
-        trend = "UPWARD 📈"
-    elif slope < -0.5:
-        trend = "DOWNWARD 📉"
-    else:
-        trend = "SIDEWAYS ➡️"
-    
-    print(f"\n=== Price Predictions for {ticker} ===")
-    print(f"Current Price: ${current_price:.2f}")
-    print(f"Prediction Model: Linear Regression (30-day trend)")
-    print(f"Trend Direction: {trend}")
-    print(f"Confidence: {confidence_emoji} {confidence} (R² = {r2:.3f})")
-    
-    print(f"\nFuture Price Predictions:")
-    predictions = {}
-    
-    for i, days_out in enumerate(days_ahead):
-        predicted_price = future_prices[i]
-        if hasattr(predicted_price, 'item'):
-            predicted_price = predicted_price.item()
-        change_pct = ((predicted_price - current_price) / current_price) * 100
+    Args:
+        data: DataFrame containing stock data (OHLCV)
+        ticker: Stock ticker symbol
+        days_ahead: List of days to predict ahead
         
-        if days_out == 1:
-            period = "Tomorrow"
-        elif days_out <= 7:
-            period = f"{days_out} days"
+    Returns:
+        Dictionary containing predictions and analysis
+    """
+    try:
+        # Create a clean DataFrame with just the close prices
+        if isinstance(data, pd.DataFrame):
+            # If data is a DataFrame, try to extract close prices
+            if 'Close' in data.columns:
+                close_series = data['Close']
+                if isinstance(close_series, pd.Series):
+                    df = pd.DataFrame({'Close': close_series.values}, index=close_series.index)
+                else:
+                    # Handle case where data['Close'] is a DataFrame
+                    df = close_series.iloc[:, 0].to_frame('Close')
+            elif isinstance(data.columns, pd.MultiIndex):
+                # Handle MultiIndex columns
+                df = data.xs('Close', axis=1, level=1, drop_level=False).copy()
+                df.columns = df.columns.droplevel(1)
+                df = df.iloc[:, 0].to_frame('Close')
+            else:
+                print("Error: Could not find 'Close' prices in the data")
+                return None
         else:
-            period = f"{days_out} days"
+            print("Error: Invalid data format")
+            return None
             
-        print(f"{period:>10s}: ${predicted_price:.2f} ({change_pct:+.1f}%)")
-        predictions[days_out] = {
-            'price': predicted_price,
-            'change_pct': change_pct
+        # Ensure we have enough data
+        if len(df) < 30:
+            print(f"\n⚠️ Not enough data for predictions (need at least 30 days, have {len(df)})")
+            return None
+            
+        # Calculate basic indicators
+        df['Returns'] = df['Close'].pct_change()
+        df['Momentum_5'] = df['Close'].pct_change(5)
+        df['Momentum_10'] = df['Close'].pct_change(10)
+        df['MA20'] = df['Close'].rolling(20).mean()
+        df['MA50'] = df['Close'].rolling(50).mean()
+        df['RSI'] = calculate_rsi(df['Close'])
+        df['Volatility'] = df['Returns'].rolling(5).std() * np.sqrt(252)
+        
+        # Calculate price relative to moving averages
+        df['Price_vs_MA20'] = (df['Close'] / df['MA20'] - 1) * 100
+        df['Price_vs_MA50'] = (df['Close'] / df['MA50'] - 1) * 100
+        
+        # Drop NA values
+        df = df.dropna()
+        
+        if len(df) < 30:
+            print(f"\n⚠️ Not enough data after cleaning (need at least 30 days, have {len(df)})")
+            return None
+            
+        # Get the most recent data point
+        current = df.iloc[-1]
+        current_price = current['Close']
+        
+        # Make predictions based on momentum
+        predictions = {}
+        for days in days_ahead:
+            # Simple momentum-based prediction
+            momentum = current['Momentum_5'] * 0.6 + current['Momentum_10'] * 0.4
+            predicted_price = current_price * (1 + momentum)
+            predictions[days] = predicted_price
+            
+        # Prepare the result
+        result = {
+            'ticker': ticker,
+            'current_price': current_price,
+            'predictions': predictions,
+            'rsi': current['RSI'],
+            'momentum_5': current['Momentum_5'],
+            'momentum_10': current['Momentum_10'],
+            'volatility': current['Volatility'],
+            'price_vs_ma20': current['Price_vs_MA20'],
+            'price_vs_ma50': current['Price_vs_MA50']
         }
-    
-    # Add prediction insights
-    print(f"\n📊 Prediction Insights:")
-    weekly_change = predictions[7]['change_pct']
-    if abs(weekly_change) < 2:
-        insight = "Relatively stable price expected"
-    elif weekly_change > 5:
-        insight = "Strong upward movement predicted"
-    elif weekly_change < -5:
-        insight = "Significant downward movement predicted"
-    elif weekly_change > 0:
-        insight = "Modest upward trend expected"
-    else:
-        insight = "Modest downward trend expected"
-    
-    print(f"• {insight}")
-    print(f"• Based on {len(recent_prices)}-day price trend analysis")
-    
-    if confidence == "Low":
-        print(f"• ⚠️ Low confidence - consider additional analysis")
-    
-    return {
-        'predictions': predictions,
-        'trend': trend,
-        'confidence': confidence,
-        'r2_score': r2,
-        'current_price': current_price
-    }
+        
+        # Print the analysis
+        print(f"\n=== Price Predictions for {ticker} ===")
+        print(f"Current Price: ${current_price:.2f}")
+        print("\n📊 Technical Indicators:")
+        print(f"• RSI: {current['RSI']:.1f} (30=oversold, 70=overbought)")
+        print(f"• 5-Day Momentum: {current['Momentum_5']*100:+.1f}%")
+        print(f"• 10-Day Momentum: {current['Momentum_10']*100:+.1f}%")
+        print(f"• Volatility (annualized): {current['Volatility']*100:.1f}%")
+        print(f"• Price vs 20-day MA: {current['Price_vs_MA20']:+.1f}%")
+        print(f"• Price vs 50-day MA: {current['Price_vs_MA50']:+.1f}%")
+        
+        print("\n🔮 Price Predictions:")
+        for days, price in predictions.items():
+            change_pct = (price / current_price - 1) * 100
+            print(f"• {days} day(s): ${price:.2f} ({change_pct:+.1f}%)")
+            
+        print("\n💡 Analysis:")
+        if current['RSI'] > 70:
+            print("• RSI indicates overbought conditions (potential pullback risk)")
+        elif current['RSI'] < 30:
+            print("• RSI indicates oversold conditions (potential rebound opportunity)")
+            
+        if current['Momentum_5'] > 0.02:
+            print("• Strong positive momentum detected")
+        elif current['Momentum_5'] < -0.02:
+            print("• Strong negative momentum detected")
+            
+        return result
+        
+    except Exception as e:
+        print(f"\n❌ Error generating predictions: {str(e)}")
+        return None
 
 # ---------------------------
 # Get Stock Data
@@ -751,6 +797,95 @@ def plot_histogram(data, ticker):
     plt.tight_layout()
     plt.show()
 
+def plot_interactive_candlestick(data, ticker):
+    """Create an interactive candlestick chart with volume using Plotly."""
+    # Create subplots with shared x-axis
+    fig = make_subplots(rows=2, cols=1, 
+                       shared_xaxes=True, 
+                       vertical_spacing=0.05,
+                       row_heights=[0.7, 0.3],
+                       subplot_titles=(f'{ticker} Price', 'Volume'))
+    
+    # Add candlestick trace
+    fig.add_trace(go.Candlestick(x=data.index,
+                                open=data['Open'],
+                                high=data['High'],
+                                low=data['Low'],
+                                close=data['Close'],
+                                name='Price'),
+                 row=1, col=1)
+    
+    # Add moving averages
+    for ma_period, color in [(20, 'orange'), (50, 'green')]:
+        ma_col = f'MA{ma_period}'
+        if ma_col in data.columns:
+            fig.add_trace(go.Scatter(x=data.index,
+                                   y=data[ma_col],
+                                   name=f'MA{ma_period}',
+                                   line=dict(color=color, width=1)),
+                         row=1, col=1)
+    
+    # Add Bollinger Bands if available
+    if 'BB_Upper' in data.columns and 'BB_Lower' in data.columns:
+        fig.add_trace(go.Scatter(x=data.index, 
+                               y=data['BB_Upper'],
+                               name='BB Upper',
+                               line=dict(color='rgba(255, 0, 0, 0.5)', width=1),
+                               showlegend=False),
+                     row=1, col=1)
+        fig.add_trace(go.Scatter(x=data.index,
+                               y=data['BB_Lower'],
+                               name='BB Lower',
+                               line=dict(color='rgba(255, 0, 0, 0.5)', width=1),
+                               fill='tonexty',
+                               fillcolor='rgba(255, 0, 0, 0.1)',
+                               showlegend=False),
+                     row=1, col=1)
+    
+    # Add volume as colored bars
+    colors = ['green' if close >= open_ else 'red' 
+              for close, open_ in zip(data['Close'], data['Open'])]
+    
+    fig.add_trace(go.Bar(x=data.index,
+                        y=data['Volume'],
+                        name='Volume',
+                        marker_color=colors,
+                        opacity=0.7),
+                 row=2, col=1)
+    
+    # Update layout
+    fig.update_layout(
+        title=f'{ticker} Interactive Chart',
+        yaxis_title='Price',
+        xaxis_rangeslider_visible=False,
+        showlegend=True,
+        height=800,
+        template='plotly_white',
+        xaxis2_rangeslider_visible=False,
+        hovermode='x unified'
+    )
+    
+    # Add range selector buttons
+    fig.update_xaxes(
+        rangeslider_visible=False,
+        rangeselector=dict(
+            buttons=list([
+                dict(count=1, label='1M', step='month', stepmode='backward'),
+                dict(count=3, label='3M', step='month', stepmode='backward'),
+                dict(count=6, label='6M', step='month', stepmode='backward'),
+                dict(count=1, label='YTD', step='year', stepmode='todate'),
+                dict(count=1, label='1Y', step='year', stepmode='backward'),
+                dict(step='all', label='All')
+            ])
+        )
+    )
+    
+    # Customize volume chart
+    fig.update_yaxes(title_text='Volume', row=2, col=1)
+    
+    # Show the plot
+    fig.show()
+
 def backtest_signals(data, initial_cash=10000):
     cash = initial_cash
     position = 0
@@ -784,7 +919,34 @@ def backtest_signals(data, initial_cash=10000):
     else:
         print("No trades executed.")
 
-def analyze_stock(ticker, skip_plot=False, custom_stats=False, export_excel=False, info=False, cumulative=False, drawdown=False, rolling_vol=False, backtest=False, show_signals=False, histogram=False, latest=None, sector_info=False, summary_only=False, moving_average_plot=False, signal_summary_only=False, price_targets=False, predictions=False, momentum_analysis=False, market_scan=False, breakout_scan=False):
+def show_historical_data(data, ticker, days=30):
+    """Display historical price data for the given ticker.
+    
+    Args:
+        data: DataFrame containing the stock data
+        ticker: Stock ticker symbol
+        days: Number of days of historical data to show (None for all)
+    """
+    print(f"\n=== Historical Price Data for {ticker} ===")
+    
+    # Select columns to display
+    columns = ['Open', 'High', 'Low', 'Close', 'Volume']
+    if all(col in data.columns for col in columns):
+        display_data = data[columns].copy()
+        
+        # Format numbers for better readability
+        pd.options.display.float_format = '{:,.2f}'.format
+        
+        # Show only the most recent days if specified
+        if days is not None and len(display_data) > days:
+            display_data = display_data.tail(days)
+        
+        print(display_data)
+        print(f"\nShowing {len(display_data)} of {len(data)} available trading days")
+    else:
+        print("Error: Could not retrieve complete historical data")
+
+def analyze_stock(ticker, skip_plot=False, custom_stats=False, export_excel=False, info=False, cumulative=False, drawdown=False, rolling_vol=False, backtest=False, show_signals=False, histogram=False, latest=None, sector_info=False, summary_only=False, moving_average_plot=False, signal_summary_only=False, price_targets=False, predictions=False, momentum_analysis=False, market_scan=False, breakout_scan=False, interactive_chart=False, show_history=False, history_days=30, show_graphs=True):
     # Handle market scanning modes first (don't need individual stock data)
     if market_scan:
         scan_market_momentum()
@@ -840,6 +1002,10 @@ def analyze_stock(ticker, skip_plot=False, custom_stats=False, export_excel=Fals
     if export_excel:
         print(f"📄 Full processed data also displayed (not saved)")
 
+    # Show historical data if requested
+    if show_history:
+        show_historical_data(data, ticker, days=history_days)
+    
     # Display Full Table
     pd.set_option("display.max_rows", None)
     if not summary_only:
@@ -907,6 +1073,100 @@ def analyze_stock(ticker, skip_plot=False, custom_stats=False, export_excel=Fals
     print(f"\nSignal summary for {ticker}:")
     print(f"Total BUY signals: {buy_signals}")
     print(f"Total SELL signals: {sell_signals}")
+    
+    # Plot charts if not skipped (moved before early return)
+    print(f"\nDEBUG: skip_plot={skip_plot}, show_graphs={show_graphs}")
+    if not skip_plot and show_graphs:
+        try:
+            print("\n📊 Creating analysis dashboard...")
+            
+            # Check if we can display plots
+            import matplotlib
+            backend = matplotlib.get_backend()
+            print(f"Current backend: {backend}")
+            
+            # Create separate windows for each chart
+            figures = []
+            
+            # 1. Price + Moving Averages + Bollinger Bands
+            fig1 = plt.figure(figsize=(12, 6))
+            plt.plot(data.index, data["Close"].values, label="Close Price", color="blue")
+            plt.plot(data.index, data["MA20"].values, label="MA20", color="orange")
+            plt.plot(data.index, data["MA50"].values, label="MA50", color="green")
+            plt.plot(data.index, data["BB_Upper"].values, label="BB Upper", color="magenta", linestyle="--")
+            plt.plot(data.index, data["BB_Lower"].values, label="BB Lower", color="magenta", linestyle="--")
+            plt.title(f"{ticker} - Price, Moving Averages & Bollinger Bands")
+            plt.xlabel("Date")
+            plt.ylabel("Price")
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()
+            figures.append(fig1)
+            
+            # 2. RSI
+            fig2 = plt.figure(figsize=(12, 4))
+            plt.plot(data.index, data["RSI"].values, label="RSI", color="purple")
+            plt.axhline(70, color="red", linestyle="--", label="Overbought (70)")
+            plt.axhline(30, color="green", linestyle="--", label="Oversold (30)")
+            plt.title(f"{ticker} - RSI")
+            plt.xlabel("Date")
+            plt.ylabel("RSI")
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()
+            figures.append(fig2)
+            
+            # 3. MACD
+            fig3 = plt.figure(figsize=(12, 4))
+            plt.plot(data.index, data["MACD"], label="MACD", color="blue")
+            plt.plot(data.index, data["MACD_signal"], label="Signal", color="red")
+            plt.bar(data.index, data["MACD"] - data["MACD_signal"], 
+                   label="MACD Histogram", color="gray", alpha=0.3)
+            plt.axhline(0, color="black", linestyle="-", linewidth=0.5)
+            plt.title(f"{ticker} - MACD")
+            plt.xlabel("Date")
+            plt.ylabel("MACD")
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()
+            figures.append(fig3)
+            
+            # 4. Volume
+            fig4 = plt.figure(figsize=(12, 6))
+            # Handle volume data - check if it's a MultiIndex column
+            if isinstance(data.columns, pd.MultiIndex):
+                volume_col = data["Volume"].iloc[:, 0] if len(data["Volume"].columns) > 0 else data["Volume"]
+                vol_ma15_col = data["Vol_MA15"] if "Vol_MA15" in data.columns else None
+            else:
+                volume_col = data["Volume"]
+                vol_ma15_col = data["Vol_MA15"] if "Vol_MA15" in data.columns else None
+            
+            plt.bar(data.index, volume_col.astype(float), color="skyblue", label="Volume")
+            if vol_ma15_col is not None:
+                plt.plot(data.index, vol_ma15_col.astype(float), color="red", label="Vol MA15")
+            plt.title(f"{ticker} - Daily Trading Volume")
+            plt.xlabel("Date")
+            plt.ylabel("Volume")
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()
+            figures.append(fig4)
+            
+            print("✅ Displaying analysis charts in separate windows. Close all windows to continue...")
+            
+            # Show all figures
+            for fig in figures:
+                plt.figure(fig.number)
+                plt.show(block=False)
+            
+            # Keep the plots open until user closes them
+            plt.show(block=True)
+            
+        except Exception as e:
+            print(f"❌ Error during plotting: {e}")
+            import traceback
+            traceback.print_exc()
+    
     if signal_summary_only:
         return
     
@@ -936,74 +1196,6 @@ def analyze_stock(ticker, skip_plot=False, custom_stats=False, export_excel=Fals
     if momentum_analysis:
         momentum_data = calculate_momentum_score(data, ticker)
         display_momentum_analysis(momentum_data)
-
-    if skip_plot:
-        print("\nPlotting skipped by user request.")
-        return
-    if cumulative:
-        plot_cumulative_returns(data, ticker)
-    if drawdown:
-        plot_drawdown(data, ticker)
-    if rolling_vol:
-        plot_rolling_volatility(data, ticker)
-    if histogram:
-        plot_histogram(data, ticker)
-
-    # Plot Charts
-    try:
-        # Price + Moving Averages + Bollinger Bands
-        plt.figure(figsize=(12,6))
-        plt.plot(data.index, data["Close"].values, label="Close Price", color="blue")
-        plt.plot(data.index, data["MA20"].values, label="MA20", color="orange")
-        plt.plot(data.index, data["MA50"].values, label="MA50", color="green")
-        plt.plot(data.index, data["BB_Upper"].values, label="BB Upper", color="magenta", linestyle="--")
-        plt.plot(data.index, data["BB_Lower"].values, label="BB Lower", color="magenta", linestyle="--")
-        plt.title(f"{ticker} Price, MA, Bollinger Bands")
-        plt.xlabel("Date")
-        plt.ylabel("Price")
-        plt.legend()
-        plt.grid(True)
-        plt.tight_layout()
-        plt.show()
-
-        # RSI
-        plt.figure(figsize=(12,4))
-        plt.plot(data.index, data["RSI"].values, label="RSI", color="purple")
-        plt.axhline(70, color="red", linestyle="--")
-        plt.axhline(30, color="green", linestyle="--")
-        plt.title(f"{ticker} RSI")
-        plt.xlabel("Date")
-        plt.ylabel("RSI")
-        plt.legend()
-        plt.grid(True)
-        plt.tight_layout()
-        plt.show()
-
-        # MACD
-        plt.figure(figsize=(12,4))
-        plt.plot(data.index, data["MACD"].values, label="MACD", color="blue")
-        plt.plot(data.index, data["MACD_signal"].values, label="Signal Line", color="red")
-        plt.title(f"{ticker} MACD")
-        plt.xlabel("Date")
-        plt.ylabel("Value")
-        plt.legend()
-        plt.grid(True)
-        plt.tight_layout()
-        plt.show()
-
-        # Volume
-        plt.figure(figsize=(12,6))
-        plt.bar(data.index, data["Volume"].astype(float).values, color="skyblue", label="Volume")
-        plt.plot(data.index, data["Vol_MA15"].values, color="red", label="Vol MA15")
-        plt.title(f"{ticker} Daily Trading Volume")
-        plt.xlabel("Date")
-        plt.ylabel("Volume")
-        plt.legend()
-        plt.grid(True)
-        plt.tight_layout()
-        plt.show()
-    except Exception as e:
-        print(f"❌ Error during plotting: {e}")
 
 def send_email_report(to_email, report_contents):
     # SMTP configuration (example: Gmail)
@@ -1057,6 +1249,12 @@ def send_sms_report(to_phone, report_contents):
         print(f"\n❌ Failed to send SMS: {e}")
 
 def main():
+    # Initialize notification variables at the start of main
+    email_report = False
+    sms_report = False
+    email_to = None
+    sms_to = None
+    
     parser = argparse.ArgumentParser(description="Stock Analysis Tool")
     parser.add_argument("-t", "--ticker", type=str, help="Stock ticker symbol (e.g. AAPL, TSLA, MSFT)")
     parser.add_argument("--batch", type=str, help="Comma-separated list of tickers for batch analysis (e.g. AAPL,TSLA,MSFT)")
@@ -1084,6 +1282,7 @@ def main():
     parser.add_argument("--mlb-predict", action="store_true", help="Predict MLB player stats for the next game")
     parser.add_argument("--email-report", action="store_true", help="Email the analysis report")
     parser.add_argument("--email-to", type=str, help="Email address to send report to")
+    parser.add_argument("--interactive", action="store_true", help="Show interactive candlestick chart with volume")
     args = parser.parse_args()
 
     if args.explain:
@@ -1240,58 +1439,92 @@ Key features:
             momentum_input = input("Do you want momentum analysis? (y/n): ").strip().lower()
             momentum_choice = momentum_input == 'y'
 
-    latest = args.latest
-    if latest is None:
-        latest_input = input("Enter number of latest days to display (or press Enter for all): ")
-        if latest_input.strip():
+    # Ask about showing historical data
+    show_history = input("Do you want to see historical price data? (y/n): ").lower().strip() == 'y'
+    history_days = 30  # Default to showing last 30 days
+    if show_history:
+        while True:
+            days_input = input("How many days of history do you want to see? (Press Enter for last 30 days): ").strip()
+            if not days_input:  # If user just presses Enter
+                break
             try:
-                latest = int(latest_input)
+                history_days = int(days_input)
+                if history_days > 0:  # Ensure positive number
+                    break
+                print("Please enter a positive number.")
             except ValueError:
-                print("Invalid number, showing all days.")
-                latest = None
-
-    # Email/SMS notification prompts
-    email_report = args.email_report
-    email_to = args.email_to
-    sms_report = False
-    sms_to = None
+                print("Invalid input. Please enter a number or press Enter for the default (30 days).")
     
-    if not args.email_report:
+    # Ask about showing graphs
+    show_graphs = True
+    if not hasattr(args, 'skip_plot') or not args.skip_plot:
+        show_graphs = input("\nDo you want to display the analysis graphs? (y/n): ").lower() == 'y'
+    
+    # Ask about showing full data table
+    if not args.summary_only and not args.signal_summary_only:
+        show_full_data = input("\nDo you want to see the full technical analysis table? (y/n): ").lower() == 'y'
+        args.summary_only = not show_full_data
+        args.signal_summary_only = not show_full_data
+
+    # Email notification prompt
+    if hasattr(args, 'email_report') and args.email_report:
+        email_report = True
+        email_to = args.email_to if hasattr(args, 'email_to') and args.email_to else None
+    else:
         email_choice = input("Do you want the results emailed to you? (y/n): ").strip().lower()
         if email_choice == "y":
             email_to = input("Enter your email address: ").strip()
             email_report = True
-    else:
-        email_report = True
-        email_to = args.email_to
-        
-    # SMS prompt
-    sms_choice = input("Do you want the results sent via SMS? (y/n): ").strip().lower()
-    if sms_choice == "y":
-        sms_to = input("Enter your phone number (with country code, e.g., +1234567890): ").strip()
-        sms_report = True
+    
+    # SMS prompt - only show if not in batch mode and email wasn't already set via command line
+    if not hasattr(args, 'batch') or not args.batch:
+        if not email_report or not hasattr(args, 'email_report'):
+            sms_choice = input("Do you want the results sent via SMS? (y/n): ").strip().lower()
+            if sms_choice == "y":
+                sms_to = input("Enter your phone number (with country code, e.g., +1234567890): ").strip()
+                sms_report = True
+    
+    # Ask about number of latest days to display
+    latest = args.latest
+    if latest is None:
+        while True:
+            latest_input = input("\nEnter number of latest days to display (or press Enter for all): ").strip()
+            if not latest_input:  # If user just presses Enter
+                latest = None
+                break
+            try:
+                latest = int(latest_input)
+                if latest > 0:  # Ensure positive number
+                    break
+                print("Please enter a positive number.")
+            except ValueError:
+                print("Invalid input. Please enter a number or press Enter to show all data.")
 
     analyze_stock(
         ticker,
-        skip_plot=args.skip_plot if args.skip_plot else False,
-        custom_stats=args.custom_stats,
-        export_excel=args.export_excel,
-        info=args.info,
-        cumulative=args.cumulative,
-        drawdown=args.drawdown,
-        rolling_vol=args.rolling_vol,
-        backtest=args.backtest,
-        show_signals=args.show_signals,
-        histogram=args.histogram,
+        skip_plot=args.skip_plot if hasattr(args, 'skip_plot') else False,
+        custom_stats=args.custom_stats if hasattr(args, 'custom_stats') else False,
+        export_excel=args.export_excel if hasattr(args, 'export_excel') else False,
+        info=args.info if hasattr(args, 'info') else False,
+        cumulative=args.cumulative if hasattr(args, 'cumulative') else False,
+        drawdown=args.drawdown if hasattr(args, 'drawdown') else False,
+        rolling_vol=args.rolling_vol if hasattr(args, 'rolling_vol') else False,
+        backtest=args.backtest if hasattr(args, 'backtest') else False,
+        show_signals=args.show_signals if hasattr(args, 'show_signals') else False,
+        histogram=args.histogram if hasattr(args, 'histogram') else False,
         latest=latest,
-        sector_info=args.sector_info,
-        summary_only=args.summary_only,
-        signal_summary_only=args.signal_summary_only,
+        sector_info=args.sector_info if hasattr(args, 'sector_info') else False,
+        summary_only=args.summary_only if hasattr(args, 'summary_only') else False,
+        signal_summary_only=args.signal_summary_only if hasattr(args, 'signal_summary_only') else False,
         price_targets=price_targets_choice,
         predictions=predictions_choice,
-        momentum_analysis=momentum_choice
+        momentum_analysis=momentum_choice,
+        interactive_chart=args.interactive if hasattr(args, 'interactive') else False,
+        show_history=show_history,
+        history_days=history_days,
+        show_graphs=show_graphs
     )
-    
+
     # Send notifications if requested
     if email_report and email_to:
         # Create a simple report summary for email/SMS
@@ -1305,6 +1538,14 @@ Key features:
         report_summary = [f"Stock Analysis Report for {ticker}"]
         try:
             send_sms_report(sms_to, report_summary)
+        except Exception as e:
+            print(f"Error sending SMS: {e}")
+            # If SMS fails, try to fall back to email if we have an email address
+            if email_to:
+                try:
+                    send_email_report(email_to, ["SMS delivery failed. Sending via email instead."] + report_summary)
+                except Exception as email_err:
+                    print(f"Error sending fallback email: {email_err}")
         except Exception as e:
             print(f"Error sending SMS: {e}")
 
