@@ -45,27 +45,32 @@ A comprehensive Python-based stock analysis tool with advanced technical indicat
 ## 📚 Command Line Reference
 
 ### 🔍 Core Commands
-- `python3 market_analyzer.py` - Start in interactive mode
-- `--ticker SYMBOL` - Analyze a specific stock (e.g., AAPL, MSFT)
+- `python3 market_analyzer.py` - Start in interactive mode (will prompt for ticker)
+- `-t, --ticker SYMBOL` - Analyze a specific stock (e.g., AAPL, MSFT)
 - `--batch "SYM1,SYM2"` - Analyze multiple stocks (e.g., "AAPL,MSFT,GOOG")
+- `--batch-summary-only` - Show only summary statistics in batch mode
 
 ### 📈 Analysis Options
-- `--momentum` - Perform momentum analysis
-- `--predictions` - Generate price predictions
-- `--price-targets` - Calculate price targets
-- `--scan-market` - Scan for high-momentum stocks
-- `--scan-breakouts` - Find stocks breaking out
-- `--backtest` - Run backtest on signals
-- `--custom-stats` - Show custom date range stats
-- `--latest N` - Show last N days of data
+- `--momentum` - Perform comprehensive momentum analysis with scoring
+- `--predictions` - Generate future price predictions using Linear Regression
+- `--price-targets` - Calculate price targets based on historical patterns
+- `--scan-market` - Scan market for high momentum stocks
+- `--scan-breakouts` - Scan for stocks breaking out to new highs
+- `--backtest` - Run backtest on buy/sell signals
+- `--custom-stats` - Show statistics for custom date range
+- `--show-signals` - Display only rows with buy/sell signals
+- `--latest N` - Show only the latest N days of data
+- `--sector-info` - Show sector, industry, and country info
+- `--info` - Show company information
 
 ### 📊 Charting Options
-- `--skip-plot` - Skip all charts
-- `--cumulative` - Show cumulative returns in a separate window
-- `--histogram` - Show returns histogram in a separate window
-- `--drawdown` - Show drawdown chart in a separate window
-- `--rolling-vol` - Show rolling volatility in a separate window
-- `--interactive` - Show interactive candlestick chart with volume (opens in a web browser)
+- `--skip-plot` - Skip all chart displays
+- `--cumulative` - Plot cumulative returns chart
+- `--histogram` - Show histogram of daily returns
+- `--drawdown` - Plot drawdown chart and show max drawdown
+- `--rolling-vol` - Plot rolling volatility chart
+- `--interactive` - Show interactive candlestick chart with volume
+- `--chart-days N` - Set number of days to display in charts (1-365, default: 90)
 
 #### Chart Display Behavior
 By default, technical analysis charts (Price/MA/BB, RSI, MACD, Volume) are displayed in separate popup windows. Each chart will block script execution until closed. This allows for better examination of each indicator.
@@ -75,10 +80,11 @@ To close all chart windows and continue script execution, simply close each wind
 For batch processing or automated workflows, use `--skip-plot` to disable all chart displays.
 
 ### 💾 Output Options
-- `--export-excel` - Export to Excel
-- `--summary-only` - Show only summary
-- `--signal-summary-only` - Show only signals
-- `--batch-summary-only` - Summary in batch mode
+- `--export-excel` - Export analysis to Excel (.xlsx)
+- `--summary-only` - Show only summary statistics
+- `--signal-summary-only` - Show only buy/sell signal summary
+- `--email-report` - Email the analysis report
+- `--email-to EMAIL` - Email address to send report to
 
 ### 🔧 Configuration
 - `--info` - Show company info
@@ -113,10 +119,20 @@ For batch processing or automated workflows, use `--skip-plot` to disable all ch
 - **Hover**: Hover over data points to see detailed information
 - **Legend**: Click on legend items to toggle indicators on/off
 
+### Chart Display Customization
+- **Time Period**: Choose how many days of historical data to display (1-365 days)
+- **Default View**: 90 days of data shown by default for optimal performance
+- **Responsive**: Automatically adjusts to show available data if less than requested
+- **Interactive**: All charts respect the selected time period for consistent analysis
+
 ### Example Command
 ```bash
-# Show interactive chart for a stock
+# Show interactive chart for a stock (default 90 days)
 python3 market_analyzer.py --interactive
+
+# Show interactive chart with custom time period (e.g., 60 days)
+python3 market_analyzer.py --interactive --chart-days 60
+
 # Will prompt for stock ticker and analysis options
 ```
 
