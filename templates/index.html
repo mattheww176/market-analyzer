@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Market Analyzer</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         .analysis-output {
             white-space: pre-wrap;
@@ -17,42 +18,240 @@
         .loading {
             display: none;
         }
+        
+        /* Dark mode styles */
+        .dark .analysis-output {
+            background-color: #1f2937;
+            color: #f8fafc;  /* Brighter text for better readability */
+        }
+        
+        .dark body {
+            background-color: #111827;
+            color: #f8fafc;  /* Brighter base text color */
+        }
+        
+        .dark .bg-white {
+            background-color: #1f2937;
+        }
+        
+        /* Input field styles for dark mode */
+        .dark input[type="text"],
+        .dark input[type="number"],
+        .dark select,
+        .dark textarea {
+            background-color: #374151 !important;
+            color: #f3f4f6 !important;
+            border-color: #4b5563 !important;
+        }
+        
+        .dark input[type="text"]::placeholder,
+        .dark input[type="number"]::placeholder {
+            color: #9ca3af !important;
+        }
+        
+        .dark .text-gray-800,
+        .dark .text-gray-700,
+        .dark .text-gray-600 {
+            color: #f1f5f9;  /* Brighter text for better contrast */
+        }
+        
+        .dark .text-gray-400,
+        .dark .text-gray-500 {
+            color: #cbd5e1;  /* Brighter secondary text */
+        }
+        
+        .dark .bg-gray-100,
+        .dark .bg-gray-50 {
+            background-color: #1f2937;
+        }
+        
+        /* Enhance contrast for better readability */
+        .dark .border-gray-200,
+        .dark .border-gray-300 {
+            border-color: #374151;
+        }
+        
+        .dark .shadow-md {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+        }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen p-8">
-    <div class="max-w-4xl mx-auto">
+<body class="bg-gray-100 min-h-screen transition-colors duration-200">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm dark:bg-gray-800 transition-colors duration-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center">
+                        <span class="text-xl font-bold text-blue-600 dark:text-blue-400">📈 Market Analyzer</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="watchlistButton" class="relative p-2 text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 focus:outline-none group">
+                        <i class="fas fa-star text-xl"></i>
+                        <span id="watchlistCount" class="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+                        <span class="absolute z-10 right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 hidden group-hover:block">
+                            <div class="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
+                                <span>Your Watchlist</span>
+                            </div>
+                            <div id="watchlistItems" class="max-h-60 overflow-y-auto">
+                                <div class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                                    No stocks in watchlist
+                                </div>
+                            </div>
+                            <div class="border-t border-gray-200 dark:border-gray-700 px-4 py-2">
+                                <button id="clearWatchlist" class="text-xs text-red-500 hover:text-red-700 dark:hover:text-red-400">
+                                    Clear All
+                                </button>
+                            </div>
+                        </span>
+                    </button>
+                    <button id="themeToggle" class="p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <i class="fas fa-moon text-gray-600 dark:text-yellow-300 text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto p-8">
         <header class="text-center mb-12">
-            <h1 class="text-4xl font-bold text-gray-800 mb-2">📈 Market Analyzer</h1>
-            <p class="text-gray-600">Analyze stock performance and technical indicators</p>
+            <h1 class="text-4xl font-bold text-gray-800 dark:text-white mb-2">Stock Analysis Dashboard</h1>
+            <p class="text-gray-600 dark:text-gray-400">Get detailed technical analysis and performance metrics</p>
         </header>
 
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <form id="analysisForm" class="space-y-4">
-                <div>
-                    <label for="ticker" class="block text-sm font-medium text-gray-700 mb-1">Stock Ticker</label>
-                    <input type="text" 
-                           id="ticker" 
-                           name="ticker" 
-                           placeholder="e.g., AAPL, MSFT, GOOG" 
-                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                           required>
-                </div>
-                
-                <div>
-                    <label for="days" class="block text-sm font-medium text-gray-700 mb-1">Days to Analyze (1-365)</label>
-                    <input type="number" 
-                           id="days" 
-                           name="days" 
-                           min="1" 
-                           max="365" 
-                           value="90"
-                           class="w-24 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 transition-colors duration-200">
+            <form id="analysisForm" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Stock Ticker Input -->
+                    <div class="space-y-2">
+                        <label for="ticker" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Stock Ticker
+                            <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative mt-1 rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-chart-line text-gray-400"></i>
+                            </div>
+                            <input type="text" 
+                                   id="ticker" 
+                                   name="ticker" 
+                                   placeholder="e.g., AAPL, MSFT, GOOG" 
+                                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                   required
+                                   autocomplete="off"
+                                   autocapitalize="characters">
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Enter a valid stock ticker symbol</p>
+                    </div>
+                    
+                    <!-- Analysis Period -->
+                    <div class="space-y-2">
+                        <label for="days" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Analysis Period
+                        </label>
+                        <div class="relative mt-1">
+                            <select id="days" 
+                                    name="days" 
+                                    class="block w-full pl-3 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                <option value="30">1 Month</option>
+                                <option value="90" selected>3 Months</option>
+                                <option value="180">6 Months</option>
+                                <option value="365">1 Year</option>
+                                <option value="custom">Custom...</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <i class="fas fa-calendar-alt text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Custom Days Input (initially hidden) -->
+                    <div id="customDaysContainer" class="hidden space-y-2">
+                        <label for="customDays" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Custom Days (1-365)
+                        </label>
+                        <input type="number" 
+                               id="customDays" 
+                               name="customDays" 
+                               min="1" 
+                               max="365" 
+                               value="90"
+                               class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+                    
+                    <!-- Analysis Type -->
+                    <div class="space-y-2">
+                        <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Analysis Type
+                        </span>
+                        <div class="mt-1 space-y-2">
+                            <div class="flex items-center">
+                                <input id="analysis-basic" name="analysisType" type="radio" value="basic" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700" checked>
+                                <label for="analysis-basic" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                                    Basic Analysis
+                                </label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="analysis-technical" name="analysisType" type="radio" value="technical" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                                <label for="analysis-technical" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                                    Technical Analysis
+                                </label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="analysis-full" name="analysisType" type="radio" value="full" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                                <label for="analysis-full" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                                    Full Analysis
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Options -->
+                    <div class="space-y-3">
+                        <div class="flex items-start">
+                            <div class="flex items-center h-5">
+                                <input id="show-charts" name="showCharts" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded" checked>
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="show-charts" class="font-medium text-gray-700 dark:text-gray-300">Show Interactive Charts</label>
+                                <p class="text-gray-500 dark:text-gray-400">Display price and volume charts</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start">
+                            <div class="flex items-center h-5">
+                                <input id="email-report" name="emailReport" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded">
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="email-report" class="font-medium text-gray-700 dark:text-gray-300">Email me the report</label>
+                                <p class="text-gray-500 dark:text-gray-400">Get a detailed report in your inbox</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <button type="submit" 
-                        class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
-                    Analyze Stock
-                </button>
+                <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-between items-center">
+                        <button type="button" 
+                                class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <i class="fas fa-history mr-2"></i>
+                            View History
+                        </button>
+                        <div class="flex space-x-3">
+                            <button type="reset" 
+                                    class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                Reset
+                            </button>
+                            <button type="submit" 
+                                    class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
+                                <i class="fas fa-chart-bar mr-2"></i>
+                                Analyze Stock
+                                <i class="fas fa-arrow-right ml-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </form>
         </div>
 
@@ -61,9 +260,140 @@
             <p class="text-gray-600">Analyzing stock data...</p>
         </div>
 
-        <div id="results" class="bg-white rounded-lg shadow-md p-6 hidden">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Analysis Results</h2>
-            <div class="analysis-output" id="analysisOutput"></div>
+        <div id="results" class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hidden transition-colors duration-200">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold text-gray-800 dark:text-white">Analysis Results</h2>
+                <div class="flex space-x-2">
+                    <button id="exportPdf" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <i class="fas fa-file-pdf text-lg"></i>
+                    </button>
+                    <button id="exportCsv" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <i class="fas fa-file-csv text-lg"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Stock Summary -->
+            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-6">
+                <div class="flex flex-wrap items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-blue-100 dark:bg-blue-800 p-3 rounded-full">
+                            <i class="fas fa-chart-line text-blue-600 dark:text-blue-400 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 id="stockSymbol" class="text-xl font-bold text-gray-900 dark:text-white">-</h3>
+                            <p id="stockName" class="text-sm text-gray-500 dark:text-gray-400">-</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4 text-center mt-4 md:mt-0 w-full md:w-auto">
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Current</p>
+                            <p id="currentPrice" class="text-lg font-semibold text-gray-900 dark:text-white">-</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Change</p>
+                            <p id="priceChange" class="text-lg font-semibold">-</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">% Change</p>
+                            <p id="percentChange" class="text-lg font-semibold">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chart Tabs -->
+            <div class="mb-6">
+                <div class="border-b border-gray-200 dark:border-gray-700">
+                    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                        <button data-tab="price" class="tab-button border-blue-500 text-blue-600 dark:text-blue-400 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                            Price Chart
+                        </button>
+                        <button data-tab="volume" class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                            Volume
+                        </button>
+                        <button data-tab="rsi" class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                            RSI
+                        </button>
+                        <button data-tab="macd" class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                            MACD
+                        </button>
+                    </nav>
+                </div>
+            </div>
+            
+            <!-- Chart Container -->
+            <div class="relative h-96 mb-6">
+                <canvas id="stockChart"></canvas>
+                <div id="chartLoading" class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-800/80 hidden">
+                    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+            </div>
+            
+            <!-- Analysis Output -->
+            <div class="analysis-output bg-gray-50 dark:bg-gray-700/30 rounded-lg p-4" id="analysisOutput">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Stock Analysis</h3>
+                    <button id="addToWatchlist" 
+                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200 transition-colors duration-200"
+                            data-ticker="">
+                        <i class="far fa-star mr-1"></i> Add to Watchlist
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Price Summary</h4>
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600 dark:text-gray-300">Open</span>
+                                    <span id="openPrice" class="font-medium">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600 dark:text-gray-300">High</span>
+                                    <span id="highPrice" class="font-medium">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600 dark:text-gray-300">Low</span>
+                                    <span id="lowPrice" class="font-medium">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600 dark:text-gray-300">Close</span>
+                                    <span id="closePrice" class="font-medium">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Technical Indicators</h4>
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600 dark:text-gray-300">RSI (14)</span>
+                                    <span id="rsiValue" class="font-medium">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600 dark:text-gray-300">MACD</span>
+                                    <span id="macdValue" class="font-medium">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600 dark:text-gray-300">SMA (50)</span>
+                                    <span id="sma50" class="font-medium">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600 dark:text-gray-300">SMA (200)</span>
+                                    <span id="sma200" class="font-medium">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Analysis</h4>
+                        <div id="analysisText" class="prose prose-sm dark:prose-invert max-w-none">
+                            Run an analysis to see detailed results
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="error" class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded hidden">
@@ -79,6 +409,636 @@
             </div>
         </div>
     </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1/dist/chartjs-plugin-annotation.min.js"></script>
+    
+    <!-- Form Scripts -->
+    <script>
+        // Chart instance
+        let stockChart = null;
+        let chartData = null;
+        
+        // Format price with proper decimal places
+        function formatPrice(price) {
+            if (price === null || price === undefined || isNaN(price)) {
+                return '$0.00';
+            }
+            
+            // Use appropriate decimal places based on price magnitude
+            let decimals = 2;
+            if (price < 0.01) {
+                decimals = 6;
+            } else if (price < 0.1) {
+                decimals = 4;
+            } else if (price < 1) {
+                decimals = 3;
+            }
+            
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            }).format(Number(price));
+        }
+
+        // Initialize chart
+        function initChart() {
+            const ctx = document.getElementById('stockChart').getContext('2d');
+            const isDarkMode = document.documentElement.classList.contains('dark');
+            
+            // Chart colors for light/dark mode
+            const colors = {
+                light: {
+                    text: '#374151',
+                    grid: 'rgba(0, 0, 0, 0.05)',
+                    border: '#d1d5db',
+                    tooltipBg: 'rgba(0, 0, 0, 0.9)',
+                    tooltipText: '#ffffff',
+                },
+                dark: {
+                    text: '#d1d5db',
+                    grid: 'rgba(255, 255, 255, 0.08)',
+                    border: '#9ca3af',
+                    tooltipBg: 'rgba(17, 24, 39, 0.95)',
+                    tooltipText: '#e5e7eb',
+                }
+            };
+            
+            const theme = isDarkMode ? colors.dark : colors.light;
+            
+            stockChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Price',
+                        data: [],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: 0,
+                        borderJoinStyle: 'round',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        zoom: {
+                            zoom: {
+                                wheel: { enabled: true },
+                                pinch: { enabled: true },
+                                mode: 'x',
+                                onZoomComplete: ({ chart }) => {
+                                    chart.update('none');
+                                }
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: 'x',
+                                threshold: 10
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: theme.tooltipBg,
+                            titleColor: theme.tooltipText,
+                            bodyColor: theme.tooltipText,
+                            titleFont: { 
+                                size: 14, 
+                                weight: 'bold',
+                                family: "'Inter', 'Helvetica Neue', 'Arial', sans-serif"
+                            },
+                            bodyFont: { 
+                                size: 13,
+                                family: "'Inter', 'Helvetica Neue', 'Arial', sans-serif"
+                            },
+                            padding: 12,
+                            usePointStyle: true,
+                            cornerRadius: 6,
+                            borderColor: theme.border,
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null && context.parsed.y !== undefined) {
+                                        label += formatPrice(context.parsed.y);
+                                    }
+                                    return label;
+                                },
+                                title: function(context) {
+                                    // Format date for tooltip title
+                                    if (context && context[0] && context[0].label) {
+                                        const date = new Date(context[0].label);
+                                        if (!isNaN(date.getTime())) {
+                                            return date.toLocaleDateString('en-US', {
+                                                year: 'numeric',
+                                                month: 'short',
+                                                day: 'numeric'
+                                            });
+                                        }
+                                    }
+                                    return context[0].label;
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: theme.text,
+                                font: { 
+                                    size: 12,
+                                    family: "'Inter', 'Helvetica Neue', 'Arial', sans-serif"
+                                },
+                                padding: 20,
+                                usePointStyle: true,
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { 
+                                display: true,
+                                color: theme.grid,
+                                drawBorder: true,
+                                drawOnChartArea: true,
+                                drawTicks: true,
+                                borderColor: theme.border,
+                            },
+                            ticks: {
+                                color: theme.text,
+                                maxRotation: 0,
+                                maxTicksLimit: 8,
+                                font: {
+                                    family: "'Inter', 'Helvetica Neue', 'Arial', sans-serif"
+                                }
+                            }
+                        },
+                        y: {
+                            position: 'right',
+                            grid: { 
+                                color: theme.grid,
+                                drawBorder: true,
+                                borderColor: theme.border,
+                            },
+                            ticks: {
+                                color: theme.text,
+                                font: {
+                                    size: 11,
+                                    weight: '500',
+                                    family: "'Inter', 'Helvetica Neue', 'Arial', sans-serif"
+                                },
+                                callback: function(value) {
+                                    return formatPrice(value);
+                                },
+                                padding: 8,
+                                maxTicksLimit: 8
+                            },
+                            border: {
+                                display: true,
+                                color: theme.border,
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 0
+                    },
+                    transitions: {
+                        active: {
+                            animation: {
+                                duration: 0
+                            }
+                        }
+                    },
+                    elements: {
+                        line: {
+                            tension: 0.1,
+                            borderWidth: 2,
+                            borderCapStyle: 'round',
+                        },
+                        point: {
+                            radius: 0,
+                            hitRadius: 8,
+                            hoverRadius: 5,
+                            hoverBorderWidth: 2
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update chart with new data
+        function updateChart(data, type = 'price') {
+            if (!stockChart) return;
+            
+            const isDarkMode = document.documentElement.classList.contains('dark');
+            const theme = {
+                light: { 
+                    text: '#374151', 
+                    grid: 'rgba(0, 0, 0, 0.05)', 
+                    border: '#d1d5db',
+                    tooltipBg: 'rgba(0, 0, 0, 0.9)',
+                    tooltipText: '#ffffff'
+                },
+                dark: { 
+                    text: '#d1d5db', 
+                    grid: 'rgba(255, 255, 255, 0.08)', 
+                    border: '#9ca3af',
+                    tooltipBg: 'rgba(17, 24, 39, 0.95)',
+                    tooltipText: '#e5e7eb'
+                }
+            }[isDarkMode ? 'dark' : 'light'];
+            
+            const datasets = [];
+            let yAxisID = 'y';
+            
+            // Common dataset options
+            const baseOptions = {
+                borderWidth: 2,
+                pointRadius: 0,
+                borderJoinStyle: 'round',
+                tension: 0.1
+            };
+            
+            if (type === 'price') {
+                datasets.push({
+                    ...baseOptions,
+                    label: 'Price',
+                    data: data.prices,
+                    borderColor: '#3b82f6',
+                    backgroundColor: isDarkMode ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                });
+                yAxisID = 'y';
+            } else if (type === 'volume') {
+                datasets.push({
+                    ...baseOptions,
+                    label: 'Volume',
+                    data: data.volumes || [],
+                    borderColor: isDarkMode ? '#10b981' : '#059669',
+                    backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)',
+                    fill: true,
+                    yAxisID: 'y',
+                    borderWidth: 1
+                });
+                yAxisID = 'y';
+            } else if (type === 'rsi') {
+                datasets.push({
+                    ...baseOptions,
+                    label: 'RSI',
+                    data: data.rsi || [],
+                    borderColor: '#8b5cf6',
+                    backgroundColor: isDarkMode ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.1)',
+                    fill: true,
+                    yAxisID: 'y',
+                });
+                yAxisID = 'y';
+            } else if (type === 'macd') {
+                const positiveColor = isDarkMode ? 'rgba(16, 185, 129, 0.8)' : 'rgba(16, 185, 129, 0.7)';
+                const negativeColor = isDarkMode ? 'rgba(239, 68, 68, 0.8)' : 'rgba(239, 68, 68, 0.7)';
+                
+                datasets.push(
+                    {
+                        ...baseOptions,
+                        label: 'MACD Line',
+                        data: data.macdLine || [],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'transparent',
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        fill: false,
+                        yAxisID: 'y'
+                    },
+                    {
+                        ...baseOptions,
+                        label: 'Signal Line',
+                        data: data.signalLine || [],
+                        borderColor: '#ef4444',
+                        backgroundColor: 'transparent',
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        fill: false,
+                        yAxisID: 'y'
+                    },
+                    {
+                        ...baseOptions,
+                        label: 'Histogram',
+                        data: data.histogram || [],
+                        type: 'bar',
+                        backgroundColor: (data.histogram || []).map(value => 
+                            value >= 0 ? positiveColor : negativeColor
+                        ),
+                        borderColor: 'transparent',
+                        borderWidth: 0,
+                        yAxisID: 'y',
+                        barPercentage: 0.8,
+                        categoryPercentage: 0.8,
+                        borderRadius: 2
+                    }
+                );
+                yAxisID = 'y';
+            }
+            
+            // Update chart data
+            stockChart.data.labels = data.dates;
+            stockChart.data.datasets = datasets;
+            
+            // Update y-axis configuration
+            const yAxis = stockChart.options.scales.y;
+            yAxis.display = true;
+            yAxis.ticks.color = theme.text;
+            yAxis.grid.color = theme.grid;
+            yAxis.border.color = theme.border;
+            
+            // Configure y-axis based on chart type
+            if (type === 'price') {
+                yAxis.position = 'right';
+                yAxis.ticks.callback = function(value) {
+                    return formatPrice(value);
+                };
+                yAxis.grid.drawBorder = true;
+            } else if (type === 'volume') {
+                yAxis.position = 'right';
+                yAxis.ticks.callback = function(value) {
+                    if (value >= 1000000000) {
+                        return (value / 1000000000).toFixed(1) + 'B';
+                    } else if (value >= 1000000) {
+                        return (value / 1000000).toFixed(1) + 'M';
+                    } else if (value >= 1000) {
+                        return (value / 1000).toFixed(1) + 'K';
+                    }
+                    return value.toLocaleString();
+                };
+                yAxis.grid.drawBorder = true;
+            } else if (type === 'rsi') {
+                yAxis.min = 0;
+                yAxis.max = 100;
+                yAxis.ticks.callback = function(value) {
+                    return value;
+                };
+                yAxis.grid.drawBorder = true;
+            } else if (type === 'macd') {
+                yAxis.position = 'right';
+                yAxis.ticks.callback = function(value) {
+                    return value.toFixed(2);
+                };
+                yAxis.grid.drawBorder = true;
+            }
+            
+            // Update x-axis styling
+            const xAxis = stockChart.options.scales.x;
+            xAxis.ticks.color = theme.text;
+            xAxis.grid.color = theme.grid;
+            xAxis.border.color = theme.border;
+            
+            // Update legend styling
+            stockChart.options.plugins.legend.labels.color = theme.text;
+            
+            // Update tooltip colors based on theme
+            stockChart.options.plugins.tooltip.backgroundColor = theme.tooltipBg;
+            stockChart.options.plugins.tooltip.titleColor = theme.tooltipText;
+            stockChart.options.plugins.tooltip.bodyColor = theme.tooltipText;
+            
+            // Apply updates with animation
+            stockChart.update({
+                duration: 0,
+                lazy: true
+            });
+        }
+        
+        // Tab switching
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const tab = this.getAttribute('data-tab');
+                
+                // Update active tab
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    btn.classList.remove('border-blue-500', 'text-blue-600', 'dark:text-blue-400');
+                    btn.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'dark:text-gray-400', 'dark:hover:text-gray-200');
+                });
+                
+                this.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'dark:text-gray-400', 'dark:hover:text-gray-200');
+                this.classList.add('border-blue-500', 'text-blue-600', 'dark:text-blue-400');
+                
+                // Update chart data based on tab
+                if (chartData) {
+                    document.getElementById('chartLoading').classList.remove('hidden');
+                    
+                    // Simulate loading (in real app, this would fetch new data)
+                    setTimeout(() => {
+                        updateChart(chartData, tab);
+                        document.getElementById('chartLoading').classList.add('hidden');
+                    }, 300);
+                }
+            });
+        });
+        
+        // Watchlist functionality
+        class Watchlist {
+            constructor() {
+                this.items = new Set(JSON.parse(localStorage.getItem('watchlist') || '[]'));
+                this.updateUI();
+                this.setupEventListeners();
+            }
+            
+            add(ticker) {
+                if (!ticker) return;
+                this.items.add(ticker.toUpperCase());
+                this.save();
+                this.updateUI();
+                this.showNotification(`Added ${ticker} to watchlist`);
+            }
+            
+            remove(ticker) {
+                this.items.delete(ticker);
+                this.save();
+                this.updateUI();
+                this.showNotification(`Removed ${ticker} from watchlist`);
+            }
+            
+            clear() {
+                this.items.clear();
+                this.save();
+                this.updateUI();
+                this.showNotification('Watchlist cleared');
+            }
+            
+            has(ticker) {
+                return this.items.has(ticker.toUpperCase());
+            }
+            
+            save() {
+                localStorage.setItem('watchlist', JSON.stringify([...this.items]));
+            }
+            
+            updateUI() {
+                const watchlistItems = document.getElementById('watchlistItems');
+                const watchlistCount = document.getElementById('watchlistCount');
+                
+                if (this.items.size === 0) {
+                    watchlistItems.innerHTML = `
+                        <div class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                            No stocks in watchlist
+                        </div>`;
+                    watchlistCount.classList.add('hidden');
+                    return;
+                }
+                
+                watchlistCount.textContent = this.items.size;
+                watchlistCount.classList.remove('hidden');
+                
+                let itemsHTML = '';
+                this.items.forEach(ticker => {
+                    itemsHTML += `
+                        <div class="flex items-center justify-between px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <button class="text-left flex-1 py-1 hover:text-blue-600 dark:hover:text-blue-400" 
+                                    onclick="document.getElementById('ticker').value='${ticker}'; document.getElementById('analysisForm').dispatchEvent(new Event('submit'));">
+                                ${ticker}
+                            </button>
+                            <button class="text-red-500 hover:text-red-700 p-1" onclick="watchlist.remove('${ticker}')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>`;
+                });
+                
+                watchlistItems.innerHTML = itemsHTML;
+                
+                // Update add to watchlist button in results
+                const addToWatchlistBtn = document.getElementById('addToWatchlist');
+                if (addToWatchlistBtn) {
+                    const ticker = addToWatchlistBtn.getAttribute('data-ticker');
+                    if (this.has(ticker)) {
+                        addToWatchlistBtn.innerHTML = '<i class="fas fa-star"></i> In Watchlist';
+                        addToWatchlistBtn.classList.add('bg-yellow-100', 'text-yellow-800', 'dark:bg-yellow-900/30', 'dark:text-yellow-400');
+                        addToWatchlistBtn.classList.remove('bg-gray-100', 'hover:bg-gray-200', 'dark:bg-gray-700', 'dark:hover:bg-gray-600');
+                    } else {
+                        addToWatchlistBtn.innerHTML = '<i class="far fa-star"></i> Add to Watchlist';
+                        addToWatchlistBtn.classList.remove('bg-yellow-100', 'text-yellow-800', 'dark:bg-yellow-900/30', 'dark:text-yellow-400');
+                        addToWatchlistBtn.classList.add('bg-gray-100', 'hover:bg-gray-200', 'dark:bg-gray-700', 'dark:hover:bg-gray-600');
+                    }
+                }
+            }
+            
+            showNotification(message) {
+                const notification = document.createElement('div');
+                notification.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg flex items-center';
+                notification.innerHTML = `
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <span>${message}</span>
+                `;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
+            
+            setupEventListeners() {
+                // Clear watchlist button
+                document.getElementById('clearWatchlist')?.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (confirm('Are you sure you want to clear your watchlist?')) {
+                        this.clear();
+                    }
+                });
+                
+                // Close watchlist when clicking outside
+                document.addEventListener('click', (e) => {
+                    const watchlistButton = document.getElementById('watchlistButton');
+                    if (!watchlistButton.contains(e.target)) {
+                        const dropdown = watchlistButton.querySelector('span[class*="group-hover:block"]');
+                        if (dropdown) {
+                            dropdown.classList.add('hidden');
+                            dropdown.classList.remove('block');
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Initialize watchlist
+        const watchlist = new Watchlist();
+        
+        // Toggle watchlist dropdown
+        document.getElementById('watchlistButton').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dropdown = e.currentTarget.querySelector('span[class*="group-hover:block"]');
+            if (dropdown) {
+                dropdown.classList.toggle('hidden');
+                dropdown.classList.toggle('block');
+            }
+        });
+        
+        // Initialize chart when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initChart();
+        });
+        
+        // Toggle custom days input
+        const daysSelect = document.getElementById('days');
+        const customDaysContainer = document.getElementById('customDaysContainer');
+        
+        daysSelect.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                customDaysContainer.classList.remove('hidden');
+                customDaysContainer.classList.add('block');
+            } else {
+                customDaysContainer.classList.remove('block');
+                customDaysContainer.classList.add('hidden');
+            }
+        });
+        
+        // Auto-uppercase ticker input
+        const tickerInput = document.getElementById('ticker');
+        tickerInput.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+    </script>
+    
+    <!-- Theme Toggle Script -->
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+        
+        // Check for saved theme preference or use system preference
+        const savedTheme = localStorage.getItem('theme') || 
+                          (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        
+        // Apply saved theme
+        if (savedTheme === 'dark') {
+            html.classList.add('dark');
+            themeToggle.innerHTML = '<i class="fas fa-sun text-yellow-300 text-xl"></i>';
+        } else {
+            html.classList.remove('dark');
+            themeToggle.innerHTML = '<i class="fas fa-moon text-gray-600 text-xl"></i>';
+        }
+        
+        // Toggle theme on button click
+        themeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            const isDark = html.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            themeToggle.innerHTML = isDark 
+                ? '<i class="fas fa-sun text-yellow-300 text-xl"></i>' 
+                : '<i class="fas fa-moon text-gray-600 text-xl">';
+        });
+    </script>
 
     <!-- Debug Information -->
     <div class="mt-8 p-4 bg-gray-100 rounded-lg text-xs text-gray-600">
@@ -132,11 +1092,25 @@
         document.getElementById('analysisForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const ticker = document.getElementById('ticker').value.trim();
-            const days = document.getElementById('days').value;
+            const ticker = document.getElementById('ticker').value.trim().toUpperCase();
+            const days = document.getElementById('days').value === 'custom' ? 
+                document.getElementById('customDays').value : document.getElementById('days').value;
             const results = document.getElementById('results');
             const loading = document.getElementById('loading');
             const error = document.getElementById('error');
+            const submitButton = e.target.querySelector('button[type="submit"]');
+            
+            // Add to watchlist
+            if (ticker) {
+                watchlist.add(ticker);
+            }
+            
+            // Update submit button
+            submitButton.disabled = true;
+            submitButton.innerHTML = `
+                <i class="fas fa-spinner fa-spin mr-2"></i>
+                Analyzing...
+            `;
             
             // Reset UI
             results.classList.add('hidden');
@@ -144,6 +1118,19 @@
             loading.classList.remove('hidden');
             
             try {
+                // Fetch chart data first
+                const chartResponse = await fetch(`/api/chart-data/${ticker}`);
+                if (chartResponse.ok) {
+                    const chartDataResponse = await chartResponse.json();
+                    chartData = chartDataResponse;
+                    updateChart(chartData, 'price');
+                } else {
+                    // Fallback to sample data if API fails
+                    chartData = await fetchRealTimeData(ticker);
+                    updateChart(chartData, 'price');
+                }
+                
+                // Fetch analysis
                 const formData = new FormData();
                 formData.append('ticker', ticker);
                 formData.append('days', days);
@@ -160,14 +1147,49 @@
                 }
                 
                 // Display results
-                document.getElementById('analysisOutput').textContent = data.analysis;
+                document.getElementById('analysisOutput').innerHTML = `<pre class="whitespace-pre-wrap text-sm">${data.analysis}</pre>`;
                 results.classList.remove('hidden');
                 
+                // Update watchlist button
+                const addToWatchlistBtn = document.getElementById('addToWatchlist');
+                if (addToWatchlistBtn) {
+                    const isInWatchlist = watchlist.has(ticker);
+                    addToWatchlistBtn.innerHTML = `
+                        <i class="fas ${isInWatchlist ? 'fa-heart' : 'fa-heart-o'}"></i>
+                        ${isInWatchlist ? 'Remove from' : 'Add to'} Watchlist
+                    `;
+                    addToWatchlistBtn.onclick = () => {
+                        if (isInWatchlist) {
+                            watchlist.remove(ticker);
+                        } else {
+                            watchlist.add(ticker);
+                        }
+                        // Update button after action
+                        setTimeout(() => {
+                            const newIsInWatchlist = watchlist.has(ticker);
+                            addToWatchlistBtn.innerHTML = `
+                                <i class="fas ${newIsInWatchlist ? 'fa-heart' : 'fa-heart-o'}"></i>
+                                ${newIsInWatchlist ? 'Remove from' : 'Add to'} Watchlist
+                            `;
+                        }, 100);
+                    };
+                }
+                
             } catch (err) {
-                document.getElementById('errorMessage').textContent = err.message;
+                const errorMessage = document.getElementById('errorMessage') || document.querySelector('#error p');
+                if (errorMessage) {
+                    errorMessage.textContent = err.message;
+                }
                 error.classList.remove('hidden');
             } finally {
                 loading.classList.add('hidden');
+                
+                // Reset submit button
+                submitButton.disabled = false;
+                submitButton.innerHTML = `
+                    <i class="fas fa-chart-line mr-2"></i>
+                    Analyze Stock
+                `;
                 
                 // Scroll to results or error
                 const elementToScroll = error.classList.contains('hidden') ? results : error;

@@ -1,41 +1,44 @@
 # 🌐 Market Analyzer Web Interface
 
-A user-friendly web interface for the Market Analyzer tool, allowing you to analyze stocks directly from your browser.
+A powerful and user-friendly web application for comprehensive stock market analysis, featuring interactive charts, technical indicators, and a customizable watchlist.
 
 ## 🚀 Quick Start
 
-1. **Install Dependencies** (if not already installed):
+1. **Install Dependencies**:
    ```bash
-   pip3 install flask
+   pip3 install flask yfinance pandas numpy
    ```
 
 2. **Run the Web Server**:
    ```bash
    python3 app.py
    ```
-   - Your browser will open automatically to the app
-   - Runs on http://127.0.0.1:5000 by default
+   - Your browser will open automatically to http://127.0.0.1:5000
 
-3. **Shut Down**:
-   - Click the red "🛑 Shutdown Server" button at the bottom of the page
-   - Confirm the shutdown when prompted
-   - The server will stop and the page will close automatically
+3. **Start Analyzing**:
+   - Enter a stock ticker (e.g., AAPL, MSFT, GOOG)
+   - Select your preferred time period
+   - Explore the interactive charts and technical indicators
 
 ## 🖥️ Features
 
-- **Simple Interface**: Enter any stock ticker to get started
-- **One-Click Shutdown**: Safely stop the server from the web interface
-- **Customizable Timeframe**: Analyze 1-365 days of historical data
-- **Responsive Design**: Works on both desktop and mobile devices
-- **Debug Info**: View connection details in the debug section
-- **Real-time Analysis**: Get instant stock analysis
-- **No Installation Needed**: Just a web browser required
+### 📊 Interactive Charts & Analysis
+- **Price Action**: View OHLC candlesticks with volume
+- **Technical Indicators**:
+  - RSI (14-period) for momentum analysis
+  - MACD (12/26/9) for trend identification
+  - Moving averages for trend confirmation
+- **Chart Controls**:
+  - **Zoom**: Click and drag to zoom in, double-click to reset
+  - **Pan**: Click and drag to move around the chart
+  - **Timeframe**: Choose presets (1M, 3M, 6M, 1Y) or enter custom days (1-365)
+  - **Theme**: Toggle between light and dark modes
+  - **Tooltips**: Hover for detailed price information
 
-## 🛠️ How to Use
-
-1. **Enter a Stock Ticker** (e.g., AAPL, MSFT, GOOG)
-2. **Select Timeframe**: Choose how many days to analyze (default: 90)
-3. **Click "Analyze Stock"**: View the results instantly
+### ⭐ Watchlist Management
+- Save and organize your favorite stocks
+- One-click analysis of watchlist items
+- Persistent storage between sessions
 
 ## ⚙️ Server Management
 
@@ -55,17 +58,36 @@ python3 app.py
   kill -9 PID
   ```
 
-## 🌟 Tips
+## 📱 Mobile & Troubleshooting
 
-- Bookmark [http://127.0.0.1:5000](http://127.0.0.1:5000) for quick access
-- The server runs locally - your data stays on your computer
-- For best performance, analyze 90-180 days of data
+### Mobile Experience
+- Fully responsive design for all screen sizes
+- Touch-optimized charts with pinch-to-zoom
+- Full feature parity with desktop version
 
-## 🔧 Troubleshooting
+### Common Issues
+- **Charts not loading?**
+  - Check internet connection and ticker symbol
+  - Refresh the page
+- **Data issues?**
+  - Verify time period selection
+  - Note: Some stocks have limited historical data
+- **Performance?**
+  - Reduce time period
+  - Close other tabs
+  - Clear browser cache
 
-- **Port in use?** Make sure no other application is using port 5000
-- **Page not loading?** Ensure the server is running in the terminal
-- **Getting errors?** Check the terminal for detailed error messages
+## 💡 Tips & Best Practices
+
+- **Performance**:
+  - Analyze 90-180 days of data for optimal performance
+  - Reduce time period if experiencing slowdowns
+  - Close unnecessary browser tabs
+
+- **Data Usage**:
+  - First load fetches data from Yahoo Finance
+  - Subsequent views use cached data when possible
+  - Refresh to get the latest market data
 
 ## 📁 Project Structure
 
@@ -74,6 +96,11 @@ python3 app.py
   - `index.html` - Main web page
 - `market_analyzer.py` - Core analysis functions
 
+## 📊 Data Sources
+- Real-time and historical market data provided by Yahoo Finance
+- Technical indicators calculated in real-time
+- All data is for informational purposes only
+
 ## 📜 License
 
-This project is for educational purposes only. Use at your own risk.
+This project is for educational purposes only. Use at your own risk. Not intended as financial advice.
