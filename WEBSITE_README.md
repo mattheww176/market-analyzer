@@ -1,6 +1,6 @@
 # 🌐 Market Analyzer Web Interface
 
-A powerful and user-friendly web application for comprehensive stock market analysis, featuring interactive charts, technical indicators, and a customizable watchlist.
+A powerful and user-friendly web application for comprehensive stock market analysis, featuring interactive charts, technical indicators, and a customizable watchlist. Now with enhanced basic analysis and detailed technical insights.
 
 ## 🚀 Quick Start
 
@@ -24,10 +24,17 @@ A powerful and user-friendly web application for comprehensive stock market anal
 
 ### 📊 Interactive Charts & Analysis
 - **Price Action**: View OHLC candlesticks with volume
+- **Enhanced Basic Analysis**:
+  - Volatility assessment with risk levels
+  - Momentum detection and trend analysis
+  - Volume trend indicators
+  - Support/Resistance levels
+  - Color-coded risk metrics
 - **Technical Indicators**:
-  - RSI (14-period) for momentum analysis
+  - RSI (14-period) with overbought/oversold signals
   - MACD (12/26/9) for trend identification
-  - Moving averages for trend confirmation
+  - Dual moving averages (50/200) for trend confirmation
+  - Price action patterns
 - **Chart Controls**:
   - **Zoom**: Click and drag to zoom in, double-click to reset
   - **Pan**: Click and drag to move around the chart
@@ -57,6 +64,28 @@ python3 app.py
   # Kill the process (replace PID with actual number)
   kill -9 PID
   ```
+
+## 🔍 Analysis Types
+
+### Basic Analysis
+- Quick overview with key metrics
+- Volatility and risk assessment
+- Volume and momentum analysis
+- Support/Resistance levels
+- Color-coded trend indicators
+
+### Technical Analysis
+- Advanced technical indicators
+- Moving average crossovers
+- Detailed RSI and MACD analysis
+- Price action patterns
+- Volume analysis
+
+### Full Analysis
+- Combines all analysis types
+- Comprehensive market insights
+- Detailed technical breakdown
+- Actionable trading signals
 
 ## 📱 Mobile & Troubleshooting
 
@@ -89,12 +118,18 @@ python3 app.py
   - Subsequent views use cached data when possible
   - Refresh to get the latest market data
 
-## 📁 Project Structure
+### 📁 Project Structure
 
 - `app.py` - Main web application
 - `templates/` - Contains the web interface files
   - `index.html` - Main web page
 - `market_analyzer.py` - Core analysis functions
+- `static/js/` - Frontend JavaScript modules
+  - `main.js` - Core application logic
+  - `chart.js` - Chart rendering and interactions
+  - `technical-analysis.js` - Technical indicator calculations
+  - `watchlist.js` - Watchlist management
+  - `utils.js` - Helper functions
 
 ## 📊 Data Sources
 - Real-time and historical market data provided by Yahoo Finance
