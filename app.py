@@ -179,6 +179,7 @@ def get_chart_data(ticker):
 def analyze():
     ticker = request.form.get('ticker', '').upper()
     days = int(request.form.get('days', 90))
+    analysis_type = request.form.get('analysisType', 'basic')
     
     if not ticker:
         return jsonify({'error': 'Please enter a stock ticker'}), 400
@@ -191,23 +192,30 @@ def analyze():
         old_stdout = sys.stdout
         sys.stdout = StringIO()
         
-        # Run the analysis
-        analyze_stock(
-            ticker=ticker,
-            show_history=True,
-            history_days=days,
-            show_graphs=False,
-            skip_plot=True
-        )
+        # Run analysis based on type
+        if analysis_type == 'basic':
+            # For basic analysis, return minimal output
+            output = f"Basic analysis completed for {ticker}. Chart data available for {days} days."
+        else:
+            # For technical and full analysis, run the full analysis
+            analyze_stock(
+                ticker=ticker,
+                show_history=True,
+                history_days=days,
+                show_graphs=False,
+                skip_plot=True
+            )
+            
+            # Get the output
+            output = sys.stdout.getvalue()
         
-        # Get the output
-        output = sys.stdout.getvalue()
         sys.stdout = old_stdout
         
-        # Process the output (you might want to format this better)
+        # Process the output based on analysis type
         return jsonify({
             'ticker': ticker,
             'analysis': output,
+            'analysis_type': analysis_type,
             'status': 'success'
         })
         
