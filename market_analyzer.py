@@ -1181,12 +1181,121 @@ def analyze_stock(ticker, skip_plot=False, custom_stats=False, export_excel=Fals
         print(f"\n[{len(display_data)} rows x {len(display_data.columns)} columns]")
 
     # Latest Day Summary
-    print(f"\n=== Most recent trading day summary ===")
+    print("\n" + "📊" * 30)
+    print("📈 MOST RECENT TRADING DAY SUMMARY".center(60))
+    print("📊" * 30)
+    
     latest_day = data.iloc[-1]
-    print(latest_day[["Close", "MA20", "MA50", "BB_Upper", "BB_Lower", "Daily % Change", "Volume", "Vol_MA15", "RSI", "MACD", "MACD_signal", "Signal"]])
+    try:
+        last_date = latest_day.name.strftime('%Y-%m-%d')
+    except (AttributeError, ValueError) as e:
+        # Handle case where date formatting fails
+        last_date = str(latest_day.name)[:10] if hasattr(latest_day, 'name') else 'Unknown'
+    
+    # Format price and indicators with colors
+    def format_price(price, prev_price=None):
+        import pandas as pd
+        import numpy as np
+        
+        # Handle case where price is a pandas Series
+        if hasattr(price, 'iloc'):
+            price = price.iloc[-1] if len(price) > 0 else price
+        
+        if prev_price is not None:
+            if hasattr(prev_price, 'iloc'):
+                prev_price = float(prev_price.iloc[0]) if len(prev_price) > 0 else 0.0
+                
+            if float(price) > float(prev_price):
+                return f"\033[92m${float(price):,.2f} ▲\033[0m"
+            elif float(price) < float(prev_price):
+                return f"\033[91m${float(price):,.2f} ▼\033[0m"
+        return f"${float(price):,.2f}" if not pd.isna(price) else "N/A"
+    
+    def format_change(pct):
+        # Convert to float if it's a pandas Series/DataFrame
+        if hasattr(pct, 'iloc'):
+            pct = float(pct.iloc[0]) if len(pct) > 0 else 0.0
+            
+        pct_float = float(pct)
+        if pct_float > 0:
+            return f"\033[92m+{pct_float:.2f}% ▲\033[0m"
+        elif pct_float < 0:
+            return f"\033[91m{pct_float:.2f}% ▼\033[0m"
+        return f"{pct_float:.2f}%"
 
+    # Get previous day's close for comparison
+    prev_close = data['Close'].iloc[-2] if len(data) > 1 else None
+    
+    # Print key metrics in a clean format
+    print(f"\n🔹 Date:           {last_date}")
+    print(f"🔹 Ticker:        {ticker.upper()}")
+    print(f"🔹 Close:         {format_price(latest_day['Close'], prev_close)}")
+    if prev_close is not None:
+        daily_change = ((latest_day['Close'] - prev_close) / prev_close) * 100
+        print(f"🔹 Daily Change:  {format_change(daily_change)}")
+    
+    # Technical Indicators
+    print("\n📊 TECHNICAL INDICATORS")
+    print("-" * 30)
+    
+    # Helper function to safely get values from Series/DataFrame
+    def get_value(data, key):
+        val = data[key]
+        if hasattr(val, 'iloc') and len(val) > 0:
+            extracted_val = val.iloc[0]
+            if extracted_val is None or pd.isna(extracted_val):
+                return None
+            try:
+                return float(extracted_val)
+            except (ValueError, TypeError):
+                return extracted_val  # Return as-is if can't convert to float
+        return val if val is not None and pd.notna(val) else None
+    
+    # Get values safely
+    ma20 = get_value(latest_day, 'MA20')
+    ma50 = get_value(latest_day, 'MA50')
+    rsi = get_value(latest_day, 'RSI')
+    
+    print(f"• 20-Day MA:     ${ma20:,.2f}")
+    print(f"• 50-Day MA:     ${ma50:,.2f}")
+    print(f"• RSI (14):      {rsi:.2f} " + 
+          ("(Overbought)" if rsi > 70 else 
+           "(Oversold)" if rsi < 30 else "(Neutral)"))
+    
+    # Volume Analysis
+    print("\n📈 VOLUME")
+    print("-" * 30)
+    
+    # Get volume values safely
+    volume = get_value(latest_day, 'Volume')
+    vol_ma15 = get_value(latest_day, 'Vol_MA15')
+    volume_ratio = volume / vol_ma15 if vol_ma15 != 0 else 1.0
+    
+    print(f"• Today's Volume:  {volume:,.0f}")
+    print(f"• 15-Day Avg:      {vol_ma15:,.0f}")
+    print(f"• Volume Ratio:    {volume_ratio:.2f}x " + 
+          ("(Above Average)" if volume_ratio > 1.5 else 
+           "(Below Average)" if volume_ratio < 0.75 else "(Average)"))
+    
+    # Trading Signal
+    print("\n🚦 TRADING SIGNAL")
+    print("-" * 30)
+    signal = get_value(latest_day, 'Signal')
+    
+    if signal is None:
+        print("• HOLD (No signal data)")
+    elif signal == 'BUY':
+        print("\033[92m• STRONG BUY SIGNAL\033[0m")
+    elif signal == 'SELL':
+        print("\033[91m• STRONG SELL SIGNAL\033[0m")
+    else:
+        print("• HOLD (No strong signal)")
+    
+    print("\n" + "📊" * 30)
+    
     # Summary Statistics
-    print(f"\n=== Summary statistics for {ticker} ===")
+    print(f"\n📊 SUMMARY STATISTICS - {ticker.upper()}")
+    print("-" * 60)
     if custom_stats:
         print("\nEnter custom date range for statistics:")
         start_str = input("Start date (YYYY-MM-DD): ")

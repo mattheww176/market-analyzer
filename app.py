@@ -149,6 +149,10 @@ def get_chart_data(ticker):
         rsi = calculate_rsi(data['Close'])
         macd_line, signal_line, histogram = calculate_macd(data['Close'])
         
+        # Calculate moving averages
+        ma50 = data['Close'].rolling(window=50).mean()
+        ma200 = data['Close'].rolling(window=200).mean()
+        
         # Prepare the response data
         chart_data = {
             'dates': data.index.strftime('%Y-%m-%d').tolist(),
@@ -158,6 +162,8 @@ def get_chart_data(ticker):
             'highs': data['High'].fillna(method='ffill').values.tolist(),
             'lows': data['Low'].fillna(method='ffill').values.tolist(),
             'rsi': rsi.fillna(50).values.tolist() if rsi is not None else [50] * len(data),
+            'ma50': ma50.fillna(0).values.tolist() if ma50 is not None else [0] * len(data),
+            'ma200': ma200.fillna(0).values.tolist() if ma200 is not None else [0] * len(data),
             'macdLine': macd_line.fillna(0).values.tolist() if macd_line is not None else [0] * len(data),
             'signalLine': signal_line.fillna(0).values.tolist() if signal_line is not None else [0] * len(data),
             'histogram': histogram.fillna(0).values.tolist() if histogram is not None else [0] * len(data),
@@ -213,7 +219,7 @@ def analyze():
 
 def open_browser():
     time.sleep(1)  # Give the server a second to start
-    webbrowser.open('http://127.0.0.1:5000')
+    webbrowser.open('http://127.0.0.1:5001')
 
 if __name__ == '__main__':
     # Create templates directory if it doesn't exist
@@ -224,7 +230,7 @@ if __name__ == '__main__':
     
     # Run the app
     try:
-        app.run(debug=True, use_reloader=False)
+        app.run(debug=True, use_reloader=False, port=5001)
     except KeyboardInterrupt:
         print("\nServer stopped by user")
     except Exception as e:
