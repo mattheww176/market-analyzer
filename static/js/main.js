@@ -107,7 +107,7 @@ async function handleFormSubmit(e) {
             fetch('/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `ticker=${ticker}&days=${days}`
+                body: `ticker=${ticker}&days=${days}&analysisType=${analysisType}`
             })
         ]);
         
@@ -153,15 +153,46 @@ async function handleFormSubmit(e) {
             } else if (analysisType === 'technical') {
                 // For technical analysis, hide the analysis text section entirely
                 analysisContainer.style.display = 'none';
-            } else if (analysisType === 'full') {
-                // For full analysis, show comprehensive analysis
+            } else if (analysisType === 'full' || analysisType === 'prediction') {
+                // For full or prediction analysis, show comprehensive analysis
                 analysisContainer.style.display = 'block';
                 if (analysisData && analysisData.analysis) {
-                    analysisText.innerHTML = `<pre class="whitespace-pre-wrap text-sm">${analysisData.analysis}</pre>`;
+                    // Format the analysis text with line breaks and proper spacing
+                    const formattedAnalysis = analysisData.analysis
+                        .replace(/\n\n+/g, '<br><br>')  // Double newlines to paragraph breaks
+                        .replace(/\n/g, '<br>')       // Single newlines to line breaks
+                        .replace(/📈/g, '📈 ')
+                        .replace(/🔮/g, '🔮 ')
+                        .replace(/📊/g, '📊 ')
+                        .replace(/🎯/g, '🎯 ');
+                    
+                    analysisText.innerHTML = `
+                        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 shadow">
+                            <div class="prose dark:prose-invert max-w-none">
+                                ${formattedAnalysis}
+                            </div>
+                        </div>`;
                 } else if (analysisData && analysisData.error) {
-                    analysisText.innerHTML = `<div class="text-red-600 dark:text-red-400">Analysis Error: ${analysisData.error}</div>`;
+                    analysisText.innerHTML = `
+                        <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-triangle text-red-500"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-red-700 dark:text-red-300">
+                                        Analysis Error: ${analysisData.error}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>`;
                 } else {
-                    analysisText.innerHTML = `<div class="text-gray-600 dark:text-gray-400">Full analysis complete. Review charts and technical indicators above.</div>`;
+                    analysisText.innerHTML = `
+                        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 text-center">
+                            <p class="text-gray-600 dark:text-gray-400">
+                                Analysis complete. Review the results above.
+                            </p>
+                        </div>`;
                 }
             }
         }

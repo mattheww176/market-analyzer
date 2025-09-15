@@ -3,7 +3,12 @@ import sys
 import os
 import threading
 import time
-from market_analyzer import analyze_stock
+import traceback
+import pandas as pd
+import numpy as np
+import yfinance as yf
+from market_analyzer import analyze_stock, predict_stock_prices
+from datetime import datetime, timedelta
 import webbrowser
 
 app = Flask(__name__)
@@ -153,14 +158,14 @@ def get_chart_data(ticker):
         ma50 = data['Close'].rolling(window=50).mean()
         ma200 = data['Close'].rolling(window=200).mean()
         
-        # Prepare the response data
+        # Create chart data with modern pandas methods
         chart_data = {
             'dates': data.index.strftime('%Y-%m-%d').tolist(),
-            'prices': data['Close'].fillna(method='ffill').values.tolist(),
-            'volumes': data['Volume'].fillna(0).astype(int).values.tolist(),
-            'opens': data['Open'].fillna(method='ffill').values.tolist(),
-            'highs': data['High'].fillna(method='ffill').values.tolist(),
-            'lows': data['Low'].fillna(method='ffill').values.tolist(),
+            'prices': data['Close'].ffill().values.tolist(),
+            'volumes': data['Volume'].fillna(0).values.tolist(),
+            'opens': data['Open'].ffill().values.tolist(),
+            'highs': data['High'].ffill().values.tolist(),
+            'lows': data['Low'].ffill().values.tolist(),
             'rsi': rsi.fillna(50).values.tolist() if rsi is not None else [50] * len(data),
             'ma50': ma50.fillna(0).values.tolist() if ma50 is not None else [0] * len(data),
             'ma200': ma200.fillna(0).values.tolist() if ma200 is not None else [0] * len(data),
@@ -175,6 +180,122 @@ def get_chart_data(ticker):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+def run_prediction_analysis(ticker, days):
+    """Run prediction analysis for the given ticker and return the results."""
+    # Import yfinance at function level to ensure it's available
+    import yfinance as yf
+    import pandas as pd
+    
+    # Debug info
+    print(f"[DEBUG] Starting prediction analysis for {ticker} (last {days} days)", file=sys.stderr)
+    
+    try:
+        # Get historical data
+        start_date = pd.Timestamp.now() - pd.Timedelta(days=days*2)
+        end_date = pd.Timestamp.now()
+        
+        print(f"[DEBUG] Downloading data from {start_date} to {end_date}", file=sys.stderr)
+        data = yf.download(ticker, start=start_date, end=end_date)
+        
+        if data is None or data.empty:
+            error_msg = f"No data available for {ticker} from {start_date} to {end_date}"
+            print(f"[ERROR] {error_msg}", file=sys.stderr)
+            return f"Error: {error_msg}"
+            
+        print(f"[DEBUG] Downloaded {len(data)} rows of data", file=sys.stderr)
+        print(f"[DEBUG] Data columns: {data.columns.tolist()}", file=sys.stderr)
+        
+        # Run prediction
+        print("[DEBUG] Calling predict_stock_prices...", file=sys.stderr)
+        try:
+            from market_analyzer import predict_stock_prices
+            prediction_results = predict_stock_prices(data, ticker, days_ahead=[1, 3, 7, 14, 30])
+            
+            if prediction_results is None:
+                error_msg = "Prediction function returned None"
+                print(f"[ERROR] {error_msg}", file=sys.stderr)
+                return f"Error: {error_msg}"
+                
+        except Exception as pred_error:
+            error_msg = f"Error in predict_stock_prices: {str(pred_error)}"
+            print(f"[ERROR] {error_msg}\n{traceback.format_exc()}", file=sys.stderr)
+            return f"Error: {error_msg}"
+            
+        print(f"[DEBUG] Prediction results: {prediction_results}", file=sys.stderr)
+        
+        # Format the prediction results
+        output = []
+        output.append(f"📈 Price Prediction Analysis for {ticker}")
+        output.append("=" * 50)
+        
+        try:
+            # Add current price
+            current_price = prediction_results.get('current_price', 0)
+            output.append(f"\n💵 Current Price: ${current_price:.2f}")
+            
+            # Add predictions if available
+            if 'predictions' in prediction_results and prediction_results['predictions']:
+                output.append("\n🔮 Price Predictions:")
+                for days_ahead, price in prediction_results['predictions'].items():
+                    if current_price > 0:  # Avoid division by zero
+                        change_pct = (price / current_price - 1) * 100
+                        output.append(f"   {days_ahead}-day forecast: ${price:.2f} ({change_pct:+.1f}%)")
+                    else:
+                        output.append(f"   {days_ahead}-day forecast: ${price:.2f}")
+            
+            # Add technical indicators
+            output.append("\n📊 Technical Indicators:")
+            
+            if 'rsi' in prediction_results:
+                rsi = prediction_results['rsi']
+                rsi_status = "(Oversold)" if rsi < 30 else "(Overbought)" if rsi > 70 else "(Neutral)"
+                output.append(f"   • RSI: {rsi:.1f} {rsi_status}")
+                
+            if 'volatility' in prediction_results:
+                output.append(f"   • Volatility: {prediction_results['volatility']*100:.1f}%")
+                
+            if 'price_vs_ma20' in prediction_results:
+                output.append(f"   • Price vs 20-day MA: {prediction_results['price_vs_ma20']:+.1f}%")
+                
+            if 'price_vs_ma50' in prediction_results:
+                output.append(f"   • Price vs 50-day MA: {prediction_results['price_vs_ma50']:+.1f}%")
+            
+            # Add trading insights
+            output.append("\n💡 Trading Insights:")
+            if 'rsi' in prediction_results:
+                rsi = prediction_results['rsi']
+                if rsi < 30:
+                    output.append("   • RSI indicates oversold conditions (potential buying opportunity)")
+                elif rsi > 70:
+                    output.append("   • RSI indicates overbought conditions (potential selling opportunity)")
+                    
+            if 'volatility' in prediction_results and prediction_results['volatility'] > 0.4:
+                output.append("   • High volatility detected - expect larger price swings")
+                
+            # Add risk assessment
+            output.append("\n⚠️ Risk Assessment:")
+            risk_factors = []
+            if 'rsi' in prediction_results and (prediction_results['rsi'] > 80 or prediction_results['rsi'] < 20):
+                risk_factors.append("extreme RSI levels")
+            if 'volatility' in prediction_results and prediction_results['volatility'] > 0.5:
+                risk_factors.append("high volatility")
+                
+            if risk_factors:
+                output.append(f"   • Caution: {' and '.join(risk_factors)} detected")
+            else:
+                output.append("   • Normal market conditions detected")
+                
+        except Exception as format_error:
+            print(f"[ERROR] Error formatting results: {str(format_error)}\n{traceback.format_exc()}", file=sys.stderr)
+            output.append("\n⚠️ Analysis completed with partial results. Some data may be missing.")
+            
+        return "\n".join(output)
+        
+    except Exception as e:
+        error_msg = f"Error in prediction analysis: {str(e)}\n{traceback.format_exc()}"
+        print(f"[CRITICAL] {error_msg}", file=sys.stderr)
+        return f"Error: {str(e)}\n\nPlease check the server logs for more details."
+
 @app.route('/analyze', methods=['POST'])
 def analyze():
     ticker = request.form.get('ticker', '').upper()
@@ -188,41 +309,77 @@ def analyze():
         # Redirect stdout to capture the output
         from io import StringIO
         import sys
+        import traceback
         
+        # Debug log
+        print(f"Starting {analysis_type} analysis for {ticker} (last {days} days)", file=sys.stderr)
+        
+        # For prediction analysis, we don't need to capture stdout
+        if analysis_type == 'prediction':
+            try:
+                output = run_prediction_analysis(ticker, days)
+                if not output:
+                    raise ValueError("No output from prediction analysis")
+                return jsonify({
+                    'ticker': ticker,
+                    'analysis': output,
+                    'analysis_type': analysis_type,
+                    'status': 'success'
+                })
+            except Exception as e:
+                print(f"Error in prediction analysis: {str(e)}\n{traceback.format_exc()}", file=sys.stderr)
+                return jsonify({
+                    'error': f"Error in prediction analysis: {str(e)}",
+                    'status': 'error',
+                    'traceback': traceback.format_exc()
+                }), 500
+        
+        # For other analysis types, capture stdout
         old_stdout = sys.stdout
         sys.stdout = StringIO()
         
-        # Run analysis based on type
-        if analysis_type == 'basic':
-            # For basic analysis, return minimal output
-            output = f"Basic analysis completed for {ticker}. Chart data available for {days} days."
-        else:
-            # For technical and full analysis, run the full analysis
-            analyze_stock(
-                ticker=ticker,
-                show_history=True,
-                history_days=days,
-                show_graphs=False,
-                skip_plot=True
-            )
+        try:
+            if analysis_type == 'basic':
+                # For basic analysis, return minimal output
+                output = f"Basic analysis completed for {ticker}. Chart data available for {days} days."
+            else:
+                # For technical and full analysis, run the full analysis
+                analyze_stock(
+                    ticker=ticker,
+                    show_history=True,
+                    history_days=days,
+                    show_graphs=False,
+                    skip_plot=True
+                )
+                
+                # Get the output
+                output = sys.stdout.getvalue()
             
-            # Get the output
-            output = sys.stdout.getvalue()
-        
-        sys.stdout = old_stdout
-        
-        # Process the output based on analysis type
-        return jsonify({
-            'ticker': ticker,
-            'analysis': output,
-            'analysis_type': analysis_type,
-            'status': 'success'
-        })
-        
+            # Process the output based on analysis type
+            return jsonify({
+                'ticker': ticker,
+                'analysis': output,
+                'analysis_type': analysis_type,
+                'status': 'success'
+            })
+            
+        except Exception as e:
+            print(f"Error in analysis: {str(e)}\n{traceback.format_exc()}", file=sys.stderr)
+            return jsonify({
+                'error': str(e),
+                'status': 'error',
+                'traceback': traceback.format_exc()
+            }), 500
+            
+        finally:
+            sys.stdout = old_stdout
+            
     except Exception as e:
+        print(f"Unexpected error in analyze route: {str(e)}\n{traceback.format_exc()}", file=sys.stderr)
         return jsonify({
-            'error': str(e),
-            'status': 'error'
+            'error': f"Unexpected error: {str(e)}",
+            'status': 'error',
+            'traceback': traceback.format_exc()
         }), 500
 
 def open_browser():

@@ -1,3 +1,4 @@
+# Core data analysis and visualization
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -627,6 +628,10 @@ def predict_stock_prices(data, ticker, days_ahead=[1, 3, 7, 14]):
     Returns:
         Dictionary containing predictions and analysis
     """
+    # Import yfinance at function level to ensure it's available
+    import yfinance as yf
+    import pandas as pd
+    
     # Only show debug info if DEBUG environment variable is set
     import os
     if os.environ.get('DEBUG'):
@@ -634,6 +639,7 @@ def predict_stock_prices(data, ticker, days_ahead=[1, 3, 7, 14]):
         print(f"DEBUG: Data columns: {data.columns.tolist()}")
         print(f"DEBUG: Data shape: {data.shape}")
         print(f"DEBUG: First few rows of data:\n{data.head()}")
+        print(f"DEBUG: yfinance version: {yf.__version__}")
     try:
         # Create a clean DataFrame with just the close prices
         if isinstance(data, pd.DataFrame):
@@ -1097,12 +1103,23 @@ def print_status(message, status_type="info"):
     }
     print(f"\n{icons.get(status_type, ' ')} {message}")
 
-def analyze_stock(ticker, skip_plot=False, custom_stats=False, export_excel=False, info=False, cumulative=False, drawdown=False, rolling_vol=False, backtest=False, show_signals=False, histogram=False, latest=None, sector_info=False, summary_only=False, moving_average_plot=False, signal_summary_only=False, price_targets=False, predictions=False, momentum_analysis=False, market_scan=False, breakout_scan=False, interactive_chart=False, show_history=False, history_days=30, show_graphs=True):
-    print(f"\nDEBUG: analyze_stock called with predictions={predictions}")
-    if predictions:
-        print("DEBUG: Predictions are ENABLED")
-    else:
-        print("DEBUG: Predictions are DISABLED")
+def analyze_stock(ticker, skip_plot=False, custom_stats=False, export_excel=False, info=False, 
+                 cumulative=False, drawdown=False, rolling_vol=False, backtest=False, 
+                 show_signals=False, histogram=False, latest=None, sector_info=False, 
+                 summary_only=False, moving_average_plot=False, signal_summary_only=False, 
+                 price_targets=False, predictions=False, momentum_analysis=False, 
+                 market_scan=False, breakout_scan=False, interactive_chart=False, 
+                 show_history=False, history_days=30, show_graphs=True):
+    """Main function to analyze a stock."""
+    # Set start and end dates
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=365*2)  # 2 years of data
+    
+    # Download data with suppressed warnings
+    import warnings
+    warnings.filterwarnings('ignore', message='YF.download() has changed argument auto_adjust default to True')
+    data = yf.download(ticker, start=start_date, end=end_date, progress=False)
+    
     # Handle market scanning modes first (don't need individual stock data)
     if market_scan:
         scan_market_momentum()
