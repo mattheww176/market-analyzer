@@ -187,7 +187,10 @@ function updateChart(data, type = 'price') {
     if (data && data.prices && data.prices.length > 30) {
         const signal = window.SignalGenerator?.generateSignals(data.prices);
         if (signal) {
-            window.SignalGenerator.updateSignalDisplay(signal);
+            // Get the current stock symbol from the search input or URL
+            const symbolInput = document.getElementById('symbol');
+            const symbol = symbolInput ? symbolInput.value : '';
+            window.SignalGenerator.updateSignalDisplay(signal, symbol);
         }
     }
     
