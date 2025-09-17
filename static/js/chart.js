@@ -180,6 +180,22 @@ function initChart() {
 function updateChart(data, type = 'price') {
     if (!chart) return;
     
+    // Store the data for later use
+    chartData = data;
+    
+    // Generate and display signals if we have price data
+    if (data && data.prices && data.prices.length > 30) {
+        const signal = window.SignalGenerator?.generateSignals(data.prices);
+        if (signal) {
+            window.SignalGenerator.updateSignalDisplay(signal);
+        }
+    }
+    
+    // Clear any existing annotations
+    if (chart.options.plugins.annotation) {
+        chart.options.plugins.annotation.annotations = [];
+    }
+    
     const dates = data.dates || [];
     const prices = data.prices || [];
     const volumes = data.volumes || [];

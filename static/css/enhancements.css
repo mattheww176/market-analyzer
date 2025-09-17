@@ -1,0 +1,132 @@
+/* Additional styles to enhance the existing interface */
+
+/* Enhanced card styling */
+.enhanced-card {
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.dark .enhanced-card {
+    background-color: #1f2937; /* gray-800 */
+}
+
+.enhanced-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    transform: translateY(-2px);
+}
+
+/* Improved button styles */
+.btn-enhanced {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+    transform: translateY(0);
+}
+
+.btn-enhanced:hover {
+    transform: scale(1.05);
+}
+
+.btn-enhanced:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    --ring-offset-shadow: var(--ring-inset) 0 0 0 var(--ring-offset-width, 0px) var(--ring-offset-color, #fff);
+    --ring-shadow: var(--ring-inset) 0 0 0 calc(2px + var(--ring-offset-width, 0px)) var(--ring-color);
+    box-shadow: var(--ring-offset-shadow), var(--ring-shadow), var(--shadow, 0 0 #0000);
+    --ring-color: rgba(59, 130, 246, 0.5);
+    --ring-offset-shadow: var(--ring-inset) 0 0 0 var(--ring-offset-width, 0px) var(--ring-offset-color, #fff);
+    --ring-shadow: var(--ring-inset) 0 0 0 calc(2px + var(--ring-offset-width, 0px)) var(--ring-color);
+    box-shadow: var(--ring-offset-shadow), var(--ring-shadow), var(--shadow, 0 0 #0000);
+}
+
+/* Tab improvements */
+.tab-button {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+}
+
+.tab-button.active {
+    color: #2563eb; /* blue-600 */
+    border-color: #3b82f6; /* blue-500 */
+}
+
+.dark .tab-button.active {
+    color: #60a5fa; /* blue-400 */
+}
+
+/* Loading animation */
+.loading-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Form elements */
+.enhanced-input {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+}
+
+.enhanced-input:focus {
+    --ring-offset-shadow: var(--ring-inset) 0 0 0 var(--ring-offset-width, 0px) var(--ring-offset-color, #fff);
+    --ring-shadow: var(--ring-inset) 0 0 0 calc(2px + var(--ring-offset-width, 0px)) var(--ring-color);
+    box-shadow: var(--ring-offset-shadow), var(--ring-shadow), var(--shadow, 0 0 #0000);
+    --ring-color: rgba(59, 130, 246, 0.5);
+    --ring-offset-shadow: var(--ring-inset) 0 0 0 var(--ring-offset-width, 0px) var(--ring-offset-color, #fff);
+    --ring-shadow: var(--ring-inset) 0 0 0 calc(2px + var(--ring-offset-width, 0px)) var(--ring-color);
+    box-shadow: var(--ring-offset-shadow), var(--ring-shadow), var(--shadow, 0 0 #0000);
+    border-color: #3b82f6; /* blue-500 */
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .responsive-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .responsive-stack > * {
+        width: 100%;
+    }
+}
+
+/* Chart container */
+.chart-container {
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    padding: 1rem;
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+    min-height: 400px;
+}
+
+.dark .chart-container {
+    background-color: #1f2937; /* gray-800 */
+}
+
+/* Status indicators */
+.status-indicator {
+    display: inline-block;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 9999px;
+    margin-right: 0.5rem;
+}
+
+.status-up { background-color: #10b981; } /* green-500 */
+.status-down { background-color: #ef4444; } /* red-500 */
+.status-neutral { background-color: #9ca3af; } /* gray-400 */

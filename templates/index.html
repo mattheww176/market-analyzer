@@ -6,6 +6,7 @@
     <title>Market Analyzer</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/enhancements.css') }}">
     <style>
         .analysis-output {
             white-space: pre-wrap;
@@ -696,6 +697,9 @@
     <script src="{{ url_for('static', filename='js/technical-analysis.js') }}"></script>
     <script src="{{ url_for('static', filename='js/chart.js') }}"></script>
     <script src="{{ url_for('static', filename='js/watchlist.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/signals.js') }}"></script>
+    <!-- Enhancement Scripts -->
+    <script src="{{ url_for('static', filename='js/enhancements.js') }}"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     
     <!-- Theme Toggle Script -->
