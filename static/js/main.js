@@ -618,6 +618,160 @@ function updateStockInfo(ticker, chartData) {
 }
 
 /**
+ * Format a number with commas and optional decimal places
+ * @param {number} num - The number to format
+ * @param {number} [decimals=2] - Number of decimal places to show
+ * @returns {string} Formatted number string
+ */
+function formatNumber(num, decimals = 2) {
+    if (num === null || num === undefined) return 'N/A';
+    if (typeof num === 'string') num = parseFloat(num);
+    if (isNaN(num)) return 'N/A';
+    
+    return num.toLocaleString(undefined, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: decimals
+    });
+}
+
+/**
+ * Update a metric in the UI
+ * @param {string} id - The element ID
+ * @param {*} value - The value to display
+ * @param {string} [suffix=''] - Optional suffix to add after the value
+ * @param {number} [decimals=2] - Number of decimal places to show
+ */
+function updateMetric(id, value, suffix = '', decimals = 2) {
+    const element = document.getElementById(id);
+    if (!element) return;
+    
+    if (value === null || value === undefined || value === '') {
+        element.textContent = 'N/A';
+        return;
+    }
+    
+    if (typeof value === 'number') {
+        element.textContent = formatNumber(value, decimals) + suffix;
+    } else {
+        element.textContent = value + suffix;
+    }
+}
+
+/**
+ * Update the fundamental analysis UI with data
+ * @param {Object} data - The fundamental data to display
+ */
+function updateFundamentalUI(data) {
+    if (!data) return;
+    
+    // Update valuation metrics
+    if (data.valuation) {
+        updateMetric('pe-ratio', data.valuation.peRatio, 'x');
+        updateMetric('ps-ratio', data.valuation.psRatio, 'x');
+        updateMetric('pb-ratio', data.valuation.pbRatio, 'x');
+        
+        // Format market cap with appropriate suffix (B for billion, M for million)
+        if (data.valuation.marketCap) {
+            let marketCap = data.valuation.marketCap;
+            let suffix = '';
+            if (marketCap >= 1e9) {
+                marketCap = marketCap / 1e9;
+                suffix = 'B';
+            } else if (marketCap >= 1e6) {
+                marketCap = marketCap / 1e6;
+                suffix = 'M';
+            }
+            updateMetric('market-cap', marketCap, ' ' + suffix + ' USD');
+        } else {
+            updateMetric('market-cap', null);
+        }
+        
+        // Format dividend yield as percentage
+        if (data.valuation.dividendYield) {
+            const divYield = data.valuation.dividendYield * 100; // Convert to percentage
+            updateMetric('dividend-yield', divYield, '%', 2);
+        } else {
+            updateMetric('dividend-yield', null);
+        }
+    }
+    
+    // Update financial health metrics
+    if (data.financialHealth) {
+        updateMetric('current-ratio', data.financialHealth.currentRatio, 'x');
+        updateMetric('debt-equity', data.financialHealth.debtToEquity, 'x');
+        updateMetric('quick-ratio', data.financialHealth.quickRatio, 'x');
+    }
+    
+    // Update growth metrics
+    if (data.growth) {
+        // Convert growth rates to percentages
+        const revenueGrowth = data.growth.revenueGrowth ? data.growth.revenueGrowth * 100 : null;
+        const earningsGrowth = data.growth.earningsGrowth ? data.growth.earningsGrowth * 100 : null;
+        
+        updateMetric('revenue-growth', revenueGrowth, '%', 2);
+        updateMetric('earnings-growth', earningsGrowth, '%', 2);
+        
+        // Update growth summary
+        const growthSummary = document.getElementById('growth-summary');
+        if (growthSummary) {
+            if (revenueGrowth !== null && earningsGrowth !== null) {
+                growthSummary.textContent = `The company has shown a revenue growth of ${formatNumber(revenueGrowth, 2)}% ` +
+                                         `and earnings growth of ${formatNumber(earningsGrowth, 2)}% year over year.`;
+            } else if (revenueGrowth !== null) {
+                growthSummary.textContent = `The company has shown a revenue growth of ${formatNumber(revenueGrowth, 2)}% year over year.`;
+            } else if (earningsGrowth !== null) {
+                growthSummary.textContent = `The company has shown an earnings growth of ${formatNumber(earningsGrowth, 2)}% year over year.`;
+            } else {
+                growthSummary.textContent = 'Growth data not available.';
+            }
+        }
+    }
+}
+
+/**
+ * Fetch and update fundamental analysis data for a ticker
+ * @param {string} ticker - The stock ticker symbol
+ */
+function updateFundamentalAnalysis(ticker) {
+    if (!ticker) return;
+    
+    const loadingElement = document.getElementById('fundamental-loading');
+    const errorElement = document.getElementById('fundamental-error');
+    
+    // Show loading state
+    if (loadingElement) loadingElement.classList.remove('hidden');
+    if (errorElement) errorElement.classList.add('hidden');
+    
+    // Fetch fundamental data from the backend
+    fetch(`/api/stock-fundamentals/${ticker}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Update the UI with the fetched data
+            updateFundamentalUI(data);
+            
+            // Hide loading state
+            if (loadingElement) loadingElement.classList.add('hidden');
+        })
+        .catch(error => {
+            console.error('Error fetching fundamental data:', error);
+            
+            // Show error message
+            if (errorElement) {
+                errorElement.textContent = `Failed to load fundamental data: ${error.message}`;
+                errorElement.classList.remove('hidden');
+            }
+            
+            // Hide loading state
+            if (loadingElement) loadingElement.classList.add('hidden');
+        });
+}
+
+/**
  * Setup collapsible sections for technical analysis
  */
 function setupCollapsibleSections() {

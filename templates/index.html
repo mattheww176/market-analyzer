@@ -188,6 +188,12 @@
                         <a href="#features" class="text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 text-sm font-medium transition-colors duration-200">
                             Features
                         </a>
+                        <a href="#guide" class="text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 text-sm font-medium transition-colors duration-200">
+                            Guide
+                        </a>
+                        <a href="#glossary" class="text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 text-sm font-medium transition-colors duration-200">
+                            Glossary
+                        </a>
                         <a href="#about" class="text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 text-sm font-medium transition-colors duration-200">
                             About
                         </a>
@@ -245,6 +251,9 @@
                 </a>
                 <a href="#features" class="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white">
                     Features
+                </a>
+                <a href="#guide" class="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white">
+                    Guide
                 </a>
                 <a href="#about" class="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white">
                     About
@@ -490,6 +499,9 @@
                         <button data-tab="macd" class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                             MACD
                         </button>
+                        <button data-tab="fundamental" class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                            <i class="fas fa-chart-pie mr-1"></i> Fundamental Analysis
+                        </button>
                     </nav>
                 </div>
             </div>
@@ -629,6 +641,126 @@
                 </div>
             </div>
 
+            <!-- Fundamental Analysis Section -->
+            <div id="fundamentalAnalysisSection" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-8 hidden">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+                    <i class="fas fa-chart-pie text-blue-500 mr-2"></i>
+                    Fundamental Analysis
+                </h3>
+                
+                <!-- Loading Indicator -->
+                <div id="fundamental-loading" class="text-center py-8">
+                    <div class="inline-flex items-center justify-center space-x-3">
+                        <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                        <span class="text-gray-600 dark:text-gray-300">Loading fundamental data...</span>
+                    </div>
+                </div>
+                
+                <!-- Error Message -->
+                <div id="fundamental-error" class="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-4 mb-6 rounded-lg hidden">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 pt-0.5">
+                            <i class="fas fa-exclamation-circle text-red-500 text-xl"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700 dark:text-red-200"></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Content will be loaded here -->
+                <div id="fundamental-content" class="space-y-6">
+                
+                <div class="space-y-6">
+                    <!-- Valuation Metrics -->
+                    <div class="analysis-card">
+                        <div class="flex items-center justify-between cursor-pointer" data-toggle="valuation-metrics">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-3">
+                                    <i class="fas fa-dollar-sign text-blue-500"></i>
+                                </div>
+                                <h4 class="text-lg font-medium text-gray-900 dark:text-white">Valuation Metrics</h4>
+                            </div>
+                            <i class="fas fa-chevron-down text-gray-400 transition-transform" id="valuation-arrow"></i>
+                        </div>
+                        <div id="valuation-metrics" class="mt-4 pl-13 hidden">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <div class="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-1">P/E Ratio</p>
+                                    <div id="pe-ratio" class="text-2xl font-bold text-gray-900 dark:text-white">-</div>
+                                </div>
+                                <div class="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-1">P/S Ratio</p>
+                                    <div id="ps-ratio" class="text-2xl font-bold text-gray-900 dark:text-white">-</div>
+                                </div>
+                                <div class="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-1">P/B Ratio</p>
+                                    <div id="pb-ratio" class="text-2xl font-bold text-gray-900 dark:text-white">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Financial Health -->
+                    <div class="analysis-card">
+                        <div class="flex items-center justify-between cursor-pointer" data-toggle="financial-health">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-3">
+                                    <i class="fas fa-heartbeat text-blue-500"></i>
+                                </div>
+                                <h4 class="text-lg font-medium text-gray-900 dark:text-white">Financial Health</h4>
+                            </div>
+                            <i class="fas fa-chevron-down text-gray-400 transition-transform" id="financial-arrow"></i>
+                        </div>
+                        <div id="financial-health" class="mt-4 pl-13 hidden">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <div class="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-1">Current Ratio</p>
+                                    <div id="current-ratio" class="text-2xl font-bold text-gray-900 dark:text-white">-</div>
+                                </div>
+                                <div class="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-1">Debt/Equity</p>
+                                    <div id="debt-equity" class="text-2xl font-bold text-gray-900 dark:text-white">-</div>
+                                </div>
+                                <div class="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-1">Quick Ratio</p>
+                                    <div id="quick-ratio" class="text-2xl font-bold text-gray-900 dark:text-white">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Growth Metrics -->
+                    <div class="analysis-card">
+                        <div class="flex items-center justify-between cursor-pointer" data-toggle="growth-metrics">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-3">
+                                    <i class="fas fa-chart-line text-blue-500"></i>
+                                </div>
+                                <h4 class="text-lg font-medium text-gray-900 dark:text-white">Growth Metrics</h4>
+                            </div>
+                            <i class="fas fa-chevron-down text-gray-400 transition-transform" id="growth-arrow"></i>
+                        </div>
+                        <div id="growth-metrics" class="mt-4 pl-13 hidden">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div class="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-1">Revenue Growth (YoY)</p>
+                                    <div id="revenue-growth" class="text-2xl font-bold text-gray-900 dark:text-white">-</div>
+                                </div>
+                                <div class="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-1">Earnings Growth (YoY)</p>
+                                    <div id="earnings-growth" class="text-2xl font-bold text-gray-900 dark:text-white">-</div>
+                                </div>
+                            </div>
+                            <div class="prose prose-sm dark:prose-invert max-w-none">
+                                <p id="growth-summary" class="text-gray-600 dark:text-gray-300">Loading growth metrics...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </div> <!-- Close fundamental-content div -->
+            </div>
+
             <!-- Action Buttons -->
             <div class="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
                 <button id="addToWatchlistBottom" class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
@@ -739,6 +871,235 @@
             </div>
         </div>
     </div>
+
+    <!-- Stock Analysis Guide Section -->
+    <section id="guide" class="py-16 bg-white dark:bg-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
+                    Stock Analysis Guide
+                </h2>
+                <p class="mt-4 text-xl text-gray-600 dark:text-gray-300">
+                    Understanding the key concepts of stock analysis
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+                <!-- Technical Analysis -->
+                <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                    <div class="p-6">
+                        <div class="flex items-center mb-4">
+                            <div class="flex-shrink-0 bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg">
+                                <i class="fas fa-chart-line text-blue-500 text-xl"></i>
+                            </div>
+                            <h3 class="ml-3 text-xl font-semibold text-gray-900 dark:text-white">Technical Analysis</h3>
+                        </div>
+                        <div class="space-y-4">
+                            <p class="text-gray-600 dark:text-gray-300">
+                                Technical analysis focuses on statistical trends gathered from trading activity, such as price movement and volume. It operates under the assumption that historical trading activity and price changes can be valuable indicators of future price movements.
+                            </p>
+                            <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                                <h4 class="font-medium text-blue-800 dark:text-blue-200">Key Principles:</h4>
+                                <ul class="mt-2 text-sm text-blue-700 dark:text-blue-300 list-disc list-inside space-y-1">
+                                    <li>Price moves in trends that tend to persist</li>
+                                    <li>Market action discounts everything</li>
+                                    <li>History tends to repeat itself</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fundamental Analysis -->
+                <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                    <div class="p-6">
+                        <div class="flex items-center mb-4">
+                            <div class="flex-shrink-0 bg-green-100 dark:bg-green-900/30 p-3 rounded-lg">
+                                <i class="fas fa-building text-green-500 text-xl"></i>
+                            </div>
+                            <h3 class="ml-3 text-xl font-semibold text-gray-900 dark:text-white">Fundamental Analysis</h3>
+                        </div>
+                        <div class="space-y-4">
+                            <p class="text-gray-600 dark:text-gray-300">
+                                Fundamental analysis examines economic and financial factors to determine the intrinsic value of a security. It looks at everything from the overall economy and industry conditions to the financial condition and management of companies.
+                            </p>
+                            <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                                <h4 class="font-medium text-green-800 dark:text-green-200">Key Areas:</h4>
+                                <ul class="mt-2 text-sm text-green-700 dark:text-green-300 list-disc list-inside space-y-1">
+                                    <li>Financial statements analysis</li>
+                                    <li>Industry conditions</li>
+                                    <li>Economic factors</li>
+                                    <li>Company management</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stock Analysis Glossary Section -->
+    <section id="glossary" class="py-16 bg-gray-50 dark:bg-gray-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
+                    Stock Analysis Glossary
+                </h2>
+                <p class="mt-4 text-xl text-gray-600 dark:text-gray-300">
+                    Key terms and abbreviations explained
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Technical Analysis Terms -->
+                <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                    <div class="p-6">
+                        <div class="flex items-center mb-4">
+                            <div class="flex-shrink-0 bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg">
+                                <i class="fas fa-chart-line text-blue-500 text-xl"></i>
+                            </div>
+                            <h3 class="ml-3 text-xl font-semibold text-gray-900 dark:text-white">Technical Terms</h3>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">SMA (Simple Moving Average)</h4>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                    The average stock price over a specific time period, recalculated regularly.
+                                </p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">EMA (Exponential Moving Average)</h4>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                    A type of moving average that gives more weight to recent prices.
+                                </p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">RSI (Relative Strength Index)</h4>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                    A momentum indicator that measures the speed and change of price movements (0-100 scale).
+                                </p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">MACD (Moving Average Convergence Divergence)</h4>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                    A trend-following momentum indicator showing the relationship between two moving averages.
+                                </p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">Bollinger Bands</h4>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                    A volatility indicator showing a moving average with upper and lower price bands.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fundamental Analysis Terms -->
+                <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                    <div class="p-6">
+                        <div class="flex items-center mb-4">
+                            <div class="flex-shrink-0 bg-green-100 dark:bg-green-900/30 p-3 rounded-lg">
+                                <i class="fas fa-building text-green-500 text-xl"></i>
+                            </div>
+                            <h3 class="ml-3 text-xl font-semibold text-gray-900 dark:text-white">Fundamental Terms</h3>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">P/E Ratio (Price-to-Earnings)</h4>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                    Compares a company's stock price to its earnings per share (EPS).
+                                </p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">P/B Ratio (Price-to-Book)</h4>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                    Compares a company's market value to its book value (assets minus liabilities).
+                                </p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">EPS (Earnings Per Share)</h4>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                    A company's profit divided by its number of outstanding shares.
+                                </p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">ROE (Return on Equity)</h4>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                    Measures a company's profitability relative to shareholders' equity.
+                                </p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">EBITDA</h4>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                    Earnings Before Interest, Taxes, Depreciation, and Amortization - a measure of operating performance.
+                                </p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">VWAP (Volume Weighted Average Price)</h4>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                    The average price a security has traded at throughout the day, based on both volume and price.
+                                </p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">Oversold/Overbought</h4>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                    Conditions where a security is considered to be trading below (oversold) or above (overbought) its intrinsic value, often measured by indicators like RSI.
+                                </p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">Volume Profile</h4>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                    A charting technique that shows trading activity over a specific time period at specified price levels.
+                                </p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">Market Cap (Market Capitalization)</h4>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                    The total market value of a company's outstanding shares, calculated as share price times number of shares.
+                                </p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">Dividend Yield</h4>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                    A financial ratio showing how much a company pays out in dividends each year relative to its stock price.
+                                </p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">Current Ratio</h4>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                    A liquidity ratio that measures a company's ability to pay short-term obligations with its current assets.
+                                </p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">Free Cash Flow (FCF)</h4>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                    The cash a company generates after accounting for cash outflows to support operations and maintain capital assets.
+                                </p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">Beta (β)</h4>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                    A measure of a stock's volatility in relation to the overall market. A beta of 1 means the stock moves with the market.
+                                </p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">Alpha (α)</h4>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                    A measure of an investment's performance relative to a market index, representing the value added by the investment's manager.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                <p>These terms appear in the analysis above. Hover over any term in the app to see its definition.</p>
+            </div>
+        </div>
+    </section>
 
     <!-- Features Section -->
     <section id="features" class="py-16 bg-gray-50 dark:bg-gray-900">

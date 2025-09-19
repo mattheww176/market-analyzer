@@ -16,6 +16,43 @@ A powerful and user-friendly web application for comprehensive stock market anal
 - Improved data loading reliability
 - Fixed theme persistence across page refreshes
 
+## 📚 Understanding Stock Analysis
+
+### Technical Analysis Terms
+
+#### Moving Averages (MA)
+- **Simple Moving Average (SMA)**: The average stock price over a specific period, smoothing out price fluctuations to identify trends.
+- **Exponential Moving Average (EMA)**: Similar to SMA but gives more weight to recent prices, making it more responsive to new information.
+- **Golden Cross**: When a short-term moving average crosses above a long-term moving average, often seen as a bullish signal.
+- **Death Cross**: When a short-term moving average crosses below a long-term moving average, often seen as a bearish signal.
+
+#### Support and Resistance
+- **Support Level**: A price level where a stock tends to stop falling and may bounce back up, as demand increases at that price.
+- **Resistance Level**: A price level where a stock tends to stop rising and may fall back, as selling pressure increases at that price.
+
+#### Volume
+- **Trading Volume**: The number of shares traded during a given period. Higher volume often confirms the strength of a price movement.
+- **Volume Weighted Average Price (VWAP)**: The average price a stock has traded at throughout the day, based on both volume and price.
+
+#### Momentum Indicators
+- **Relative Strength Index (RSI)**: Measures the speed and change of price movements, indicating overbought (>70) or oversold (<30) conditions.
+- **Moving Average Convergence Divergence (MACD)**: Shows the relationship between two moving averages, helping identify trend changes and momentum.
+
+### Fundamental Analysis Terms
+
+#### Valuation Metrics
+- **P/E Ratio (Price-to-Earnings)**: Compares a company's stock price to its earnings per share, indicating how much investors are willing to pay per dollar of earnings.
+- **P/B Ratio (Price-to-Book)**: Compares a company's market value to its book value, showing how much investors pay for each dollar of net assets.
+- **Dividend Yield**: Shows how much a company pays out in dividends each year relative to its stock price.
+
+#### Financial Health
+- **Debt-to-Equity Ratio**: Measures a company's financial leverage by comparing its total liabilities to shareholders' equity.
+- **Current Ratio**: Indicates a company's ability to pay short-term obligations with its current assets.
+
+#### Growth Metrics
+- **Earnings Per Share (EPS) Growth**: The rate at which a company's earnings per share are growing year over year.
+- **Revenue Growth**: The rate at which a company's revenue is increasing over time.
+
 ## 🚀 Quick Start
 
 1. **Install Dependencies**:

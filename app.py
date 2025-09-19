@@ -386,6 +386,96 @@ def open_browser():
     time.sleep(1)  # Give the server a second to start
     webbrowser.open('http://127.0.0.1:5001')
 
+@app.route('/api/stock-fundamentals/<ticker>')
+def get_stock_fundamentals(ticker):
+    """Get fundamental analysis data for a stock ticker"""
+    try:
+        import yfinance as yf
+        from datetime import datetime
+        
+        # Get stock data
+        stock = yf.Ticker(ticker.upper())
+        
+        # Get info (contains most fundamental data)
+        info = stock.info
+        
+        # Calculate some additional metrics if not available
+        if 'trailingPE' not in info and 'trailingEps' in info and info['trailingEps'] is not None and info['trailingEps'] != 0:
+            info['trailingPE'] = info.get('currentPrice', 0) / info['trailingEps']
+        
+        if 'priceToSalesTrailing12Months' not in info and 'revenuePerShare' in info and info['revenuePerShare'] is not None and info['revenuePerShare'] != 0:
+            info['priceToSalesTrailing12Months'] = info.get('currentPrice', 0) / info['revenuePerShare']
+        
+        if 'debtToEquity' not in info and 'totalStockholderEquity' in info and info['totalStockholderEquity'] is not None and info['totalStockholderEquity'] != 0:
+            info['debtToEquity'] = info.get('totalDebt', 0) / info['totalStockholderEquity']
+        
+        # Prepare the response data structure
+        fundamentals = {
+            'valuation': {
+                'peRatio': info.get('trailingPE'),
+                'psRatio': info.get('priceToSalesTrailing12Months'),
+                'pbRatio': info.get('priceToBook'),
+                'marketCap': info.get('marketCap'),
+                'dividendYield': info.get('dividendYield'),
+                'forwardPE': info.get('forwardPE'),
+                'pegRatio': info.get('pegRatio')
+            },
+            'financialHealth': {
+                'currentRatio': info.get('currentRatio'),
+                'quickRatio': info.get('quickRatio'),
+                'debtToEquity': info.get('debtToEquity'),
+                'interestCoverage': info.get('interestCoverage'),
+                'totalDebt': info.get('totalDebt'),
+                'totalCash': info.get('totalCash')
+            },
+            'growth': {
+                'revenueGrowth': info.get('revenueGrowth'),
+                'earningsGrowth': info.get('earningsGrowth'),
+                'earningsQuarterlyGrowth': info.get('earningsQuarterlyGrowth'),
+                'growthEstimate': info.get('revenueGrowth'),  # Using revenue growth as a simple estimate
+                'nextFiscalYearGrowth': info.get('earningsQuarterlyGrowth')
+            },
+            'keyMetrics': {
+                'roe': info.get('returnOnEquity'),
+                'roa': info.get('returnOnAssets'),
+                'profitMargin': info.get('profitMargins'),
+                'operatingMargin': info.get('operatingMargins'),
+                'ebitda': info.get('ebitda'),
+                'ebitdaMargins': info.get('ebitdaMargins')
+            },
+            'companyInfo': {
+                'name': info.get('longName', ticker.upper()),
+                'sector': info.get('sector'),
+                'industry': info.get('industry'),
+                'employees': info.get('fullTimeEmployees'),
+                'description': info.get('longBusinessSummary', 'No description available.')
+            },
+            'dividendInfo': {
+                'dividendRate': info.get('dividendRate'),
+                'dividendYield': info.get('dividendYield'),
+                'payoutRatio': info.get('payoutRatio'),
+                'dividendDate': info.get('exDividendDate'),
+                'fiveYearAvgDividendYield': info.get('fiveYearAvgDividendYield')
+            },
+            'lastUpdated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        
+        # Clean up None values to ensure JSON serialization
+        def clean_none(d):
+            if not isinstance(d, dict):
+                return d
+            return {k: clean_none(v) for k, v in d.items() if v is not None}
+        
+        return jsonify(clean_none(fundamentals))
+        
+    except Exception as e:
+        import traceback
+        print(f"Error fetching fundamental data for {ticker}: {str(e)}\n{traceback.format_exc()}")
+        return jsonify({
+            'error': f'Failed to fetch fundamental data for {ticker}: {str(e)}',
+            'details': str(e)
+        }), 500
+
 if __name__ == '__main__':
     # Create templates directory if it doesn't exist
     os.makedirs('templates', exist_ok=True)

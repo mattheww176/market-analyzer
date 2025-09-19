@@ -342,9 +342,37 @@ function updateChart(data, type = 'price') {
 
 /**
  * Update chart for the active tab
- * @param {string} tabType - Type of tab ('price', 'volume', 'rsi', 'macd')
+ * @param {string} tabType - Type of tab ('price', 'volume', 'rsi', 'macd', 'fundamental')
  */
 function updateChartForTab(tabType) {
+    // Handle fundamental analysis tab
+    if (tabType === 'fundamental') {
+        // Hide chart and show fundamental analysis
+        const chartContainer = document.querySelector('.relative.h-96');
+        const technicalSection = document.getElementById('technicalAnalysisSection');
+        const fundamentalSection = document.getElementById('fundamentalAnalysisSection');
+        
+        if (chartContainer) chartContainer.classList.add('hidden');
+        if (technicalSection) technicalSection.classList.add('hidden');
+        if (fundamentalSection) fundamentalSection.classList.remove('hidden');
+        
+        // Load fundamental data if not already loaded
+        const ticker = document.getElementById('ticker')?.value;
+        if (ticker) {
+            updateFundamentalAnalysis(ticker);
+        }
+        return;
+    }
+    
+    // For other tabs, show chart and hide fundamental analysis
+    const chartContainer = document.querySelector('.relative.h-96');
+    const technicalSection = document.getElementById('technicalAnalysisSection');
+    const fundamentalSection = document.getElementById('fundamentalAnalysisSection');
+    
+    if (chartContainer) chartContainer.classList.remove('hidden');
+    if (technicalSection) technicalSection.classList.remove('hidden');
+    if (fundamentalSection) fundamentalSection.classList.add('hidden');
+    
     if (!chart) return;
     
     // If no data is loaded yet, just return
