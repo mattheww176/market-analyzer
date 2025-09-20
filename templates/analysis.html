@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="light">
+    <div class="max-w-4xl mx-auto p-8">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-800 dark:text-white mb-2">Stock Analysis</h1>
+            <p class="text-gray-600 dark:text-gray-400">Detailed analysis and insights for your stocks</p>
+        </header>
+        
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+            <form id="analysisForm" class="space-y-6" novalidate>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Stock Ticker Input -->
+                    <div class="space-y-2">
+                        <label for="ticker" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Stock Ticker
+                            <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <input type="text" 
+                                   id="ticker" 
+                                   name="ticker" 
+                                   required
+                                   class="focus:ring-blue-500 focus:border-blue-500 block w-full pl-4 pr-12 py-3 sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md"
+                                   placeholder="e.g., AAPL, MSFT, GOOG">
+                        </div>
+                    </div>
+
+                    <!-- Time Period Selection -->
+                    <div class="space-y-2">
+                        <label for="timeframe" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Time Period
+                            <span class="text-red-500">*</span>
+                        </label>
+                        <select id="timeframe" 
+                                name="timeframe" 
+                                class="mt-1 block w-full pl-3 pr-10 py-3 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                            <option value="30">Last 30 days</option>
+                            <option value="90" selected>Last 90 days</option>
+                            <option value="180">Last 6 months</option>
+                            <option value="365">Last year</option>
+                            <option value="max">Max available</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Analysis Type Selection -->
+                <div class="space-y-2">
+                    <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Analysis Type
+                    </span>
+                    <div class="mt-1 space-y-2">
+                        <div class="flex items-center">
+                            <input id="analysis-basic" name="analysis-type" type="radio" value="basic" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300" checked>
+                            <label for="analysis-basic" class="ml-3 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Basic Analysis
+                                <span class="text-xs text-gray-500 dark:text-gray-400">(Price trends, volume, moving averages)</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center">
+                            <input id="analysis-technical" name="analysis-type" type="radio" value="technical" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300">
+                            <label for="analysis-technical" class="ml-3 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Technical Analysis
+                                <span class="text-xs text-gray-500 dark:text-gray-400">(RSI, MACD, Bollinger Bands)</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center">
+                            <input id="analysis-fundamental" name="analysis-type" type="radio" value="fundamental" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300">
+                            <label for="analysis-fundamental" class="ml-3 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Fundamental Analysis
+                                <span class="text-xs text-gray-500 dark:text-gray-400">(Financials, ratios, growth)</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-between items-center">
+                        <button type="button" 
+                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                                onclick="analyzeStock()">
+                            <i class="fas fa-chart-line mr-2"></i>
+                            Analyze Stock
+                        </button>
+                        <button type="button" 
+                                class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                                onclick="resetForm()">
+                            <i class="fas fa-redo mr-2"></i>
+                            Reset
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Loading Indicator -->
+            <div id="loading" class="text-center py-8 hidden">
+                <div class="inline-flex items-center justify-center space-x-3">
+                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                    <span class="text-gray-600 dark:text-gray-400">Analyzing stock data...</span>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results" class="mt-8 hidden">
+                <!-- Results will be inserted here by JavaScript -->
+            </div>
+
+            <!-- Error Message -->
+            <div id="error" class="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-4 mb-6 rounded-lg hidden">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p id="error-message" class="text-sm text-red-700 dark:text-red-300"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Handle form submission
+    function analyzeStock() {
+        const ticker = document.getElementById('ticker').value.trim().toUpperCase();
+        const days = document.getElementById('timeframe').value;
+        const analysisType = document.querySelector('input[name="analysis-type"]:checked').value;
+        
+        if (!ticker) {
+            showError('Please enter a stock ticker');
+            return;
+        }
+
+        // Show loading, hide results and errors
+        document.getElementById('loading').classList.remove('hidden');
+        document.getElementById('results').classList.add('hidden');
+        document.getElementById('error').classList.add('hidden');
+
+        // Make API call to analyze the stock
+        fetch('/analyze', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `ticker=${encodeURIComponent(ticker)}&days=${encodeURIComponent(days)}&analysis_type=${encodeURIComponent(analysisType)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('loading').classList.add('hidden');
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            // Update the results section with the analysis
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+                    <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-4">
+                        Analysis Results for ${data.ticker}
+                        <span class="text-sm font-normal text-gray-500 dark:text-gray-400">
+                            (${data.analysis_type.charAt(0).toUpperCase() + data.analysis_type.slice(1)} Analysis)
+                        </span>
+                    </h2>
+                    <div class="prose dark:prose-invert max-w-none">
+                        ${data.analysis || 'No analysis available'}
+                    </div>
+                </div>
+            `;
+            resultsDiv.classList.remove('hidden');
+        })
+        .catch(error => {
+            document.getElementById('loading').classList.add('hidden');
+            showError(error.message || 'An error occurred while analyzing the stock');
+        });
+    }
+
+    // Reset the form
+    function resetForm() {
+        document.getElementById('analysisForm').reset();
+        document.getElementById('results').classList.add('hidden');
+        document.getElementById('error').classList.add('hidden');
+    }
+
+    // Show error message
+    function showError(message) {
+        const errorElement = document.getElementById('error');
+        document.getElementById('error-message').textContent = message;
+        errorElement.classList.remove('hidden');
+        
+        // Auto-hide error after 5 seconds
+        setTimeout(() => {
+            errorElement.classList.add('hidden');
+        }, 5000);
+    }
+
+    // Add keyboard event listener for Enter key
+    document.getElementById('ticker').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            analyzeStock();
+        }
+    });
+
+    // Auto-uppercase ticker input as user types
+    document.getElementById('ticker').addEventListener('input', function(e) {
+        const cursorPosition = e.target.selectionStart;
+        e.target.value = e.target.value.toUpperCase();
+        e.target.setSelectionRange(cursorPosition, cursorPosition);
+    });
+</script>
+{% endblock %}

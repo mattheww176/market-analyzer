@@ -49,10 +49,9 @@ def shutdown():
         '''
     return 'Unauthorized', 403
 
-@app.route('/')
-def index():
+def get_common_context():
+    """Helper function to get common context for all routes"""
     global shutdown_enabled
-    # Debug information
     client_ip = request.remote_addr
     user_agent = request.user_agent.string
     shutdown_enabled = (client_ip == '127.0.0.1')
@@ -63,13 +62,33 @@ def index():
     print(f"Show Shutdown: {shutdown_enabled}")
     print("============\n")
     
-    return render_template('index.html', 
-                         show_shutdown=shutdown_enabled,
-                         debug_info={
-                             'client_ip': client_ip,
-                             'user_agent': user_agent,
-                             'show_shutdown': shutdown_enabled
-                         })
+    return {
+        'show_shutdown': shutdown_enabled,
+        'debug_info': {
+            'client_ip': client_ip,
+            'user_agent': user_agent,
+            'show_shutdown': shutdown_enabled
+        }
+    }
+
+@app.route('/')
+def index():
+    return render_template('index.html', **get_common_context())
+
+@app.route('/analysis')
+def analysis():
+    print("Debug: /analysis route was accessed!")
+    try:
+        context = get_common_context()
+        print(f"Debug: Context created successfully: {context}")
+        result = render_template('analysis.html', **context)
+        print("Debug: Template rendered successfully")
+        return result
+    except Exception as e:
+        print(f"Debug: Error in analysis route: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return f"Error loading analysis page: {str(e)}", 500
 
 @app.route('/api/chart-data/<ticker>')
 def get_chart_data(ticker):
@@ -300,7 +319,7 @@ def run_prediction_analysis(ticker, days):
 def analyze():
     ticker = request.form.get('ticker', '').upper()
     days = int(request.form.get('days', 90))
-    analysis_type = request.form.get('analysisType', 'basic')
+    analysis_type = request.form.get('analysis_type', 'basic')
     
     if not ticker:
         return jsonify({'error': 'Please enter a stock ticker'}), 400
@@ -334,15 +353,94 @@ def analyze():
                     'traceback': traceback.format_exc()
                 }), 500
         
-        # For other analysis types, capture stdout
-        old_stdout = sys.stdout
-        sys.stdout = StringIO()
+        # Handle basic analysis separately (no stdout capture needed)
+        if analysis_type == 'basic':
+            # For basic analysis, get basic stock information
+            try:
+                import yfinance as yf
+                from datetime import datetime, timedelta
+                
+                stock = yf.Ticker(ticker)
+                
+                # Get historical data
+                if days == 'max':
+                    hist = stock.history(period="max")
+                else:
+                    hist = stock.history(period=f"{days}d")
+                
+                if hist.empty:
+                    output = f"<div class='p-4'><h3 class='text-lg font-semibold mb-2 text-red-600'>Error</h3><p>No data available for {ticker}. Please check the ticker symbol.</p></div>"
+                else:
+                    # Get basic info
+                    info = stock.info
+                    current_price = hist['Close'].iloc[-1]
+                    prev_price = hist['Close'].iloc[-2] if len(hist) > 1 else current_price
+                    price_change = current_price - prev_price
+                    price_change_pct = (price_change / prev_price) * 100 if prev_price != 0 else 0
+                    
+                    # Calculate basic metrics
+                    high_52w = hist['High'].max()
+                    low_52w = hist['Low'].min()
+                    avg_volume = hist['Volume'].mean()
+                    
+                    # Format the output
+                    change_color = "text-green-600" if price_change >= 0 else "text-red-600"
+                    change_symbol = "+" if price_change >= 0 else ""
+                    
+                    company_name = info.get('longName', ticker)
+                    
+                    output = f"""
+                    <div class='p-4'>
+                        <h3 class='text-lg font-semibold mb-4'>Basic Analysis for {company_name} ({ticker})</h3>
+                        
+                        <div class='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
+                            <div class='bg-gray-50 dark:bg-gray-700 p-4 rounded'>
+                                <h4 class='font-semibold mb-2'>Current Price</h4>
+                                <p class='text-2xl font-bold'>${current_price:.2f}</p>
+                                <p class='{change_color} text-sm'>
+                                    {change_symbol}{price_change:.2f} ({change_symbol}{price_change_pct:.2f}%)
+                                </p>
+                            </div>
+                            
+                            <div class='bg-gray-50 dark:bg-gray-700 p-4 rounded'>
+                                <h4 class='font-semibold mb-2'>52-Week Range</h4>
+                                <p class='text-sm'>High: <span class='font-semibold'>${high_52w:.2f}</span></p>
+                                <p class='text-sm'>Low: <span class='font-semibold'>${low_52w:.2f}</span></p>
+                            </div>
+                        </div>
+                        
+                        <div class='bg-gray-50 dark:bg-gray-700 p-4 rounded mb-4'>
+                            <h4 class='font-semibold mb-2'>Volume Information</h4>
+                            <p class='text-sm'>Average Daily Volume: <span class='font-semibold'>{avg_volume:,.0f}</span></p>
+                            <p class='text-sm'>Latest Volume: <span class='font-semibold'>{hist['Volume'].iloc[-1]:,.0f}</span></p>
+                        </div>
+                        
+                        <div class='bg-blue-50 dark:bg-blue-900/30 p-4 rounded'>
+                            <h4 class='font-semibold mb-2'>Analysis Period</h4>
+                            <p class='text-sm'>Data from the last {days} days ({len(hist)} trading days)</p>
+                            <p class='text-sm'>Period: {hist.index[0].strftime('%Y-%m-%d')} to {hist.index[-1].strftime('%Y-%m-%d')}</p>
+                        </div>
+                    </div>
+                    """
+                    
+            except Exception as e:
+                print(f"Error in basic analysis: {str(e)}", file=sys.stderr)
+                output = f"<div class='p-4'><h3 class='text-lg font-semibold mb-2 text-red-600'>Error</h3><p>Failed to fetch data for {ticker}: {str(e)}</p></div>"
+                
+            # Return the basic analysis result
+            return jsonify({
+                'ticker': ticker,
+                'analysis': output,
+                'analysis_type': analysis_type,
+                'status': 'success'
+            })
         
-        try:
-            if analysis_type == 'basic':
-                # For basic analysis, return minimal output
-                output = f"Basic analysis completed for {ticker}. Chart data available for {days} days."
-            else:
+        else:
+            # For technical and full analysis, capture stdout
+            old_stdout = sys.stdout
+            sys.stdout = StringIO()
+            
+            try:
                 # For technical and full analysis, run the full analysis
                 analyze_stock(
                     ticker=ticker,
@@ -352,27 +450,29 @@ def analyze():
                     skip_plot=True
                 )
                 
-                # Get the output
-                output = sys.stdout.getvalue()
-            
-            # Process the output based on analysis type
-            return jsonify({
-                'ticker': ticker,
-                'analysis': output,
-                'analysis_type': analysis_type,
-                'status': 'success'
-            })
-            
-        except Exception as e:
-            print(f"Error in analysis: {str(e)}\n{traceback.format_exc()}", file=sys.stderr)
-            return jsonify({
-                'error': str(e),
-                'status': 'error',
-                'traceback': traceback.format_exc()
-            }), 500
-            
-        finally:
-            sys.stdout = old_stdout
+                # Get the output and format it for HTML display
+                raw_output = sys.stdout.getvalue()
+                # Convert plain text to HTML with proper line breaks and formatting
+                output = f"<div class='p-4'><pre class='whitespace-pre-wrap text-sm bg-gray-100 dark:bg-gray-700 p-4 rounded'>{raw_output}</pre></div>"
+                
+                # Process the output based on analysis type
+                return jsonify({
+                    'ticker': ticker,
+                    'analysis': output,
+                    'analysis_type': analysis_type,
+                    'status': 'success'
+                })
+                
+            except Exception as e:
+                print(f"Error in analysis: {str(e)}\n{traceback.format_exc()}", file=sys.stderr)
+                return jsonify({
+                    'error': str(e),
+                    'status': 'error',
+                    'traceback': traceback.format_exc()
+                }), 500
+                
+            finally:
+                sys.stdout = old_stdout
             
     except Exception as e:
         print(f"Unexpected error in analyze route: {str(e)}\n{traceback.format_exc()}", file=sys.stderr)
@@ -390,14 +490,71 @@ def open_browser():
 def get_stock_fundamentals(ticker):
     """Get fundamental analysis data for a stock ticker"""
     try:
-        import yfinance as yf
+        import requests
         from datetime import datetime
+        import json
+        import time
+        import random
         
-        # Get stock data
-        stock = yf.Ticker(ticker.upper())
+        ticker_upper = ticker.upper()
         
-        # Get info (contains most fundamental data)
-        info = stock.info
+        # Generate a random number to prevent caching
+        cache_buster = str(int(time.time())) + str(random.randint(1000, 9999))
+        
+        # Define the base URL for Yahoo Finance API
+        base_url = "https://query2.finance.yahoo.com/v10/finance/quoteSummary/"
+        
+        # Define the modules we want to fetch
+        modules = [
+            'assetProfile', 'financialData', 'defaultKeyStatistics', 
+            'summaryDetail', 'price', 'earnings', 'calendarEvents',
+            'upgradeDowngradeHistory', 'recommendationTrend', 'cashflowStatementHistory'
+        ]
+        
+        # Initialize the result dictionary
+        info = {}
+        
+        # Try to fetch data for each module
+        for module in modules:
+            try:
+                url = f"{base_url}{ticker_upper}?modules={module}&formatted=false&corsDomain=finance.yahoo.com&_={cache_buster}"
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    'Accept': 'application/json',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Referer': 'https://finance.yahoo.com/'
+                }
+                
+                response = requests.get(url, headers=headers, timeout=10)
+                response.raise_for_status()
+                
+                data = response.json()
+                if 'quoteSummary' in data and 'result' in data['quoteSummary'] and data['quoteSummary']['result']:
+                    module_data = data['quoteSummary']['result'][0].get(module, {})
+                    if module_data:
+                        # Flatten the module data into the info dictionary
+                        for key, value in module_data.items():
+                            if not key.startswith('maxAge'):
+                                info[key] = value
+                
+                # Add a small delay between requests to avoid rate limiting
+                time.sleep(0.2)
+                
+            except Exception as e:
+                print(f"Error fetching {module} for {ticker_upper}: {str(e)}")
+                continue
+        
+        # If we didn't get any data, try the old method as a last resort
+        if not info:
+            import yfinance as yf
+            stock = yf.Ticker(ticker_upper)
+            info = stock.info
+            info['source'] = 'yfinance_fallback'
+        else:
+            info['source'] = 'direct_api'
+        
+        # Ensure we have the ticker symbol
+        info['symbol'] = ticker_upper
         
         # Calculate some additional metrics if not available
         if 'trailingPE' not in info and 'trailingEps' in info and info['trailingEps'] is not None and info['trailingEps'] != 0:
@@ -408,7 +565,7 @@ def get_stock_fundamentals(ticker):
         
         if 'debtToEquity' not in info and 'totalStockholderEquity' in info and info['totalStockholderEquity'] is not None and info['totalStockholderEquity'] != 0:
             info['debtToEquity'] = info.get('totalDebt', 0) / info['totalStockholderEquity']
-        
+            
         # Prepare the response data structure
         fundamentals = {
             'valuation': {
@@ -432,7 +589,7 @@ def get_stock_fundamentals(ticker):
                 'revenueGrowth': info.get('revenueGrowth'),
                 'earningsGrowth': info.get('earningsGrowth'),
                 'earningsQuarterlyGrowth': info.get('earningsQuarterlyGrowth'),
-                'growthEstimate': info.get('revenueGrowth'),  # Using revenue growth as a simple estimate
+                'growthEstimate': info.get('revenueGrowth'),
                 'nextFiscalYearGrowth': info.get('earningsQuarterlyGrowth')
             },
             'keyMetrics': {
@@ -444,7 +601,7 @@ def get_stock_fundamentals(ticker):
                 'ebitdaMargins': info.get('ebitdaMargins')
             },
             'companyInfo': {
-                'name': info.get('longName', ticker.upper()),
+                'name': info.get('longName', ticker_upper),
                 'sector': info.get('sector'),
                 'industry': info.get('industry'),
                 'employees': info.get('fullTimeEmployees'),
@@ -457,7 +614,8 @@ def get_stock_fundamentals(ticker):
                 'dividendDate': info.get('exDividendDate'),
                 'fiveYearAvgDividendYield': info.get('fiveYearAvgDividendYield')
             },
-            'lastUpdated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            'lastUpdated': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'source': info.get('source', 'unknown')
         }
         
         # Clean up None values to ensure JSON serialization
@@ -479,6 +637,15 @@ def get_stock_fundamentals(ticker):
 if __name__ == '__main__':
     # Create templates directory if it doesn't exist
     os.makedirs('templates', exist_ok=True)
+    
+    # Debug: Print registered routes
+    print("\n=== Flask Debug Info ===")
+    print("Registered routes:")
+    for rule in app.url_map.iter_rules():
+        print(f"  {rule.rule} -> {rule.endpoint}")
+    print(f"Templates directory exists: {os.path.exists('templates')}")
+    print(f"Analysis template exists: {os.path.exists('templates/analysis.html')}")
+    print("========================\n")
     
     # Start the browser automatically
     threading.Thread(target=open_browser).start()
