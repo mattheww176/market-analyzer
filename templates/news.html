@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                {% if ticker %}{{ ticker }} News{% else %}Market News{% endif %}
+            </h1>
+            <p class="text-gray-600">{{ current_date }}</p>
+            
+            <!-- Search Form -->
+            <div class="mt-6 max-w-md mx-auto">
+                <form action="{{ url_for('news') }}" method="get" class="flex gap-2">
+                    <input type="text" 
+                           id="news-ticker-input"
+                           name="ticker" 
+                           placeholder="Enter stock symbol (e.g., AAPL)" 
+                           class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           value="{{ ticker if ticker else '' }}">
+                    <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        Search
+                    </button>
+                </form>
+                {% if ticker %}
+                <div class="mt-2">
+                    <a href="{{ url_for('news') }}" class="text-blue-600 hover:underline text-sm">
+                        ← Back to Market News
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+
+        <!-- News Articles -->
+        <div class="space-y-6">
+            {% if news_items %}
+                {% for item in news_items %}
+                <article class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                    <div class="p-6">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <div class="flex items-center mb-3">
+                                    <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                                        {{ item.ticker }}
+                                    </span>
+                                    {% if item.content and item.content.provider and item.content.provider.displayName %}
+                                    <span class="text-gray-500 text-sm ml-2">
+                                        {{ item.content.provider.displayName }}
+                                    </span>
+                                    {% endif %}
+                                    {% if item.content and item.content.pubDate %}
+                                    <span class="text-gray-400 text-xs ml-2">
+                                        {{ item.content.pubDate[:10] }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if item.content and item.content.title %}
+                                <h2 class="text-xl font-semibold text-gray-900 mb-3 hover:text-blue-600">
+                                    {% if item.content.canonicalUrl and item.content.canonicalUrl.url %}
+                                    <a href="{{ item.content.canonicalUrl.url }}" target="_blank" rel="noopener noreferrer">
+                                        {{ item.content.title }}
+                                    </a>
+                                    {% else %}
+                                    {{ item.content.title }}
+                                    {% endif %}
+                                </h2>
+                                {% endif %}
+                                
+                                {% if item.content and item.content.summary %}
+                                <p class="text-gray-600 mb-3">
+                                    {{ item.content.summary }}
+                                </p>
+                                {% elif item.content and item.content.description %}
+                                <p class="text-gray-600 mb-3">
+                                    {{ item.content.description }}
+                                </p>
+                                {% endif %}
+                                
+                                {% if item.content and item.content.thumbnail and item.content.thumbnail.resolutions and item.content.thumbnail.resolutions|length > 1 %}
+                                <div class="mt-3">
+                                    <img src="{{ item.content.thumbnail.resolutions[-1].url }}" 
+                                         alt="{{ item.content.title or 'News Image' }}" 
+                                         class="rounded-lg max-h-48 object-cover w-full"
+                                         onerror="this.style.display='none'">
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if item.content and item.content.canonicalUrl and item.content.canonicalUrl.url %}
+                        <div class="mt-4">
+                            <a href="{{ item.content.canonicalUrl.url }}" 
+                               target="_blank" 
+                               rel="noopener noreferrer"
+                               class="text-blue-600 hover:underline font-medium">
+                                Read full article →
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </article>
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-12">
+                    <div class="text-gray-400 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900">No news found</h3>
+                    <p class="mt-1 text-gray-500">
+                        {% if ticker %}
+                            No news available for {{ ticker }} at the moment.
+                        {% else %}
+                            No market news available at the moment.
+                        {% endif %}
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-uppercase ticker input as user types
+document.addEventListener('DOMContentLoaded', function() {
+    const tickerInput = document.getElementById('news-ticker-input');
+    if (tickerInput) {
+        tickerInput.addEventListener('input', function(e) {
+            const cursorPosition = e.target.selectionStart;
+            e.target.value = e.target.value.toUpperCase();
+            e.target.setSelectionRange(cursorPosition, cursorPosition);
+        });
+        
+        // Also handle Enter key for form submission
+        tickerInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.target.form.submit();
+            }
+        });
+    }
+});
+
+// Format timestamps
+function formatTimestamp(timestamp) {
+    if (!timestamp) return '';
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+// Apply formatting to all timestamps when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[data-timestamp]').forEach(element => {
+        const timestamp = parseInt(element.getAttribute('data-timestamp'));
+        if (timestamp) {
+            element.textContent = formatTimestamp(timestamp);
+        }
+    });
+});
+</script>
+{% endblock %}

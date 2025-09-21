@@ -2,14 +2,21 @@
 
 A powerful and user-friendly web application for comprehensive stock market analysis, featuring interactive charts, technical indicators, and a customizable watchlist. Now with enhanced basic analysis and detailed technical insights.
 
-## 🆕 Latest Updates (v1.1.0)
+## 🆕 Latest Updates (v1.2.0)
 
 ### New Features
+- **Enhanced Navigation**: Added a convenient shutdown button in the navigation bar for easy server management
+- **Improved News Section**: Completely revamped news display with proper formatting, images, and article links
+- **News Auto-Refresh**: News articles automatically refresh to show the latest updates
+- **Better Mobile Experience**: Improved news layout for mobile devices
 - **Moving Average Crossover Signals**: Clear buy/sell/hold signals based on 10-day and 30-day moving average crossovers
 - **Enhanced Signal Display**: Detailed signals with confidence levels, explanations, and actionable recommendations
-- **Improved UI/UX**: Smoother animations, better visual feedback, and enhanced mobile responsiveness
-- **Performance Optimizations**: Faster chart rendering and data processing
-- **Accessibility Improvements**: Better keyboard navigation and screen reader support
+
+### Improvements
+- **UI/UX**: Smoother animations, better visual feedback, and enhanced mobile responsiveness
+- **Performance**: Faster chart rendering and data processing
+- **Accessibility**: Better keyboard navigation and screen reader support
+- **Code Quality**: Removed debug output and improved error handling
 
 ### Bug Fixes
 - Fixed chart rendering issues on mobile devices

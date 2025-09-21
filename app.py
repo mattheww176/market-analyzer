@@ -10,9 +10,29 @@ import yfinance as yf
 from market_analyzer import analyze_stock, predict_stock_prices
 from datetime import datetime, timedelta
 import webbrowser
+from typing import List, Dict, Any
+from jinja2 import Environment
 
 app = Flask(__name__)
 shutdown_enabled = False
+
+# Custom Jinja2 filter for formatting timestamps
+def datetimeformat(timestamp, format='%B %d, %Y %I:%M %p'):
+    if not timestamp:
+        return ''
+    try:
+        # Convert timestamp to datetime object
+        if isinstance(timestamp, (int, float)) and timestamp > 1e10:
+            # If timestamp is in milliseconds, convert to seconds
+            timestamp = timestamp / 1000
+        dt = datetime.fromtimestamp(timestamp)
+        return dt.strftime(format)
+    except Exception as e:
+        print(f"Error formatting timestamp {timestamp}: {e}")
+        return str(timestamp)
+
+# Add the filter to Jinja2 environment
+app.jinja_env.filters['datetimeformat'] = datetimeformat
 
 # Shutdown route that can only be accessed from localhost
 @app.route('/shutdown')
@@ -634,21 +654,54 @@ def get_stock_fundamentals(ticker):
             'details': str(e)
         }), 500
 
+@app.route('/news')
+def news():
+    """Display market news and stock-specific news if a ticker is provided."""
+    ticker = request.args.get('ticker', '').upper().strip()
+    news_items = []
+    
+    # Initialize news items list
+    
+    try:
+        if ticker:
+            # Get news for specific stock
+            stock = yf.Ticker(ticker)
+            raw_news = stock.news or []
+            
+            # Add all items and let template handle missing data
+            for item in raw_news:
+                item['ticker'] = ticker
+                news_items.append(item)
+        else:
+            # Get general market news (using SPY as a proxy for market news)
+            market = yf.Ticker('SPY')
+            raw_news = market.news or []
+            
+            # Add all items and let template handle missing data
+            for item in raw_news:
+                item['ticker'] = 'MARKET'
+                news_items.append(item)
+                    
+    except Exception as e:
+        import traceback
+        print(f"Error in news route: {e}")
+        traceback.print_exc()
+    
+    context = get_common_context()
+    context.update({
+        'ticker': ticker,
+        'news_items': news_items,
+        'current_date': datetime.now().strftime('%A, %B %d, %Y')
+    })
+    return render_template('news.html', **context)
+
 if __name__ == '__main__':
     # Create templates directory if it doesn't exist
     os.makedirs('templates', exist_ok=True)
     
-    # Debug: Print registered routes
-    print("\n=== Flask Debug Info ===")
-    print("Registered routes:")
-    for rule in app.url_map.iter_rules():
-        print(f"  {rule.rule} -> {rule.endpoint}")
-    print(f"Templates directory exists: {os.path.exists('templates')}")
-    print(f"Analysis template exists: {os.path.exists('templates/analysis.html')}")
-    print("========================\n")
-    
-    # Start the browser automatically
-    threading.Thread(target=open_browser).start()
+    # Start the browser after a short delay
+    if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':  # Prevent duplicate tabs in debug mode
+        threading.Timer(1.25, open_browser).start()
     
     # Run the app
     try:
