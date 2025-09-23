@@ -1,22 +1,23 @@
 # 🌐 Market Analyzer Web Interface
 
-A powerful and user-friendly web application for comprehensive stock market analysis, featuring interactive charts, technical indicators, and a customizable watchlist. Now with enhanced basic analysis and detailed technical insights.
+A powerful and user-friendly web application for comprehensive stock market analysis, featuring interactive charts, technical indicators, and AI-powered price predictions. Get detailed technical analysis, fundamental metrics, and predictive insights for smarter trading decisions.
 
-## 🆕 Latest Updates (v1.2.0)
+## 🆕 Latest Updates (v1.3.0)
 
 ### New Features
-- **Enhanced Navigation**: Added a convenient shutdown button in the navigation bar for easy server management
-- **Improved News Section**: Completely revamped news display with proper formatting, images, and article links
-- **News Auto-Refresh**: News articles automatically refresh to show the latest updates
-- **Better Mobile Experience**: Improved news layout for mobile devices
+- **AI-Powered Price Predictions**: Advanced machine learning models for 1-day, 3-day, 7-day, 14-day, and 30-day price forecasts with confidence intervals
+- **Enhanced Technical Analysis**: Comprehensive technical indicators including RSI, MACD, Bollinger Bands, and moving averages
+- **Improved Chart Visualization**: Interactive charts with better tooltips, zooming, and comparison capabilities
+- **Responsive Design**: Optimized for all devices with improved mobile experience
 - **Moving Average Crossover Signals**: Clear buy/sell/hold signals based on 10-day and 30-day moving average crossovers
 - **Enhanced Signal Display**: Detailed signals with confidence levels, explanations, and actionable recommendations
 
 ### Improvements
-- **UI/UX**: Smoother animations, better visual feedback, and enhanced mobile responsiveness
-- **Performance**: Faster chart rendering and data processing
-- **Accessibility**: Better keyboard navigation and screen reader support
-- **Code Quality**: Removed debug output and improved error handling
+- **UI/UX**: Redesigned interface with dark/light mode support and improved data visualization
+- **Performance**: Optimized data fetching and processing for faster analysis
+- **Error Handling**: More descriptive error messages and graceful degradation
+- **Code Quality**: Refactored codebase with better documentation and type hints
+- **Security**: Enhanced input validation and error handling
 
 ### Bug Fixes
 - Fixed chart rendering issues on mobile devices
@@ -62,24 +63,46 @@ A powerful and user-friendly web application for comprehensive stock market anal
 
 ## 🚀 Quick Start
 
-1. **Install Dependencies**:
+### Prerequisites
+- Python 3.8+
+- pip (Python package manager)
+
+### Installation
+1. **Clone the repository**:
    ```bash
-   pip3 install flask yfinance pandas numpy
+   git clone https://github.com/yourusername/market-analyzer.git
+   cd market-analyzer
    ```
 
-2. **Run the Web Server**:
+2. **Install Dependencies**:
+   ```bash
+   pip3 install -r requirements.txt
+   ```
+   or
+   ```bash
+   pip3 install flask yfinance pandas numpy matplotlib scikit-learn
+   ```
+
+3. **Run the Web Server**:
    ```bash
    python3 app.py
    ```
-   - Your browser will open automatically to http://127.0.0.1:5001
+   - Your default browser will open automatically to http://127.0.0.1:5001
    - If the browser doesn't open automatically, you can manually navigate to the URL
 
-3. **Start Analyzing**:
-   - Enter a stock ticker (e.g., AAPL, MSFT, GOOG)
-   - Select your preferred time period
-   - Explore the interactive charts and technical indicators
+4. **Start Analyzing**:
+   - Enter a stock ticker (e.g., AAPL, MSFT, GOOG, NVDA)
+   - Select your preferred analysis type (Basic, Technical, Full, or Prediction)
+   - Choose a time period (1M, 3M, 6M, 1Y, 5Y, or MAX)
+   - Explore the interactive charts, technical indicators, and predictions
 
 ## 🖥️ Features
+
+### 📊 Analysis Types
+- **Basic Analysis**: Quick overview of stock performance and key metrics
+- **Technical Analysis**: Detailed technical indicators and chart patterns
+- **Full Analysis**: Comprehensive analysis combining technical and fundamental metrics
+- **Prediction Analysis**: AI-powered price forecasts with confidence intervals
 
 ### 📈 Trading Signals
 - **Moving Average Crossover**: Automated buy/sell signals based on 10-day and 30-day moving averages
@@ -91,6 +114,63 @@ A powerful and user-friendly web application for comprehensive stock market anal
 
 ### 📊 Interactive Charts & Analysis
 - **Price Action**: View OHLC candlesticks with volume
+- **Technical Indicators**:
+  - RSI (Relative Strength Index)
+  - MACD (Moving Average Convergence Divergence)
+  - Bollinger Bands
+  - Multiple Moving Averages (SMA 10, 20, 50, 200)
+- **Prediction Tools**:
+  - 1-day to 30-day price forecasts
+  - Confidence intervals for predictions
+  - Support and resistance levels
+  - Volatility analysis
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### Data Not Loading
+- Ensure you have a stable internet connection
+- Verify the stock ticker is correct and exists
+- Check browser console for JavaScript errors (F12 → Console)
+- Try clearing your browser cache or using incognito mode
+
+#### Analysis Not Displaying
+- Make sure all dependencies are installed correctly
+- Check the terminal for any Python errors
+- Verify that the Flask server is running without errors
+- Ensure you have the required permissions to access financial data
+
+#### Prediction Analysis Issues
+- Ensure you have all required Python packages installed
+- Check that the model files are in the correct location
+- Verify that the historical data is being loaded correctly
+
+## 📞 Support
+
+For additional help or to report issues, please:
+1. Check the [GitHub Issues](https://github.com/yourusername/market-analyzer/issues) page
+2. Open a new issue with detailed steps to reproduce the problem
+3. Include any error messages and your environment details
+
+## 🤝 Contributing
+
+We welcome contributions! Please follow these steps:
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Built with ❤️ using Python, Flask, and modern web technologies
+- Powered by Yahoo Finance for market data
+- Special thanks to all contributors who have helped improve this project
 - **Technical Indicators**:
   - RSI (14-period) with overbought/oversold signals
   - MACD (12/26/9) for trend identification

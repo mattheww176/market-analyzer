@@ -4,30 +4,465 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Market Analyzer</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/enhancements.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <!-- Base Typography -->
+    <style>
+        :root {
+            /* Typography */
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-heading: 'Poppins', 'Inter', system-ui, -apple-system, sans-serif;
+            
+            /* Base Colors */
+            --color-white: #ffffff;
+            --color-black: #000000;
+            
+            /* Primary Color Palette */
+            --color-primary-50: #eff6ff;
+            --color-primary-100: #dbeafe;
+            --color-primary-200: #bfdbfe;
+            --color-primary-300: #93c5fd;
+            --color-primary-400: #60a5fa;
+            --color-primary-500: #3b82f6;
+            --color-primary-600: #2563eb;
+            --color-primary-700: #1d4ed8;
+            --color-primary-800: #1e40af;
+            --color-primary-900: #1e3a8a;
+            --color-primary-950: #172554;
+            
+            /* Secondary Color Palette */
+            --color-secondary-50: #f0fdfa;
+            --color-secondary-100: #ccfbf1;
+            --color-secondary-200: #99f6e4;
+            --color-secondary-300: #5eead4;
+            --color-secondary-400: #2dd4bf;
+            --color-secondary-500: #14b8a6;
+            --color-secondary-600: #0d9488;
+            --color-secondary-700: #0f766e;
+            --color-secondary-800: #115e59;
+            --color-secondary-900: #134e4a;
+            
+            /* Neutral Colors */
+            --color-gray-50: #f9fafb;
+            --color-gray-100: #f3f4f6;
+            --color-gray-200: #e5e7eb;
+            --color-gray-300: #d1d5db;
+            --color-gray-400: #9ca3af;
+            --color-gray-500: #6b7280;
+            --color-gray-600: #4b5563;
+            --color-gray-700: #374151;
+            --color-gray-800: #1f2937;
+            --color-gray-900: #111827;
+            
+            /* Semantic Colors */
+            --color-success: #059669;
+            --color-error: #dc2626;
+            --color-warning: #d97706;
+            --color-info: #3b82f6;
+            
+            /* Background Colors */
+            --color-bg-primary: var(--color-white);
+            --color-bg-secondary: var(--color-gray-50);
+            --color-bg-tertiary: var(--color-gray-100);
+            
+            /* Text Colors */
+            --color-text-primary: var(--color-gray-900);
+            --color-text-secondary: var(--color-gray-600);
+            --color-text-tertiary: var(--color-gray-500);
+            --color-text-on-primary: var(--color-white);
+            
+            /* Border Colors */
+            --color-border-light: var(--color-gray-200);
+            --color-border-medium: var(--color-gray-300);
+            --color-border-dark: var(--color-gray-400);
+            
+            /* Shadow */
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            
+            /* Animation */
+            --transition-default: all 0.2s ease-in-out;
+            
+            /* Legacy variables for backward compatibility */
+            --text-gray-800: var(--color-gray-800);
+            --text-gray-900: var(--color-gray-900);
+        }
+        
+        body {
+            font-family: var(--font-sans);
+            color: var(--color-text-primary);
+            line-height: 1.625;
+            background-color: var(--color-bg-secondary);
+            transition: var(--transition-default);
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            color: var(--color-gray-900);
+            margin-top: 1.5em;
+            margin-bottom: 0.75em;
+            line-height: 1.2;
+        }
+        
+        h1 { 
+            font-size: 2.25rem;
+            line-height: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            color: var(--color-primary-900);
+        }
+        
+        @media (min-width: 768px) {
+            h1 {
+                font-size: 3rem;
+                line-height: 1;
+            }
+            h2 {
+                font-size: 2.25rem;
+                line-height: 2.5rem;
+            }
+            h3 {
+                font-size: 1.5rem;
+                line-height: 2rem;
+            }
+            h4 {
+                font-size: 1.25rem;
+                line-height: 1.75rem;
+            }
+        }
+        
+        h2 { 
+            font-size: 1.875rem;
+            line-height: 2.25rem;
+            font-weight: 700;
+            color: var(--color-primary-800);
+            letter-spacing: -0.025em;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            line-height: 2rem;
+            font-weight: 600;
+            color: var(--color-gray-800);
+        }
+        
+        h4 { 
+            font-size: 1.25rem;
+            line-height: 1.75rem;
+            font-weight: 600;
+            color: var(--color-gray-700);
+        }
+        
+        /* Enhanced link styles */
+        a {
+            color: var(--color-primary-600);
+            text-decoration: none;
+            transition: var(--transition-default);
+        }
+        
+        a:hover {
+            color: var(--color-primary-800);
+            text-decoration: underline;
+        }
+        
+        /* Button styles - only apply to buttons without existing classes */
+        button:not([class*="bg-"]):not([class*="btn-"]), .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            transition: var(--transition-default);
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        
+        .btn-primary {
+            background-color: var(--color-primary-600);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--color-primary-700);
+        }
+        
+        /* Card styles */
+        .card {
+            background: var(--color-bg-primary);
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            transition: var(--transition-default);
+            border: 1px solid var(--color-border-light);
+        }
+        
+        .card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+        
+        /* Form elements - only apply to elements without existing Tailwind classes */
+        input:not([class*="focus:ring"]):not([class*="border-"]), 
+        select:not([class*="focus:ring"]):not([class*="border-"]), 
+        textarea:not([class*="focus:ring"]):not([class*="border-"]) {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid var(--color-border-medium);
+            transition: var(--transition-default);
+        }
+        
+        input:not([class*="focus:ring"]):not([class*="border-"]):focus, 
+        select:not([class*="focus:ring"]):not([class*="border-"]):focus, 
+        textarea:not([class*="focus:ring"]):not([class*="border-"]):focus {
+            outline: none;
+            border-color: var(--color-primary-500);
+            box-shadow: 0 0 0 3px var(--color-primary-100);
+        }
+        
+        .prose:not(.analysis-results) {
+            max-width: 65ch;
+            color: var(--color-text-primary);
+            line-height: 1.7;
+        }
+        
+        .prose:not(.analysis-results) p {
+            margin-top: 1.2em;
+            margin-bottom: 1.2em;
+            color: var(--color-text-secondary);
+        }
+        
+        .prose:not(.analysis-results) a {
+            color: var(--color-primary-600);
+            text-decoration: none;
+            font-weight: 500;
+            border-bottom: 1px solid var(--color-primary-200);
+            transition: var(--transition-default);
+        }
+        
+        .prose:not(.analysis-results) a:hover {
+            color: var(--color-primary-800);
+            border-bottom-color: var(--color-primary-500);
+        }
+        
+        /* Ensure analysis results are not affected by prose styles */
+        .analysis-results {
+            max-width: none !important;
+        }
+        
+        /* Navigation styles */
+        nav {
+            background-color: var(--color-primary-700);
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.25rem;
+            transition: var(--transition-default);
+        }
+        
+        nav a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+        }
+        
+        /* Footer styles */
+        footer {
+            background-color: var(--color-gray-900);
+            color: var(--color-gray-300);
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+    </style>
 </head>
 <body class="bg-gray-100">
     <!-- Navigation -->
-    <nav class="bg-blue-600 text-white p-4">
-        <div class="container mx-auto flex justify-between items-center">
-            <a href="/" class="text-2xl font-bold">Market Analyzer</a>
-            <div class="flex items-center space-x-4">
-                <div class="space-x-4">
-                    <a href="/" class="hover:underline">Home</a>
-                    <a href="/analysis" class="hover:underline">Analysis</a>
-                    <a href="/watchlist" class="hover:underline">Watchlist</a>
-                    <a href="/screener" class="hover:underline">Screener</a>
-                    <a href="/news" class="hover:underline">News</a>
+    <!-- Navigation Styles -->
+    <style>
+        .nav-container {
+            position: relative;
+            z-index: 40;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background-color: var(--color-primary-700);
+            transition: all 0.3s ease;
+        }
+        
+        /* Ensure charts and other content render properly */
+        canvas {
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Fix any potential conflicts with chart containers */
+        .chart-container, #stockChart {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .nav-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 4rem;
+        }
+        
+        .nav-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: transform 0.2s ease;
+        }
+        
+        .nav-logo:hover {
+            transform: translateY(-1px);
+        }
+        
+        .nav-logo i {
+            font-size: 1.75rem;
+            color: var(--color-secondary-300);
+        }
+        
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .nav-link i {
+            font-size: 1.1em;
+            width: 1.25rem;
+            text-align: center;
+        }
+        
+        .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        .nav-link.active {
+            color: white;
+            font-weight: 600;
+        }
+        
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 1rem;
+            right: 1rem;
+            height: 3px;
+            background-color: var(--color-secondary-400);
+            border-radius: 3px 3px 0 0;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .nav-divider {
+            width: 1px;
+            height: 1.5rem;
+            background-color: rgba(255, 255, 255, 0.2);
+            margin: 0 0.5rem;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @media (max-width: 768px) {
+            .nav-content {
+                padding: 0 0.75rem;
+            }
+            
+            .nav-links {
+                gap: 0;
+            }
+            
+            .nav-link span {
+                display: none;
+            }
+            
+            .nav-link i {
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+    
+    <nav class="nav-container">
+        <div class="nav-content">
+            <a href="/" class="nav-logo">
+                <i class="fas fa-chart-line"></i>
+                <span>Market Analyzer</span>
+            </a>
+            
+            <div class="flex items-center">
+                <div class="nav-links">
+                    <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}" title="Home">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </a>
+                    <a href="/analysis" class="nav-link {% if request.path.startswith('/analysis') %}active{% endif %}" title="Analysis">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Analysis</span>
+                    </a>
+                    <a href="/watchlist" class="nav-link {% if request.path.startswith('/watchlist') %}active{% endif %}" title="Watchlist">
+                        <i class="fas fa-star"></i>
+                        <span>Watchlist</span>
+                    </a>
+                    <a href="/screener" class="nav-link {% if request.path.startswith('/screener') %}active{% endif %}" title="Screener">
+                        <i class="fas fa-filter"></i>
+                        <span>Screener</span>
+                    </a>
+                    <a href="/news" class="nav-link {% if request.path.startswith('/news') %}active{% endif %}" title="News">
+                        <i class="fas fa-newspaper"></i>
+                        <span>News</span>
+                    </a>
                 </div>
                 {% if show_shutdown %}
-                <div class="border-l border-blue-500 h-6"></div>
+                <div class="nav-divider"></div>
                 <button 
                     onclick="shutdownServer()"
-                    class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-4 rounded-full text-sm transition-colors duration-200">
-                    🛑 Shutdown Server
+                    class="ml-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-full text-sm transition-all duration-200 flex items-center gap-2"
+                    title="Shutdown Server">
+                    <i class="fas fa-power-off"></i>
+                    <span class="hidden md:inline">Shutdown</span>
                 </button>
                 {% endif %}
                 

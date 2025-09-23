@@ -356,7 +356,10 @@ def analyze():
         # For prediction analysis, we don't need to capture stdout
         if analysis_type == 'prediction':
             try:
+                print(f"[DEBUG] Running prediction analysis for {ticker}", file=sys.stderr)
                 output = run_prediction_analysis(ticker, days)
+                print(f"[DEBUG] Prediction output length: {len(output) if output else 0}", file=sys.stderr)
+                print(f"[DEBUG] Prediction output preview: {output[:200] if output else 'None'}...", file=sys.stderr)
                 if not output:
                     raise ValueError("No output from prediction analysis")
                 return jsonify({

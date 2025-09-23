@@ -99,7 +99,10 @@ async function handleFormSubmit(e) {
         }
         
         // Show loading state
-        loadingStatus.textContent = 'Fetching data...';
+        const loadingStatus = document.getElementById('loadingStatus');
+        if (loadingStatus) {
+            loadingStatus.textContent = 'Fetching data...';
+        }
         
         // Fetch both chart data and analysis in parallel
         const [chartResponse, analysisResponse] = await Promise.all([
@@ -107,7 +110,7 @@ async function handleFormSubmit(e) {
             fetch('/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `ticker=${ticker}&days=${days}&analysisType=${analysisType}`
+                body: `ticker=${ticker}&days=${days}&analysis_type=${analysisType}`
             })
         ]);
         
@@ -118,6 +121,9 @@ async function handleFormSubmit(e) {
         
         const chartDataResponse = await chartResponse.json();
         const analysisData = await analysisResponse.json();
+        
+        console.log('Chart data response:', chartDataResponse);
+        console.log('Analysis data response:', analysisData);
         
         // Store chart data globally for tab switching
         chartData = chartDataResponse;
@@ -168,7 +174,7 @@ async function handleFormSubmit(e) {
                     
                     analysisText.innerHTML = `
                         <div class="bg-white dark:bg-gray-800 rounded-lg p-4 shadow">
-                            <div class="prose dark:prose-invert max-w-none">
+                            <div class="analysis-results prose dark:prose-invert max-w-none">
                                 ${formattedAnalysis}
                             </div>
                         </div>`;
