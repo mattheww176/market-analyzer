@@ -657,6 +657,62 @@ def get_stock_fundamentals(ticker):
             'details': str(e)
         }), 500
 
+@app.route('/watchlist')
+def watchlist():
+    """Display the user's stock watchlist."""
+    return render_template('watchlist.html', **get_common_context())
+
+@app.route('/api/stock/<ticker>')
+def get_stock_info(ticker):
+    """Get basic stock information for the watchlist."""
+    try:
+        print(f"[DEBUG] Fetching data for ticker: {ticker}")
+        # Get stock data
+        stock = yf.Ticker(ticker)
+        
+        # Get historical data first (more reliable than info)
+        hist = stock.history(period='5d')
+        
+        if hist.empty:
+            print(f"[DEBUG] No historical data found for {ticker}")
+            return jsonify({
+                'error': f'No data found for {ticker}'
+            }), 404
+        
+        # Use the most recent price as current price
+        current_price = hist['Close'].iloc[-1]
+        
+        # Calculate change if we have at least 2 days of data
+        if len(hist) >= 2:
+            prev_close = hist['Close'].iloc[-2]
+            price_change = current_price - prev_close
+            percent_change = (price_change / prev_close) * 100
+        else:
+            print(f"[DEBUG] Only one day of data for {ticker}, using zero change")
+            price_change = 0
+            percent_change = 0
+            prev_close = current_price
+        
+        print(f"[DEBUG] Successfully fetched data for {ticker}")
+        return jsonify({
+            'ticker': ticker.upper(),
+            'price': current_price,  # For backward compatibility
+            'current_price': current_price,
+            'previous_close': prev_close,
+            'change': price_change,
+            'percent_change': percent_change,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        import traceback
+        error_msg = f"Error fetching stock data for {ticker}: {str(e)}\n{traceback.format_exc()}"
+        print(f"[ERROR] {error_msg}")
+        return jsonify({
+            'error': f'Failed to fetch data for {ticker}',
+            'details': str(e)
+        }), 500
+
 @app.route('/news')
 def news():
     """Display market news and stock-specific news if a ticker is provided."""

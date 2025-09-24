@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+
+{% block title %}Watchlist - Market Analyzer{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-6xl mx-auto">
+        <!-- Page Header -->
+        <div class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">My Watchlist</h1>
+            <p class="text-gray-600 dark:text-gray-300">Track your favorite stocks and monitor their performance</p>
+        </div>
+
+        <!-- Add Ticker Form -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4">Add to Watchlist</h2>
+            <form id="addToWatchlistForm" class="flex flex-col sm:flex-row gap-4">
+                <div class="flex-grow">
+                    <label for="ticker" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ticker Symbol</label>
+                    <input type="text" id="ticker" name="ticker" 
+                           class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                           placeholder="e.g., AAPL, MSFT, GOOGL" required>
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" 
+                            class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md shadow-sm transition-colors duration-200 flex items-center gap-2">
+                        <i class="fas fa-plus"></i>
+                        <span>Add to Watchlist</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Watchlist Table -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 watchlist-table">
+                    <thead class="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Symbol</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Price</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Change</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">% Change</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="watchlistTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        <!-- Watchlist items will be dynamically inserted here -->
+                        <tr id="emptyWatchlistMessage">
+                            <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                Your watchlist is empty. Add some stocks to get started!
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Watchlist Item Template (Hidden, used by JavaScript) -->
+<template id="watchlistItemTemplate">
+    <tr class="watchlist-item hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
+        <td class="px-6 py-4 whitespace-nowrap">
+            <div class="flex items-center">
+                <span class="ticker-symbol font-medium text-gray-900 dark:text-white"></span>
+            </div>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap">
+            <span class="current-price font-medium"></span>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap">
+            <span class="price-change"></span>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap">
+            <span class="percent-change"></span>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+            <div class="flex space-x-2">
+                <button class="analyze-btn text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300" title="Analyze">
+                    <i class="fas fa-chart-bar"></i>
+                </button>
+                <button class="refresh-btn text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300" title="Refresh">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button class="remove-btn text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" title="Remove">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+        </td>
+    </tr>
+</template>
+
+<style>
+    /* Custom styles for watchlist */
+    .positive-change {
+        color: #10b981; /* Green */
+        font-weight: 500;
+    }
+    
+    .negative-change {
+        color: #ef4444; /* Red */
+        font-weight: 500;
+    }
+    
+    .no-change {
+        color: #6b7280; /* Gray */
+    }
+    
+    .watchlist-item {
+        transition: background-color 0.2s ease-in-out;
+    }
+    
+    .watchlist-item:hover {
+        background-color: rgba(243, 244, 246, 0.5); /* Light gray for light mode */
+    }
+    
+    .dark .watchlist-item:hover {
+        background-color: rgba(31, 41, 55, 0.5); /* Dark gray for dark mode */
+    }
+    
+    /* Ensure table cells have proper padding */
+    .watchlist-table td, 
+    .watchlist-table th {
+        padding: 0.75rem 1rem;
+        vertical-align: middle;
+    }
+    
+    /* Loading state */
+    @keyframes pulse {
+        0%, 100% { opacity: 0.6; }
+        50% { opacity: 1; }
+    }
+    
+    .loading {
+        animation: pulse 1.5s ease-in-out infinite;
+        color: #9ca3af;
+    }
+    
+    /* Refresh button animation */
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    
+    .fa-spin {
+        animation: spin 1s linear infinite;
+    }
+    
+    .refresh-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+        const watchlistTableBody = document.getElementById('watchlistTableBody');
+        const emptyWatchlistMessage = document.getElementById('emptyWatchlistMessage');
+        const addToWatchlistForm = document.getElementById('addToWatchlistForm');
+        const tickerInput = document.getElementById('ticker');
+        
+        // Load watchlist on page load
+        if (watchlist.length > 0) {
+            emptyWatchlistMessage.style.display = 'none';
+            updateWatchlistUI(watchlist);
+        }
+        
+        // Auto-uppercase ticker input as user types
+        tickerInput.addEventListener('input', function(e) {
+            const cursorPos = e.target.selectionStart;
+            e.target.value = e.target.value.toUpperCase();
+            e.target.setSelectionRange(cursorPos, cursorPos);
+        });
+        
+        // Add ticker to watchlist
+        addToWatchlistForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const ticker = tickerInput.value.trim().toUpperCase();
+            
+            if (!ticker) return;
+            
+            // Update input field with uppercase value
+            tickerInput.value = ticker;
+            
+            // Check if ticker already exists
+            if (watchlist.includes(ticker)) {
+                alert(`${ticker} is already in your watchlist.`);
+                return;
+            }
+            
+            // Add to watchlist
+            watchlist.push(ticker);
+            saveWatchlist();
+            updateWatchlistUI(watchlist);
+            
+            // Clear input
+            tickerInput.value = '';
+            
+            // Hide empty message if it's the first item
+            if (watchlist.length === 1) {
+                emptyWatchlistMessage.style.display = 'none';
+            }
+            
+            // Fetch and display stock data
+            fetchStockData(ticker);
+        });
+        
+        // Handle watchlist actions
+        watchlistTableBody.addEventListener('click', function(e) {
+            // Handle refresh button click
+            if (e.target.closest('.refresh-btn')) {
+                const row = e.target.closest('tr');
+                const ticker = row.querySelector('.ticker-symbol').textContent;
+                
+                // Show loading state
+                const refreshBtn = e.target.closest('.refresh-btn');
+                refreshBtn.disabled = true;
+                refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                
+                // Refresh the stock data
+                fetchStockData(ticker).then(() => {
+                    // Data loaded successfully, stop the spinner immediately
+                    refreshBtn.disabled = false;
+                    refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+                }).catch(error => {
+                    console.error('Error refreshing stock data:', error);
+                    // On error, still stop the spinner after a short delay
+                    setTimeout(() => {
+                        refreshBtn.disabled = false;
+                        refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+                    }, 500);
+                });
+                
+                return;
+            }
+            
+            // Handle remove button click
+            if (e.target.closest('.remove-btn')) {
+                const row = e.target.closest('tr');
+                const ticker = row.querySelector('.ticker-symbol').textContent;
+                const index = watchlist.indexOf(ticker);
+                
+                if (index > -1) {
+                    watchlist.splice(index, 1);
+                    saveWatchlist();
+                    row.remove();
+                    
+                    // Show empty message if watchlist is empty
+                    if (watchlist.length === 0) {
+                        emptyWatchlistMessage.style.display = '';
+                    }
+                }
+            }
+            
+            // Handle analyze button click
+            if (e.target.closest('.analyze-btn')) {
+                const ticker = e.target.closest('tr').querySelector('.ticker-symbol').textContent;
+                window.location.href = `/analysis?ticker=${ticker}`;
+            }
+        });
+        
+        // Save watchlist to localStorage
+        function saveWatchlist() {
+            localStorage.setItem('watchlist', JSON.stringify(watchlist));
+        }
+        
+        // Update the watchlist UI
+        function updateWatchlistUI(tickers) {
+            // Clear existing rows (except the empty message)
+            const existingRows = document.querySelectorAll('.watchlist-item');
+            existingRows.forEach(row => row.remove());
+            
+            // Add new rows
+            tickers.forEach(ticker => {
+                const template = document.getElementById('watchlistItemTemplate');
+                const clone = template.content.cloneNode(true);
+                
+                clone.querySelector('.ticker-symbol').textContent = ticker;
+                
+                // Add loading state
+                clone.querySelector('.current-price').textContent = 'Loading...';
+                clone.querySelector('.price-change').textContent = '-';
+                clone.querySelector('.percent-change').textContent = '-';
+                
+                watchlistTableBody.appendChild(clone);
+                
+                // Fetch stock data
+                fetchStockData(ticker);
+            });
+        }
+        
+        // Fetch stock data from the server
+        function fetchStockData(ticker) {
+            console.log(`Fetching data for ${ticker}`);
+            return fetch(`/api/stock/${ticker}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log(`Data received for ${ticker}:`, data);
+                    updateStockRow(ticker, data);
+                    return data; // Return the data for the promise chain
+                })
+                .catch(error => {
+                    console.error(`Error fetching data for ${ticker}:`, error);
+                    updateStockRow(ticker, { 
+                        error: 'Failed to fetch data',
+                        details: error.message 
+                    });
+                    throw error; // Re-throw the error for the promise chain
+                });
+        }
+        
+        // Update a single stock row with data
+        function updateStockRow(ticker, data) {
+            console.log(`Updating row for ${ticker} with data:`, data);
+            // Find the row by looking for the ticker symbol text content
+            const tickerElements = document.querySelectorAll('.ticker-symbol');
+            let row = null;
+            for (let element of tickerElements) {
+                if (element.textContent.trim() === ticker) {
+                    row = element;
+                    break;
+                }
+            }
+            if (!row) {
+                console.error(`Could not find row for ticker: ${ticker}`);
+                return;
+            }
+            
+            const parentRow = row.closest('tr');
+            
+            if (data.error) {
+                console.error(`Error for ${ticker}:`, data.error, data.details || '');
+                parentRow.querySelector('.current-price').textContent = 'Error';
+                parentRow.querySelector('.price-change').textContent = '-';
+                parentRow.querySelector('.percent-change').textContent = '-';
+                return;
+            }
+            
+            try {
+                // Update price
+                const price = data.current_price || data.price || 0;
+                parentRow.querySelector('.current-price').textContent = 
+                    typeof price === 'number' ? price.toLocaleString('en-US', { 
+                        style: 'currency', 
+                        currency: 'USD',
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }) : price;
+                
+                // Update change
+                const change = data.change || 0;
+                const changeElement = parentRow.querySelector('.price-change');
+                changeElement.textContent = 
+                    typeof change === 'number' 
+                        ? (change >= 0 ? `+$${Math.abs(change).toFixed(2)}` : `-$${Math.abs(change).toFixed(2)}`)
+                        : change;
+                
+                // Update percent change
+                const percentChange = data.percent_change || 0;
+                const percentChangeElement = parentRow.querySelector('.percent-change');
+                percentChangeElement.textContent = 
+                    typeof percentChange === 'number' 
+                        ? (percentChange >= 0 
+                            ? `+${percentChange.toFixed(2)}%` 
+                            : `${percentChange.toFixed(2)}%`)
+                        : percentChange;
+                
+                // Set color based on change
+                if (change > 0) {
+                    changeElement.className = 'price-change positive-change';
+                    percentChangeElement.className = 'percent-change positive-change';
+                } else if (change < 0) {
+                    changeElement.className = 'price-change negative-change';
+                    percentChangeElement.className = 'percent-change negative-change';
+                } else {
+                    changeElement.className = 'price-change no-change';
+                    percentChangeElement.className = 'percent-change no-change';
+                }
+                
+            } catch (error) {
+                console.error(`Error updating row for ${ticker}:`, error);
+                parentRow.querySelector('.current-price').textContent = 'Error';
+                parentRow.querySelector('.price-change').textContent = '-';
+                parentRow.querySelector('.percent-change').textContent = '-';
+            }
+        }
+    });
+</script>
+{% endblock %}
