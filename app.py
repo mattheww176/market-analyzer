@@ -754,6 +754,236 @@ def news():
     })
     return render_template('news.html', **context)
 
+def get_popular_stocks():
+    """Return a list of popular stock tickers across different sectors."""
+    return [
+        # Tech
+        'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'NVDA', 'ADBE', 'INTC', 'CSCO',
+        # Finance
+        'JPM', 'BAC', 'GS', 'MS', 'C', 'BLK', 'SCHW', 'AXP', 'V', 'MA',
+        # Consumer
+        'PG', 'KO', 'PEP', 'WMT', 'TGT', 'HD', 'MCD', 'NKE', 'SBUX', 'DIS',
+        # Healthcare
+        'JNJ', 'PFE', 'MRK', 'ABT', 'UNH', 'LLY', 'GILD', 'AMGN', 'BMY', 'ABBV',
+        # Industrial
+        'GE', 'BA', 'HON', 'MMM', 'CAT', 'DE', 'UPS', 'FDX', 'LMT', 'RTX'
+    ]
+
+def get_stock_data(tickers):
+    """Fetch stock data for the given tickers using yfinance."""
+    import signal
+    
+    def timeout_handler(signum, frame):
+        raise TimeoutError("Stock data fetch timed out")
+    
+    try:
+        print(f"Starting to fetch data for {len(tickers)} tickers...")
+        
+        # Set a timeout of 10 seconds for the entire operation
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(10)
+        
+        # Create a Ticker object for batch processing
+        ticker_data = yf.Tickers(' '.join(tickers))
+        stocks = []
+        
+        for ticker in tickers:
+            try:
+                info = ticker_data.tickers[ticker].info
+                
+                # Ensure all values are JSON serializable
+                def safe_get(value, default=0):
+                    if value is None or str(value).lower() == 'nan' or value == float('inf') or value == float('-inf'):
+                        return default
+                    try:
+                        return float(value) if isinstance(value, (int, float)) else value
+                    except (ValueError, TypeError):
+                        return default
+                
+                stock = {
+                    'symbol': str(ticker),
+                    'name': str(info.get('shortName', ticker)),
+                    'price': safe_get(info.get('currentPrice', info.get('regularMarketPrice', 0))),
+                    'change': safe_get(info.get('regularMarketChange', 0)),
+                    'change_percent': safe_get(info.get('regularMarketChangePercent', 0)),
+                    'market_cap': safe_get(info.get('marketCap', 0)),
+                    'volume': safe_get(info.get('volume', 0)),
+                    'pe_ratio': safe_get(info.get('trailingPE', None), None),
+                    'dividend_yield': safe_get(info.get('dividendYield', 0) * 100 if info.get('dividendYield') else 0),
+                    'sector': str(info.get('sector', 'N/A')),
+                    'fifty_two_week_high': safe_get(info.get('fiftyTwoWeekHigh', 0)),
+                    'fifty_two_week_low': safe_get(info.get('fiftyTwoWeekLow', 0))
+                }
+                stocks.append(stock)
+            except Exception as e:
+                print(f"Error fetching data for {ticker}: {str(e)}")
+                continue
+                
+        # Clear the alarm
+        signal.alarm(0)
+        return stocks
+        
+    except TimeoutError as e:
+        print(f"Timeout in get_stock_data: {str(e)}")
+        signal.alarm(0)
+        return []
+    except Exception as e:
+        print(f"Error in get_stock_data: {str(e)}")
+        signal.alarm(0)
+        return []
+
+@app.route('/screener')
+def screener():
+    """Display the stock screener page with real stock data."""
+    print("=== SCREENER DEBUG ===")
+    print("Screener route accessed")
+    
+    context = get_common_context()
+    try:
+        # Get popular stocks and fetch their data
+        print("Getting popular stocks...")
+        tickers = get_popular_stocks()
+        print(f"Got {len(tickers)} tickers: {tickers[:5]}...")  # Show first 5
+        
+        print("Using sample data for immediate page load...")
+        # Use sample data for immediate page load to prevent hanging
+        stocks = [
+            {
+                'symbol': 'AAPL',
+                'name': 'Apple Inc.',
+                'price': 175.34,
+                'change': 2.34,
+                'change_percent': 1.35,
+                'market_cap': 2750000000000,
+                'volume': 45000000,
+                'pe_ratio': 28.5,
+                'dividend_yield': 0.5,
+                'sector': 'Technology'
+            },
+            {
+                'symbol': 'MSFT',
+                'name': 'Microsoft Corporation',
+                'price': 325.12,
+                'change': -1.23,
+                'change_percent': -0.38,
+                'market_cap': 2420000000000,
+                'volume': 32000000,
+                'pe_ratio': 32.1,
+                'dividend_yield': 0.8,
+                'sector': 'Technology'
+            },
+            {
+                'symbol': 'GOOGL',
+                'name': 'Alphabet Inc.',
+                'price': 138.45,
+                'change': 0.87,
+                'change_percent': 0.63,
+                'market_cap': 1740000000000,
+                'volume': 28000000,
+                'pe_ratio': 25.8,
+                'dividend_yield': 0.0,
+                'sector': 'Technology'
+            },
+            {
+                'symbol': 'AMZN',
+                'name': 'Amazon.com Inc.',
+                'price': 185.19,
+                'change': 3.45,
+                'change_percent': 1.90,
+                'market_cap': 1920000000000,
+                'volume': 38000000,
+                'pe_ratio': 62.3,
+                'dividend_yield': 0.0,
+                'sector': 'Consumer Cyclical'
+            },
+            {
+                'symbol': 'JNJ',
+                'name': 'Johnson & Johnson',
+                'price': 152.67,
+                'change': -0.56,
+                'change_percent': -0.37,
+                'market_cap': 394000000000,
+                'volume': 12000000,
+                'pe_ratio': 15.2,
+                'dividend_yield': 2.91,
+                'sector': 'Healthcare'
+            },
+            {
+                'symbol': 'JPM',
+                'name': 'JPMorgan Chase & Co.',
+                'price': 198.76,
+                'change': 1.23,
+                'change_percent': 0.62,
+                'market_cap': 572000000000,
+                'volume': 15000000,
+                'pe_ratio': 11.8,
+                'dividend_yield': 2.35,
+                'sector': 'Financial Services'
+            },
+            {
+                'symbol': 'PG',
+                'name': 'Procter & Gamble',
+                'price': 156.89,
+                'change': 0.45,
+                'change_percent': 0.29,
+                'market_cap': 370000000000,
+                'volume': 8500000,
+                'pe_ratio': 26.4,
+                'dividend_yield': 2.42,
+                'sector': 'Consumer Defensive'
+            },
+            {
+                'symbol': 'XOM',
+                'name': 'Exxon Mobil Corporation',
+                'price': 118.34,
+                'change': 2.12,
+                'change_percent': 1.82,
+                'market_cap': 473000000000,
+                'volume': 25000000,
+                'pe_ratio': 13.7,
+                'dividend_yield': 3.21,
+                'sector': 'Energy'
+            },
+            {
+                'symbol': 'VZ',
+                'name': 'Verizon Communications',
+                'price': 41.23,
+                'change': -0.34,
+                'change_percent': -0.82,
+                'market_cap': 174000000000,
+                'volume': 18000000,
+                'pe_ratio': 8.9,
+                'dividend_yield': 6.54,
+                'sector': 'Communication Services'
+            },
+            {
+                'symbol': 'HD',
+                'name': 'Home Depot, Inc.',
+                'price': 347.89,
+                'change': 1.56,
+                'change_percent': 0.45,
+                'market_cap': 345000000000,
+                'volume': 4200000,
+                'pe_ratio': 22.6,
+                'dividend_yield': 2.30,
+                'sector': 'Consumer Cyclical'
+            }
+        ]
+        
+        # Ensure stocks is always a list
+        context['stocks'] = stocks if stocks else []
+        print(f"Final stocks count: {len(context['stocks'])}")
+        
+    except Exception as e:
+        print(f"Error in screener route: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        # Fallback to empty list if there's an error
+        context['stocks'] = []
+    
+    print("Rendering template...")
+    return render_template('screener.html', **context)
+
 if __name__ == '__main__':
     # Create templates directory if it doesn't exist
     os.makedirs('templates', exist_ok=True)

@@ -92,22 +92,25 @@ A powerful and user-friendly web application for comprehensive stock market anal
 
 4. **Start Analyzing**:
    - Enter a stock ticker (e.g., AAPL, MSFT, GOOG, NVDA)
+   - Choose time period for analysis (1D, 1W, 1M, 3M, 1Y, 5Y, MAX)
    - Select your preferred analysis type (Basic, Technical, Full, or Prediction)
-   - Choose a time period (1M, 3M, 6M, 1Y, 5Y, or MAX)
    - Explore the interactive charts, technical indicators, and predictions
 
 ## 🖥️ Features
 
 ### 📊 Analysis Types
 - **Basic Analysis**: Quick overview of stock performance and key metrics
-- **Technical Analysis**: Detailed technical indicators and chart patterns
-- **Full Analysis**: Comprehensive analysis combining technical and fundamental metrics
-- **Prediction Analysis**: AI-powered price forecasts with confidence intervals
+- **Technical Analysis**: View detailed technical indicators and patterns for any stock
+- **Signal Detection**: Get buy/sell signals based on technical indicators
+- **Interactive Charts**: Visualize stock data with interactive charts
+- **Watchlist**: Track your favorite stocks with real-time price updates
+- **Responsive Design**: Works on both desktop and mobile devices
 
 ### 📈 Trading Signals
 - **Moving Average Crossover**: Automated buy/sell signals based on 10-day and 30-day moving averages
   - **Bullish Signal**: When 10-day MA crosses above 30-day MA
   - **Bearish Signal**: When 10-day MA crosses below 30-day MA
+{{ ... }}
   - **Confidence Levels**: High/Medium/Low based on volume and trend strength
   - **Recommendations**: Actionable trading suggestions with price targets
   - **Timeframe Analysis**: Signals for different time horizons (short/medium/long term)
