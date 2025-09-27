@@ -1,55 +1,28 @@
 # Core data analysis and visualization
-import yfinance as yf
-import pandas as pd
-import numpy as np
 import os
-import matplotlib
-# Try to use Qt5Agg backend first, as it's more reliable
 import sys
-import platform
-
-# Set the backend before importing pyplot
-if 'matplotlib.pyplot' in sys.modules:
-    # If pyplot is already imported, we need to restart the kernel
-    print("\n⚠️ matplotlib.pyplot already imported. Please restart the Python kernel and try again.")
-    sys.exit(1)
-
-try:
-    # Try Qt5Agg first (most reliable for interactive plots)
-    matplotlib.use('Qt5Agg')
-    import matplotlib.pyplot as plt
-    print("\nℹ️ Using Qt5Agg backend for plotting")
-    
-    # Enable interactive mode
-    plt.ion()
-    
-except Exception as e:
-    print(f"\n⚠️ Could not use Qt5Agg: {e}")
-    
-    # Fall back to the default backend
-    import matplotlib.pyplot as plt
-    print("⚠️ Using default matplotlib backend. Plots may not display.")
-    print("   To fix this, install PyQt5: pip install PyQt5")
-
-# Try to use IPython's display if available
-try:
-    from IPython import get_ipython
-    ipython = get_ipython()
-    if ipython is not None:
-        ipython.magic('matplotlib inline')
-        print("\nℹ️ Using IPython inline display for plots")
-except:
-    pass  # Not in IPython, continue with standard matplotlib
+import logging
 from datetime import datetime, timedelta
-import sys
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-import argparse
+from typing import Dict, List, Optional, Tuple, Union
+
+import matplotlib
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+import yfinance as yf
+from plotly.subplots import make_subplots
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+
+# Configure matplotlib to use a non-interactive backend for server use
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
+# Disable unnecessary logging
+logging.getLogger('matplotlib').setLevel(logging.WARNING)
+logging.getLogger('yfinance').setLevel(logging.WARNING)
+
+# Optional imports with graceful fallbacks
 try:
     from twilio.rest import Client
     TWILIO_AVAILABLE = True
@@ -616,7 +589,7 @@ def scan_breakout_stocks(lookback_days=20):
     print("=" * 70)
     return breakout_stocks[:10]
 
-def predict_stock_prices(data, ticker, days_ahead=[1, 3, 7, 14]):
+def predict_stock_prices(data, ticker, days_ahead=[1, 3, 7, 14], verbose=False):
     """
     Predict future stock prices using multiple technical indicators and market context.
     
@@ -624,6 +597,7 @@ def predict_stock_prices(data, ticker, days_ahead=[1, 3, 7, 14]):
         data: DataFrame containing stock data (OHLCV)
         ticker: Stock ticker symbol
         days_ahead: List of days to predict ahead
+        verbose: If True, print debug information
         
     Returns:
         Dictionary containing predictions and analysis
@@ -632,14 +606,14 @@ def predict_stock_prices(data, ticker, days_ahead=[1, 3, 7, 14]):
     import yfinance as yf
     import pandas as pd
     
-    # Only show debug info if DEBUG environment variable is set
-    import os
-    if os.environ.get('DEBUG'):
-        print(f"\nDEBUG: Inside predict_stock_prices for {ticker}")
-        print(f"DEBUG: Data columns: {data.columns.tolist()}")
-        print(f"DEBUG: Data shape: {data.shape}")
-        print(f"DEBUG: First few rows of data:\n{data.head()}")
-        print(f"DEBUG: yfinance version: {yf.__version__}")
+    # Suppress warnings
+    import warnings
+    warnings.filterwarnings('ignore')
+    
+    # Only show debug info if verbose is True
+    if verbose:
+        print(f"\n📊 Running prediction analysis for {ticker}")
+        print(f"📅 Using {len(data)} days of historical data")
     try:
         # Create a clean DataFrame with just the close prices
         if isinstance(data, pd.DataFrame):
@@ -659,15 +633,15 @@ def predict_stock_prices(data, ticker, days_ahead=[1, 3, 7, 14]):
                     # Handle case where data['Close'] is a DataFrame
                     df = close_series.iloc[:, 0].to_frame('Close')
             else:
-                print("Error: Could not find 'Close' prices in the data")
+                # Could not find 'Close' prices in the data
                 return None
         else:
-            print("Error: Invalid data format")
+            # Invalid data format
             return None
             
         # Ensure we have enough data
         if len(df) < 30:
-            print(f"\n⚠️ Not enough data for predictions (need at least 30 days, have {len(df)})")
+            # Not enough data for predictions
             return None
             
         # Calculate basic indicators
@@ -805,78 +779,80 @@ def predict_stock_prices(data, ticker, days_ahead=[1, 3, 7, 14]):
             'price_vs_ma50': current['Price_vs_MA50']
         }
         
-        # Print comprehensive analysis
-        print(f"\n=== Price Predictions for {ticker} ===")
-        print(f"Current Price: ${current_price:.2f}")
-        print("\n📊 Technical Indicators:")
-        print(f"• RSI: {current['RSI']:.1f} (30=oversold, 70=overbought)")
-        print(f"• 5-Day Momentum: {current['Momentum_5']*100:+.1f}%")
-        print(f"• 10-Day Momentum: {current['Momentum_10']*100:+.1f}%")
-        print(f"• 20-Day Momentum: {current['Momentum_20']*100:+.1f}%")
-        print(f"• 50-Day Momentum: {current['Momentum_50']*100:+.1f}%")
-        print(f"• Volatility (annualized): {current['Volatility']*100:.1f}%")
-        print(f"• Price vs 20-day MA: {current['Price_vs_MA20']:+.1f}%")
-        print(f"• Price vs 50-day MA: {current['Price_vs_MA50']:+.1f}%")
-        
-        print("\n🔮 Price Predictions:")
-        for days, price in sorted(predictions.items()):
-            change_pct = (price / current_price - 1) * 100
-            conf = confidence.get(days, 50)
-            print(f"• {days} day{'s' if days > 1 else ''}: ${price:.2f} ({change_pct:+.1f}%)")
-            print(f"  Confidence: {'█' * int(conf/10)}{'░' * (10 - int(conf/10))} {conf:.0f}%")
+        # Only print analysis if verbose mode is enabled
+        if verbose:
+            print(f"\n=== Price Predictions for {ticker} ===")
+            print(f"Current Price: ${current_price:.2f}")
+            print("\n📊 Technical Indicators:")
+            print(f"• RSI: {current['RSI']:.1f} (30=oversold, 70=overbought)")
+            print(f"• 5-Day Momentum: {current['Momentum_5']*100:+.1f}%")
+            print(f"• 10-Day Momentum: {current['Momentum_10']*100:+.1f}%")
+            print(f"• 20-Day Momentum: {current['Momentum_20']*100:+.1f}%")
+            print(f"• 50-Day Momentum: {current['Momentum_50']*100:+.1f}%")
+            print(f"• Volatility (annualized): {current['Volatility']*100:.1f}%")
+            print(f"• Price vs 20-day MA: {current['Price_vs_MA20']:+.1f}%")
+            print(f"• Price vs 50-day MA: {current['Price_vs_MA50']:+.1f}%")
             
-        print("\n📈 Market Context:")
-        if current['RSI'] > 70:
-            print("• RSI indicates overbought conditions (potential pullback risk)")
-        elif current['RSI'] < 30:
-            print("• RSI indicates oversold conditions (potential rebound opportunity)")
-        else:
-            print("• RSI in neutral territory")
+            print("\n🔮 Price Predictions:")
+            for days, price in sorted(predictions.items()):
+                change_pct = (price / current_price - 1) * 100
+                conf = confidence.get(days, 50)
+                print(f"• {days} day{'s' if days > 1 else ''}: ${price:.2f} ({change_pct:+.1f}%)")
+                print(f"  Confidence: {'█' * int(conf/10)}{'░' * (10 - int(conf/10))} {conf:.0f}%")
+                
+            print("\n📈 Market Context:")
+            if current['RSI'] > 70:
+                print("• RSI indicates overbought conditions (potential pullback risk)")
+            elif current['RSI'] < 30:
+                print("• RSI indicates oversold conditions (potential rebound opportunity)")
+            else:
+                print("• RSI in neutral territory")
+                
+            if current['Momentum_5'] > 0.02:
+                print("• Strong positive short-term momentum")
+            elif current['Momentum_5'] < -0.02:
+                print("• Strong negative short-term momentum")
+            else:
+                print("• Neutral short-term momentum")
+                
+            if current['Price_vs_MA20'] > 5:
+                print("• Trading significantly above 20-day moving average")
+            elif current['Price_vs_MA20'] < -5:
+                print("• Trading significantly below 20-day moving average")
+                
+            print("\n💡 Trading Insights:")
+            if current['RSI'] < 30 and current['Momentum_5'] < 0:
+                print("• Potential oversold bounce opportunity")
+            elif current['RSI'] > 70 and current['Momentum_5'] > 0:
+                print("• Consider taking profits - momentum may be exhausting")
             
-        if current['Momentum_5'] > 0.02:
-            print("• Strong positive short-term momentum")
-        elif current['Momentum_5'] < -0.02:
-            print("• Strong negative short-term momentum")
-        else:
-            print("• Neutral short-term momentum")
-            
-        if current['Price_vs_MA20'] > 5:
-            print("• Trading significantly above 20-day moving average")
-        elif current['Price_vs_MA20'] < -5:
-            print("• Trading significantly below 20-day moving average")
-            
-        print("\n💡 Trading Insights:")
-        if current['RSI'] < 30 and current['Momentum_5'] < 0:
-            print("• Potential oversold bounce opportunity")
-        elif current['RSI'] > 70 and current['Momentum_5'] > 0:
-            print("• Consider taking profits - momentum may be exhausting")
-        
-        volatility_level = current['Volatility']
-        if volatility_level > 0.4:
-            print("• High volatility environment - expect larger price swings")
-        elif volatility_level < 0.2:
-            print("• Low volatility environment - expect smaller price movements")
-            
-        print("\n⚠️ Risk Assessment:")
-        risk_score = 0
-        if current['RSI'] > 80 or current['RSI'] < 20:
-            risk_score += 2
-        if abs(current['Price_vs_MA20']) > 10:
-            risk_score += 1
-        if volatility_level > 0.5:
-            risk_score += 1
-            
-        if risk_score >= 3:
-            print("• HIGH RISK: Multiple warning indicators present")
-        elif risk_score >= 2:
-            print("• MEDIUM RISK: Some caution advised")
-        else:
-            print("• MODERATE RISK: Normal market conditions")
+            volatility_level = current['Volatility']
+            if volatility_level > 0.4:
+                print("• High volatility environment - expect larger price swings")
+            elif volatility_level < 0.2:
+                print("• Low volatility environment - expect smaller price movements")
+                
+            print("\n⚠️ Risk Assessment:")
+            risk_score = 0
+            if current['RSI'] > 80 or current['RSI'] < 20:
+                risk_score += 2
+            if abs(current['Price_vs_MA20']) > 10:
+                risk_score += 1
+            if volatility_level > 0.5:
+                risk_score += 1
+                
+            if risk_score >= 3:
+                print("• HIGH RISK: Multiple warning indicators present")
+            elif risk_score >= 2:
+                print("• MEDIUM RISK: Some caution advised")
+            else:
+                print("• MODERATE RISK: Normal market conditions")
             
         return result
         
     except Exception as e:
-        print(f"\n❌ Error generating predictions: {str(e)}")
+        if verbose:
+            print(f"\n❌ Error generating predictions: {str(e)}")
         return None
 
 # ---------------------------
@@ -1109,47 +1085,74 @@ def analyze_stock(ticker, skip_plot=False, custom_stats=False, export_excel=Fals
                  summary_only=False, moving_average_plot=False, signal_summary_only=False, 
                  price_targets=False, predictions=False, momentum_analysis=False, 
                  market_scan=False, breakout_scan=False, interactive_chart=False, 
-                 show_history=False, history_days=30, show_graphs=True):
-    """Main function to analyze a stock."""
+                 show_history=False, history_days=30, show_graphs=True, verbose=False):
+    """
+    Main function to analyze a stock.
+    
+    Args:
+        ticker (str): Stock ticker symbol
+        verbose (bool): If True, show debug output. Default is False.
+        ... (other params remain the same)
+    """
+    # Configure logging
+    import logging
+    logging.getLogger('yfinance').setLevel(logging.ERROR)
+    logging.getLogger('matplotlib').setLevel(logging.ERROR)
+    
+    # Suppress warnings
+    import warnings
+    warnings.filterwarnings('ignore')
+    
     # Set start and end dates
     end_date = datetime.now()
     start_date = end_date - timedelta(days=365*2)  # 2 years of data
     
-    # Download data with suppressed warnings
-    import warnings
-    warnings.filterwarnings('ignore', message='YF.download() has changed argument auto_adjust default to True')
+    # Download data with suppressed output
     data = yf.download(ticker, start=start_date, end=end_date, progress=False)
     
     # Handle market scanning modes first (don't need individual stock data)
     if market_scan:
+        if verbose:
+            print("\n" + "="*60)
+            print(f"🔍 Scanning market for momentum stocks...")
+            print("="*60)
         scan_market_momentum()
         return
     
     if breakout_scan:
+        if verbose:
+            print("\n" + "="*60)
+            print(f"🔍 Scanning for breakout stocks...")
+            print("="*60)
         scan_breakout_stocks()
         return
     
-    start_date = datetime.now() - timedelta(days=365)
-    end_date = datetime.now()
-    print("\n" + "="*60)
-    print_status(f"Starting analysis for {ticker}", "info")
-    print("="*60)
+    if verbose:
+        print("\n" + "="*60)
+        print(f"📊 Analyzing {ticker}...")
+        print("="*60)
     
-    # Show analysis progress
-    print_status("Fetching market data...", "progress")
+    # Show analysis progress if verbose
+    if verbose:
+        print_status("Fetching market data...", "progress")
+    
     try:
-        data = yf.download(ticker, start=start_date, end=end_date)
+        data = yf.download(ticker, start=start_date, end=end_date, progress=False)
         if data.empty:
-            print_status(f"No data found for ticker '{ticker}'", "error")
-            return
-        print_status(f"Successfully fetched {len(data)} days of data", "success")
+            if verbose:
+                print_status(f"No data found for ticker '{ticker}'", "error")
+            return None
+        if verbose:
+            print_status(f"Fetched {len(data)} days of data", "success")
     except Exception as e:
-        print_status(f"Error fetching data: {str(e)}", "error")
-        return
+        if verbose:
+            print_status(f"Error fetching data: {str(e)}", "error")
+        return None
 
     if data.empty:
-        print(f"❌ No data found for ticker '{ticker}'. Please check the symbol and try again.")
-        sys.exit(1)
+        if verbose:
+            print(f"❌ No data found for ticker '{ticker}'. Please check the symbol and try again.")
+        return None
 
     if sector_info:
         stock_info = get_stock_info(ticker)

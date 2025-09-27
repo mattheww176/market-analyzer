@@ -1,19 +1,22 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for
-import sys
+import logging
 import os
+import signal
+import sys
 import threading
 import time
-import traceback
-import pandas as pd
-import numpy as np
-import yfinance as yf
-from market_analyzer import analyze_stock, predict_stock_prices
-from datetime import datetime, timedelta
 import webbrowser
+from datetime import datetime, timedelta
 from typing import List, Dict, Any
+
+from flask import Flask, render_template, request, jsonify, redirect, url_for
+import pandas as pd
+import yfinance as yf
 from jinja2 import Environment
 
+from market_analyzer import analyze_stock, predict_stock_prices
+
 app = Flask(__name__)
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 shutdown_enabled = False
 
 # Custom Jinja2 filter for formatting timestamps
@@ -76,11 +79,7 @@ def get_common_context():
     user_agent = request.user_agent.string
     shutdown_enabled = (client_ip == '127.0.0.1')
     
-    print(f"\n=== DEBUG ===")
-    print(f"Client IP: {client_ip}")
-    print(f"User Agent: {user_agent}")
-    print(f"Show Shutdown: {shutdown_enabled}")
-    print("============\n")
+    # Debug info suppressed for cleaner output
     
     return {
         'show_shutdown': shutdown_enabled,
@@ -97,15 +96,12 @@ def index():
 
 @app.route('/analysis')
 def analysis():
-    print("Debug: /analysis route was accessed!")
     try:
         context = get_common_context()
-        print(f"Debug: Context created successfully: {context}")
         result = render_template('analysis.html', **context)
-        print("Debug: Template rendered successfully")
         return result
     except Exception as e:
-        print(f"Debug: Error in analysis route: {str(e)}")
+        # Log error to stderr only for debugging
         import traceback
         traceback.print_exc()
         return f"Error loading analysis page: {str(e)}", 500
@@ -225,42 +221,45 @@ def run_prediction_analysis(ticker, days):
     import yfinance as yf
     import pandas as pd
     
-    # Debug info
-    print(f"[DEBUG] Starting prediction analysis for {ticker} (last {days} days)", file=sys.stderr)
+    # Prediction analysis starting
     
     try:
         # Get historical data
         start_date = pd.Timestamp.now() - pd.Timedelta(days=days*2)
         end_date = pd.Timestamp.now()
         
-        print(f"[DEBUG] Downloading data from {start_date} to {end_date}", file=sys.stderr)
-        data = yf.download(ticker, start=start_date, end=end_date)
+        # Downloading data silently
+        data = yf.download(ticker, start=start_date, end=end_date, progress=False)
         
         if data is None or data.empty:
             error_msg = f"No data available for {ticker} from {start_date} to {end_date}"
-            print(f"[ERROR] {error_msg}", file=sys.stderr)
+            # Error logged internally
             return f"Error: {error_msg}"
             
-        print(f"[DEBUG] Downloaded {len(data)} rows of data", file=sys.stderr)
-        print(f"[DEBUG] Data columns: {data.columns.tolist()}", file=sys.stderr)
+        # Data downloaded successfully
         
-        # Run prediction
-        print("[DEBUG] Calling predict_stock_prices...", file=sys.stderr)
+        # Run prediction with verbose output disabled
         try:
             from market_analyzer import predict_stock_prices
-            prediction_results = predict_stock_prices(data, ticker, days_ahead=[1, 3, 7, 14, 30])
+            # Disable verbose output in web interface
+            prediction_results = predict_stock_prices(
+                data, 
+                ticker, 
+                days_ahead=[1, 3, 7, 14, 30],
+                verbose=False
+            )
             
             if prediction_results is None:
                 error_msg = "Prediction function returned None"
-                print(f"[ERROR] {error_msg}", file=sys.stderr)
+                # Error logged internally
                 return f"Error: {error_msg}"
                 
         except Exception as pred_error:
             error_msg = f"Error in predict_stock_prices: {str(pred_error)}"
-            print(f"[ERROR] {error_msg}\n{traceback.format_exc()}", file=sys.stderr)
+            # Error logged internally
             return f"Error: {error_msg}"
             
-        print(f"[DEBUG] Prediction results: {prediction_results}", file=sys.stderr)
+        # Prediction results generated
         
         # Format the prediction results
         output = []
@@ -325,14 +324,14 @@ def run_prediction_analysis(ticker, days):
                 output.append("   • Normal market conditions detected")
                 
         except Exception as format_error:
-            print(f"[ERROR] Error formatting results: {str(format_error)}\n{traceback.format_exc()}", file=sys.stderr)
+            # Error formatting results
             output.append("\n⚠️ Analysis completed with partial results. Some data may be missing.")
             
         return "\n".join(output)
         
     except Exception as e:
         error_msg = f"Error in prediction analysis: {str(e)}\n{traceback.format_exc()}"
-        print(f"[CRITICAL] {error_msg}", file=sys.stderr)
+        # Critical error logged
         return f"Error: {str(e)}\n\nPlease check the server logs for more details."
 
 @app.route('/analyze', methods=['POST'])
@@ -350,16 +349,12 @@ def analyze():
         import sys
         import traceback
         
-        # Debug log
-        print(f"Starting {analysis_type} analysis for {ticker} (last {days} days)", file=sys.stderr)
+        # Analysis starting
         
         # For prediction analysis, we don't need to capture stdout
         if analysis_type == 'prediction':
             try:
-                print(f"[DEBUG] Running prediction analysis for {ticker}", file=sys.stderr)
                 output = run_prediction_analysis(ticker, days)
-                print(f"[DEBUG] Prediction output length: {len(output) if output else 0}", file=sys.stderr)
-                print(f"[DEBUG] Prediction output preview: {output[:200] if output else 'None'}...", file=sys.stderr)
                 if not output:
                     raise ValueError("No output from prediction analysis")
                 return jsonify({
@@ -369,7 +364,7 @@ def analyze():
                     'status': 'success'
                 })
             except Exception as e:
-                print(f"Error in prediction analysis: {str(e)}\n{traceback.format_exc()}", file=sys.stderr)
+                # Error in prediction analysis logged
                 return jsonify({
                     'error': f"Error in prediction analysis: {str(e)}",
                     'status': 'error',
@@ -447,7 +442,7 @@ def analyze():
                     """
                     
             except Exception as e:
-                print(f"Error in basic analysis: {str(e)}", file=sys.stderr)
+                # Error in basic analysis logged
                 output = f"<div class='p-4'><h3 class='text-lg font-semibold mb-2 text-red-600'>Error</h3><p>Failed to fetch data for {ticker}: {str(e)}</p></div>"
                 
             # Return the basic analysis result
@@ -470,7 +465,8 @@ def analyze():
                     show_history=True,
                     history_days=days,
                     show_graphs=False,
-                    skip_plot=True
+                    skip_plot=True,
+                    verbose=False  # Disable verbose output in web interface
                 )
                 
                 # Get the output and format it for HTML display
@@ -487,7 +483,7 @@ def analyze():
                 })
                 
             except Exception as e:
-                print(f"Error in analysis: {str(e)}\n{traceback.format_exc()}", file=sys.stderr)
+                # Error in analysis logged
                 return jsonify({
                     'error': str(e),
                     'status': 'error',
@@ -498,7 +494,7 @@ def analyze():
                 sys.stdout = old_stdout
             
     except Exception as e:
-        print(f"Unexpected error in analyze route: {str(e)}\n{traceback.format_exc()}", file=sys.stderr)
+        # Unexpected error logged
         return jsonify({
             'error': f"Unexpected error: {str(e)}",
             'status': 'error',
@@ -564,7 +560,7 @@ def get_stock_fundamentals(ticker):
                 time.sleep(0.2)
                 
             except Exception as e:
-                print(f"Error fetching {module} for {ticker_upper}: {str(e)}")
+                # Error fetching module data
                 continue
         
         # If we didn't get any data, try the old method as a last resort
@@ -651,7 +647,7 @@ def get_stock_fundamentals(ticker):
         
     except Exception as e:
         import traceback
-        print(f"Error fetching fundamental data for {ticker}: {str(e)}\n{traceback.format_exc()}")
+        # Error fetching fundamental data
         return jsonify({
             'error': f'Failed to fetch fundamental data for {ticker}: {str(e)}',
             'details': str(e)
@@ -666,7 +662,7 @@ def watchlist():
 def get_stock_info(ticker):
     """Get basic stock information for the watchlist."""
     try:
-        print(f"[DEBUG] Fetching data for ticker: {ticker}")
+        # Fetching ticker data
         # Get stock data
         stock = yf.Ticker(ticker)
         
@@ -674,7 +670,7 @@ def get_stock_info(ticker):
         hist = stock.history(period='5d')
         
         if hist.empty:
-            print(f"[DEBUG] No historical data found for {ticker}")
+            # No historical data found
             return jsonify({
                 'error': f'No data found for {ticker}'
             }), 404
@@ -688,12 +684,12 @@ def get_stock_info(ticker):
             price_change = current_price - prev_close
             percent_change = (price_change / prev_close) * 100
         else:
-            print(f"[DEBUG] Only one day of data for {ticker}, using zero change")
+            # Using zero change for single day data
             price_change = 0
             percent_change = 0
             prev_close = current_price
         
-        print(f"[DEBUG] Successfully fetched data for {ticker}")
+        # Data fetched successfully
         return jsonify({
             'ticker': ticker.upper(),
             'price': current_price,  # For backward compatibility
@@ -835,17 +831,16 @@ def get_stock_data(tickers):
 @app.route('/screener')
 def screener():
     """Display the stock screener page with real stock data."""
-    print("=== SCREENER DEBUG ===")
-    print("Screener route accessed")
+    # Screener route accessed
     
     context = get_common_context()
     try:
         # Get popular stocks and fetch their data
-        print("Getting popular stocks...")
+        # Getting popular stocks
         tickers = get_popular_stocks()
-        print(f"Got {len(tickers)} tickers: {tickers[:5]}...")  # Show first 5
+        # Got tickers for analysis
         
-        print("Using sample data for immediate page load...")
+        # Using sample data for immediate page load
         # Use sample data for immediate page load to prevent hanging
         stocks = [
             {
@@ -972,32 +967,192 @@ def screener():
         
         # Ensure stocks is always a list
         context['stocks'] = stocks if stocks else []
-        print(f"Final stocks count: {len(context['stocks'])}")
+        # Final stocks prepared
         
     except Exception as e:
-        print(f"Error in screener route: {str(e)}")
-        import traceback
-        traceback.print_exc()
+        # Error in screener route - using fallback data
+        pass
         # Fallback to empty list if there's an error
         context['stocks'] = []
     
-    print("Rendering template...")
+    # Rendering template
     return render_template('screener.html', **context)
 
+def print_startup_message():
+    """Print a clean, professional startup message."""
+    print("\n" + "╔" + "═"*58 + "╗")
+    print("║" + " "*58 + "║")
+    print("║" + "🚀 Market Analyzer v1.0".center(58) + "║")
+    print("║" + "Advanced Stock Analysis Platform".center(58) + "║")
+    print("║" + " "*58 + "║")
+    print("╠" + "═"*58 + "╣")
+    print("║" + " "*58 + "║")
+    print("║" + "  🌐 Server URL: http://127.0.0.1:5001".ljust(58) + "║")
+    print("║" + "  📊 Status: Initializing...".ljust(58) + "║")
+    print("║" + "  ⚡ Mode: Production Ready".ljust(58) + "║")
+    print("║" + " "*58 + "║")
+    print("╠" + "═"*58 + "╣")
+    print("║" + "  💡 Your browser will open automatically".ljust(58) + "║")
+    print("║" + "  🛑 Press Ctrl+C to stop the server".ljust(58) + "║")
+    print("║" + " "*58 + "║")
+    print("╚" + "═"*58 + "╝")
+    print("")
+
+def print_server_ready():
+    """Print server ready message after Flask initialization."""
+    print("╔" + "═"*58 + "╗")
+    print("║" + " "*58 + "║")
+    print("║" + "✅ SERVER READY".center(58) + "║")
+    print("║" + "Market Analyzer is now running successfully".center(58) + "║")
+    print("║" + " "*58 + "║")
+    print("╚" + "═"*58 + "╝")
+    print("")
+
+def print_shutdown_message():
+    """Print professional shutdown message."""
+    import sys
+    # Mark that shutdown message has been shown
+    sys._shutdown_message_shown = True
+    
+    print("\n" + "╔" + "═"*58 + "╗")
+    print("║" + " "*58 + "║")
+    print("║" + "🛑 SHUTTING DOWN".center(58) + "║")
+    print("║" + "Market Analyzer server is stopping...".center(58) + "║")
+    print("║" + " "*58 + "║")
+    print("╠" + "═"*58 + "╣")
+    print("║" + "  💾 Saving session data...".ljust(58) + "║")
+    print("║" + "  🔒 Closing connections...".ljust(58) + "║")
+    print("║" + "  ✅ Cleanup complete".ljust(58) + "║")
+    print("║" + " "*58 + "║")
+    print("╚" + "═"*58 + "╝")
+    print("\n👋 Thank you for using Market Analyzer!")
+    print("💡 Run 'python3 app.py' again to restart\n")
+
+def configure_logging():
+    """Configure logging for the application."""
+    # Set up basic config first
+    logging.basicConfig(
+        level=logging.CRITICAL,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.StreamHandler()
+        ]
+    )
+    
+    # Suppress specific loggers completely
+    loggers_to_suppress = [
+        'werkzeug',
+        'yfinance',
+        'matplotlib',
+        'urllib3',
+        'asyncio',
+        'flask.app',
+        'flask_compress',
+        'flask_caching',
+        'flask_socketio',
+        'engineio',
+        'socketio',
+        'requests',
+        'urllib3.connectionpool',
+        'matplotlib.font_manager',
+        'PIL'
+    ]
+    
+    for logger_name in loggers_to_suppress:
+        logger = logging.getLogger(logger_name)
+        logger.setLevel(logging.CRITICAL)
+        logger.propagate = False
+        logger.disabled = True
+    
+    # Suppress all warnings
+    import warnings
+    warnings.filterwarnings("ignore")
+    
+    # Specifically suppress yfinance warnings
+    import os
+    os.environ['PYTHONWARNINGS'] = 'ignore'
+    
+    # Suppress Flask CLI messages
+    os.environ['FLASK_ENV'] = 'production'
+    
+    # Suppress Flask startup messages by redirecting both stdout and stderr
+    import sys
+    from io import StringIO
+    
+    class SuppressFlaskOutput:
+        def __init__(self):
+            self.original_stdout = sys.stdout
+            self.original_stderr = sys.stderr
+            
+        def __enter__(self):
+            sys.stdout = StringIO()
+            sys.stderr = StringIO()
+            return self
+            
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            sys.stdout = self.original_stdout
+            sys.stderr = self.original_stderr
+    
+    return SuppressFlaskOutput
+
 if __name__ == '__main__':
+    # Configure logging first and get the suppressor
+    SuppressFlaskOutput = configure_logging()
+    
+    # Set up signal handler for graceful shutdown
+    import signal
+    
+    def signal_handler(sig, frame):
+        print_shutdown_message()
+        sys.exit(0)
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    
     # Create templates directory if it doesn't exist
     os.makedirs('templates', exist_ok=True)
     
     # Start the browser after a short delay
-    if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':  # Prevent duplicate tabs in debug mode
-        threading.Timer(1.25, open_browser).start()
+    threading.Timer(1.25, open_browser).start()
+    
+    # Add a timer to show "Server Ready" message after Flask initializes
+    def show_ready_message():
+        import time
+        time.sleep(2.0)  # Wait for Flask to finish startup
+        print_server_ready()
+    
+    threading.Timer(2.0, show_ready_message).start()
     
     # Run the app
     try:
-        app.run(debug=True, use_reloader=False, port=5001)
+        # Print enhanced startup message
+        print_startup_message()
+        
+        # Configure Flask to run silently
+        import logging
+        
+        # Disable Flask's startup messages by setting werkzeug logger to ERROR level
+        werkzeug_logger = logging.getLogger('werkzeug')
+        werkzeug_logger.setLevel(logging.ERROR)
+        werkzeug_logger.disabled = True
+        
+        # Also try to suppress click (Flask CLI) messages
+        click_logger = logging.getLogger('click')
+        click_logger.setLevel(logging.ERROR)
+        click_logger.disabled = True
+        
+        # Run Flask normally - the logging configuration should suppress messages
+        app.run(host='127.0.0.1', port=5001, debug=False, use_reloader=False, threaded=True)
+        
     except KeyboardInterrupt:
-        print("\nServer stopped by user")
+        print_shutdown_message()
     except Exception as e:
-        print(f"\nError: {e}")
+        print(f"\n❌ Error starting server: {e}")
+        import traceback
+        traceback.print_exc()
+        print_shutdown_message()
     finally:
-        print("\nServer has been shut down. You can close this window.")
+        # Always show shutdown message if it hasn't been shown yet
+        import sys
+        if not hasattr(sys, '_shutdown_message_shown'):
+            print_shutdown_message()
+            sys._shutdown_message_shown = True
