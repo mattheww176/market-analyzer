@@ -334,6 +334,393 @@ def run_prediction_analysis(ticker, days):
         # Critical error logged
         return f"Error: {str(e)}\n\nPlease check the server logs for more details."
 
+def run_technical_analysis(ticker, days):
+    """Run enhanced technical analysis with better formatting."""
+    try:
+        import yfinance as yf
+        from datetime import datetime, timedelta
+        
+        stock = yf.Ticker(ticker)
+        
+        # Get historical data
+        if days == 'max':
+            hist = stock.history(period="max")
+        else:
+            hist = stock.history(period=f"{days}d")
+        
+        if hist.empty:
+            return f"<div class='p-4'><h3 class='text-lg font-semibold mb-2 text-red-600'>Error</h3><p>No data available for {ticker}. Please check the ticker symbol.</p></div>"
+        
+        # Import technical analysis functions from market_analyzer
+        from market_analyzer import calculate_rsi, calculate_macd, calculate_bollinger_bands
+        
+        # Calculate technical indicators
+        rsi = calculate_rsi(hist['Close'])
+        macd_line, macd_signal = calculate_macd(hist['Close'])
+        macd_histogram = macd_line - macd_signal  # Calculate histogram manually
+        bb_upper, bb_middle, bb_lower = calculate_bollinger_bands(hist['Close'])
+        
+        # Get current values
+        current_price = hist['Close'].iloc[-1]
+        current_rsi = rsi.iloc[-1] if not rsi.empty else 0
+        current_macd = macd_line.iloc[-1] if not macd_line.empty else 0
+        current_macd_signal = macd_signal.iloc[-1] if not macd_signal.empty else 0
+        current_bb_upper = bb_upper.iloc[-1] if not bb_upper.empty else 0
+        current_bb_lower = bb_lower.iloc[-1] if not bb_lower.empty else 0
+        
+        # Calculate moving averages
+        ma_20 = hist['Close'].rolling(window=20).mean().iloc[-1]
+        ma_50 = hist['Close'].rolling(window=50).mean().iloc[-1] if len(hist) >= 50 else None
+        
+        # Determine RSI signal
+        if current_rsi > 70:
+            rsi_signal = "Overbought"
+            rsi_color = "text-red-600"
+        elif current_rsi < 30:
+            rsi_signal = "Oversold"
+            rsi_color = "text-green-600"
+        else:
+            rsi_signal = "Neutral"
+            rsi_color = "text-gray-600"
+        
+        # Determine MACD signal
+        if current_macd > current_macd_signal:
+            macd_signal_text = "Bullish"
+            macd_color = "text-green-600"
+        else:
+            macd_signal_text = "Bearish"
+            macd_color = "text-red-600"
+        
+        # Determine Bollinger Bands position
+        if current_price > current_bb_upper:
+            bb_position = "Above Upper Band (Overbought)"
+            bb_color = "text-red-600"
+        elif current_price < current_bb_lower:
+            bb_position = "Below Lower Band (Oversold)"
+            bb_color = "text-green-600"
+        else:
+            bb_position = "Within Bands (Normal)"
+            bb_color = "text-gray-600"
+        
+        # Get company info
+        info = stock.info
+        company_name = info.get('longName', ticker)
+        
+        # Format the output with enhanced HTML
+        output = f"""
+        <div class='p-4'>
+            <h3 class='text-lg font-semibold mb-4'>Technical Analysis for {company_name} ({ticker})</h3>
+            
+            <!-- Current Price Section -->
+            <div class='bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg mb-4'>
+                <h4 class='font-semibold mb-2 text-blue-800 dark:text-blue-200'>Current Price Information</h4>
+                <div class='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                    <div>
+                        <p class='text-sm text-gray-600 dark:text-gray-400'>Current Price</p>
+                        <p class='text-xl font-bold'>${current_price:.2f}</p>
+                    </div>
+                    <div>
+                        <p class='text-sm text-gray-600 dark:text-gray-400'>20-Day MA</p>
+                        <p class='text-lg font-semibold'>${ma_20:.2f}</p>
+                    </div>
+                    {"<div><p class='text-sm text-gray-600 dark:text-gray-400'>50-Day MA</p><p class='text-lg font-semibold'>$" + f"{ma_50:.2f}" + "</p></div>" if ma_50 else "<div><p class='text-sm text-gray-600 dark:text-gray-400'>50-Day MA</p><p class='text-sm text-gray-500'>Insufficient data</p></div>"}
+                </div>
+            </div>
+            
+            <!-- Technical Indicators Grid -->
+            <div class='grid grid-cols-1 md:grid-cols-3 gap-4 mb-4'>
+                <!-- RSI Card -->
+                <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4'>
+                    <h4 class='font-semibold mb-2 text-gray-800 dark:text-white'>RSI (14)</h4>
+                    <div class='text-center'>
+                        <p class='text-2xl font-bold text-gray-800 dark:text-white'>{current_rsi:.1f}</p>
+                        <p class='{rsi_color} font-semibold text-sm'>{rsi_signal}</p>
+                    </div>
+                    <div class='mt-2'>
+                        <div class='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2'>
+                            <div class='bg-blue-600 h-2 rounded-full' style='width: {min(current_rsi, 100)}%'></div>
+                        </div>
+                        <div class='flex justify-between text-xs text-gray-500 mt-1'>
+                            <span>0</span>
+                            <span>30</span>
+                            <span>70</span>
+                            <span>100</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- MACD Card -->
+                <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4'>
+                    <h4 class='font-semibold mb-2 text-gray-800 dark:text-white'>MACD</h4>
+                    <div class='space-y-2'>
+                        <div>
+                            <p class='text-sm text-gray-600 dark:text-gray-400'>MACD Line</p>
+                            <p class='font-semibold'>{current_macd:.4f}</p>
+                        </div>
+                        <div>
+                            <p class='text-sm text-gray-600 dark:text-gray-400'>Signal Line</p>
+                            <p class='font-semibold'>{current_macd_signal:.4f}</p>
+                        </div>
+                        <div>
+                            <p class='text-sm text-gray-600 dark:text-gray-400'>Signal</p>
+                            <p class='{macd_color} font-semibold'>{macd_signal_text}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bollinger Bands Card -->
+                <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4'>
+                    <h4 class='font-semibold mb-2 text-gray-800 dark:text-white'>Bollinger Bands</h4>
+                    <div class='space-y-2'>
+                        <div>
+                            <p class='text-sm text-gray-600 dark:text-gray-400'>Upper Band</p>
+                            <p class='font-semibold'>${current_bb_upper:.2f}</p>
+                        </div>
+                        <div>
+                            <p class='text-sm text-gray-600 dark:text-gray-400'>Lower Band</p>
+                            <p class='font-semibold'>${current_bb_lower:.2f}</p>
+                        </div>
+                        <div>
+                            <p class='text-sm text-gray-600 dark:text-gray-400'>Position</p>
+                            <p class='{bb_color} font-semibold text-sm'>{bb_position}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Summary Section -->
+            <div class='bg-gray-50 dark:bg-gray-700 p-4 rounded-lg'>
+                <h4 class='font-semibold mb-2 text-gray-800 dark:text-white'>Technical Summary</h4>
+                <div class='grid grid-cols-1 md:grid-cols-2 gap-4 text-sm'>
+                    <div>
+                        <p class='text-gray-600 dark:text-gray-400'>Analysis Period: {len(hist)} trading days</p>
+                        <p class='text-gray-600 dark:text-gray-400'>Data Range: {hist.index[0].strftime('%Y-%m-%d')} to {hist.index[-1].strftime('%Y-%m-%d')}</p>
+                    </div>
+                    <div>
+                        <p class='text-gray-600 dark:text-gray-400'>Price vs 20-MA: {"Above" if current_price > ma_20 else "Below"} ({((current_price - ma_20) / ma_20 * 100):+.1f}%)</p>
+                        {"<p class='text-gray-600 dark:text-gray-400'>Price vs 50-MA: " + ("Above" if current_price > ma_50 else "Below") + f" ({((current_price - ma_50) / ma_50 * 100):+.1f}%)</p>" if ma_50 else "<p class='text-gray-600 dark:text-gray-400'>50-MA: Insufficient data</p>"}
+                    </div>
+                </div>
+            </div>
+        </div>
+        """
+        
+        return output
+        
+    except Exception as e:
+        return f"<div class='p-4'><h3 class='text-lg font-semibold mb-2 text-red-600'>Error</h3><p>Failed to perform technical analysis for {ticker}: {str(e)}</p></div>"
+
+def run_fundamental_analysis(ticker):
+    """Run enhanced fundamental analysis with better formatting."""
+    try:
+        import yfinance as yf
+        
+        stock = yf.Ticker(ticker)
+        info = stock.info
+        
+        if not info or len(info) < 5:
+            return f"<div class='p-4'><h3 class='text-lg font-semibold mb-2 text-red-600'>Error</h3><p>No fundamental data available for {ticker}. Please check the ticker symbol.</p></div>"
+        
+        # Get company information
+        company_name = info.get('longName', ticker)
+        sector = info.get('sector', 'N/A')
+        industry = info.get('industry', 'N/A')
+        market_cap = info.get('marketCap', 0)
+        
+        # Financial metrics
+        pe_ratio = info.get('trailingPE', 'N/A')
+        forward_pe = info.get('forwardPE', 'N/A')
+        peg_ratio = info.get('pegRatio', 'N/A')
+        price_to_book = info.get('priceToBook', 'N/A')
+        price_to_sales = info.get('priceToSalesTrailing12Months', 'N/A')
+        
+        # Profitability metrics
+        profit_margin = info.get('profitMargins', 'N/A')
+        operating_margin = info.get('operatingMargins', 'N/A')
+        roe = info.get('returnOnEquity', 'N/A')
+        roa = info.get('returnOnAssets', 'N/A')
+        
+        # Growth metrics
+        revenue_growth = info.get('revenueGrowth', 'N/A')
+        earnings_growth = info.get('earningsGrowth', 'N/A')
+        
+        # Dividend information
+        dividend_yield = info.get('dividendYield', 'N/A')
+        payout_ratio = info.get('payoutRatio', 'N/A')
+        
+        # Financial health
+        debt_to_equity = info.get('debtToEquity', 'N/A')
+        current_ratio = info.get('currentRatio', 'N/A')
+        quick_ratio = info.get('quickRatio', 'N/A')
+        
+        # Format market cap
+        if market_cap and market_cap > 0:
+            if market_cap >= 1e12:
+                market_cap_formatted = f"${market_cap/1e12:.2f}T"
+            elif market_cap >= 1e9:
+                market_cap_formatted = f"${market_cap/1e9:.2f}B"
+            elif market_cap >= 1e6:
+                market_cap_formatted = f"${market_cap/1e6:.2f}M"
+            else:
+                market_cap_formatted = f"${market_cap:,.0f}"
+        else:
+            market_cap_formatted = "N/A"
+        
+        # Helper function to format percentage
+        def format_percentage(value):
+            if value == 'N/A' or value is None:
+                return 'N/A'
+            try:
+                return f"{float(value) * 100:.2f}%" if isinstance(value, (int, float)) else 'N/A'
+            except:
+                return 'N/A'
+        
+        # Helper function to format ratio
+        def format_ratio(value):
+            if value == 'N/A' or value is None:
+                return 'N/A'
+            try:
+                return f"{float(value):.2f}" if isinstance(value, (int, float)) else 'N/A'
+            except:
+                return 'N/A'
+        
+        # Format the output with enhanced HTML
+        output = f"""
+        <div class='p-4'>
+            <h3 class='text-lg font-semibold mb-4'>Fundamental Analysis for {company_name} ({ticker})</h3>
+            
+            <!-- Company Overview -->
+            <div class='bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg mb-4'>
+                <h4 class='font-semibold mb-2 text-blue-800 dark:text-blue-200'>Company Overview</h4>
+                <div class='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+                    <div>
+                        <p class='text-sm text-gray-600 dark:text-gray-400'>Sector</p>
+                        <p class='font-semibold'>{sector}</p>
+                    </div>
+                    <div>
+                        <p class='text-sm text-gray-600 dark:text-gray-400'>Industry</p>
+                        <p class='font-semibold'>{industry}</p>
+                    </div>
+                    <div>
+                        <p class='text-sm text-gray-600 dark:text-gray-400'>Market Cap</p>
+                        <p class='font-semibold'>{market_cap_formatted}</p>
+                    </div>
+                    <div>
+                        <p class='text-sm text-gray-600 dark:text-gray-400'>Employees</p>
+                        <p class='font-semibold'>{info.get('fullTimeEmployees', 'N/A'):,}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Valuation Metrics -->
+            <div class='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
+                <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4'>
+                    <h4 class='font-semibold mb-3 text-gray-800 dark:text-white'>Valuation Ratios</h4>
+                    <div class='space-y-3'>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>P/E Ratio (TTM)</span>
+                            <span class='font-semibold'>{format_ratio(pe_ratio)}</span>
+                        </div>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Forward P/E</span>
+                            <span class='font-semibold'>{format_ratio(forward_pe)}</span>
+                        </div>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>PEG Ratio</span>
+                            <span class='font-semibold'>{format_ratio(peg_ratio)}</span>
+                        </div>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Price-to-Book</span>
+                            <span class='font-semibold'>{format_ratio(price_to_book)}</span>
+                        </div>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Price-to-Sales</span>
+                            <span class='font-semibold'>{format_ratio(price_to_sales)}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Profitability Metrics -->
+                <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4'>
+                    <h4 class='font-semibold mb-3 text-gray-800 dark:text-white'>Profitability</h4>
+                    <div class='space-y-3'>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Profit Margin</span>
+                            <span class='font-semibold'>{format_percentage(profit_margin)}</span>
+                        </div>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Operating Margin</span>
+                            <span class='font-semibold'>{format_percentage(operating_margin)}</span>
+                        </div>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Return on Equity</span>
+                            <span class='font-semibold'>{format_percentage(roe)}</span>
+                        </div>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Return on Assets</span>
+                            <span class='font-semibold'>{format_percentage(roa)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Growth and Dividend -->
+            <div class='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
+                <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4'>
+                    <h4 class='font-semibold mb-3 text-gray-800 dark:text-white'>Growth Metrics</h4>
+                    <div class='space-y-3'>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Revenue Growth</span>
+                            <span class='font-semibold'>{format_percentage(revenue_growth)}</span>
+                        </div>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Earnings Growth</span>
+                            <span class='font-semibold'>{format_percentage(earnings_growth)}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4'>
+                    <h4 class='font-semibold mb-3 text-gray-800 dark:text-white'>Dividend Information</h4>
+                    <div class='space-y-3'>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Dividend Yield</span>
+                            <span class='font-semibold'>{format_percentage(dividend_yield)}</span>
+                        </div>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Payout Ratio</span>
+                            <span class='font-semibold'>{format_percentage(payout_ratio)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Financial Health -->
+            <div class='bg-green-50 dark:bg-green-900/30 p-4 rounded-lg'>
+                <h4 class='font-semibold mb-3 text-green-800 dark:text-green-200'>Financial Health</h4>
+                <div class='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                    <div>
+                        <p class='text-sm text-gray-600 dark:text-gray-400'>Debt-to-Equity</p>
+                        <p class='font-semibold'>{format_ratio(debt_to_equity)}</p>
+                    </div>
+                    <div>
+                        <p class='text-sm text-gray-600 dark:text-gray-400'>Current Ratio</p>
+                        <p class='font-semibold'>{format_ratio(current_ratio)}</p>
+                    </div>
+                    <div>
+                        <p class='text-sm text-gray-600 dark:text-gray-400'>Quick Ratio</p>
+                        <p class='font-semibold'>{format_ratio(quick_ratio)}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        """
+        
+        return output
+        
+    except Exception as e:
+        return f"<div class='p-4'><h3 class='text-lg font-semibold mb-2 text-red-600'>Error</h3><p>Failed to perform fundamental analysis for {ticker}: {str(e)}</p></div>"
+
 @app.route('/analyze', methods=['POST'])
 def analyze():
     ticker = request.form.get('ticker', '').upper()
@@ -453,8 +840,40 @@ def analyze():
                 'status': 'success'
             })
         
+        elif analysis_type == 'technical':
+            # Enhanced Technical Analysis
+            try:
+                output = run_technical_analysis(ticker, days)
+                return jsonify({
+                    'ticker': ticker,
+                    'analysis': output,
+                    'analysis_type': analysis_type,
+                    'status': 'success'
+                })
+            except Exception as e:
+                return jsonify({
+                    'error': f"Error in technical analysis: {str(e)}",
+                    'status': 'error'
+                }), 500
+                
+        elif analysis_type == 'fundamental':
+            # Enhanced Fundamental Analysis
+            try:
+                output = run_fundamental_analysis(ticker)
+                return jsonify({
+                    'ticker': ticker,
+                    'analysis': output,
+                    'analysis_type': analysis_type,
+                    'status': 'success'
+                })
+            except Exception as e:
+                return jsonify({
+                    'error': f"Error in fundamental analysis: {str(e)}",
+                    'status': 'error'
+                }), 500
+        
         else:
-            # For technical and full analysis, capture stdout
+            # For other analysis types, capture stdout (fallback)
             old_stdout = sys.stdout
             sys.stdout = StringIO()
             

@@ -5,12 +5,13 @@ A powerful and user-friendly web application for comprehensive stock market anal
 ## 🆕 Latest Updates (v1.3.0)
 
 ### New Features
-- **AI-Powered Price Predictions**: Advanced machine learning models for 1-day, 3-day, 7-day, 14-day, and 30-day price forecasts with confidence intervals
-- **Enhanced Technical Analysis**: Comprehensive technical indicators including RSI, MACD, Bollinger Bands, and moving averages
-- **Improved Chart Visualization**: Interactive charts with better tooltips, zooming, and comparison capabilities
-- **Responsive Design**: Optimized for all devices with improved mobile experience
-- **Moving Average Crossover Signals**: Clear buy/sell/hold signals based on 10-day and 30-day moving average crossovers
-- **Enhanced Signal Display**: Detailed signals with confidence levels, explanations, and actionable recommendations
+- **Enhanced Technical Analysis UI**: Professional card-based layout with visual indicators for RSI, MACD, and Bollinger Bands
+- **Interactive Price Charts**: Real-time stock charts with volume analysis and technical overlays
+- **Comprehensive Analysis Types**: Basic, Technical, Fundamental, Full, and Prediction analysis modes
+- **Multi-Page Navigation**: Dedicated pages for Analysis, Watchlist, Stock Screener, and Market News
+- **Dark/Light Mode Support**: Full theme switching with persistent user preferences
+- **Responsive Design**: Optimized mobile-first design that works on all devices
+- **Real-time Data Integration**: Live stock data from Yahoo Finance with error handling
 
 ### Improvements
 - **UI/UX**: Redesigned interface with dark/light mode support and improved data visualization
@@ -92,41 +93,41 @@ A powerful and user-friendly web application for comprehensive stock market anal
 
 4. **Start Analyzing**:
    - Enter a stock ticker (e.g., AAPL, MSFT, GOOG, NVDA)
-   - Choose time period for analysis (1D, 1W, 1M, 3M, 1Y, 5Y, MAX)
-   - Select your preferred analysis type (Basic, Technical, Full, or Prediction)
-   - Explore the interactive charts, technical indicators, and predictions
+   - Choose time period for analysis (1 Month, 3 Months, 6 Months, 1 Year, or Custom)
+   - Select your preferred analysis type (Basic, Technical, Fundamental, Full, or Prediction)
+   - Explore the interactive charts, technical indicators, and comprehensive analysis
 
 ## 🖥️ Features
 
-### 📊 Analysis Types
-- **Basic Analysis**: Quick overview of stock performance and key metrics
-- **Technical Analysis**: View detailed technical indicators and patterns for any stock
-- **Signal Detection**: Get buy/sell signals based on technical indicators
-- **Interactive Charts**: Visualize stock data with interactive charts
-- **Watchlist**: Track your favorite stocks with real-time price updates
-- **Responsive Design**: Works on both desktop and mobile devices
+### 📊 Analysis Dashboard
+- **Home Page**: Main analysis interface with stock ticker input and comprehensive results
+- **Interactive Navigation**: Clean navigation bar with dedicated sections
+- **Dark/Light Theme**: Toggle between themes with persistent preferences
+- **Responsive Design**: Optimized for desktop, tablet, and mobile devices
 
-### 📈 Trading Signals
-- **Moving Average Crossover**: Automated buy/sell signals based on 10-day and 30-day moving averages
-  - **Bullish Signal**: When 10-day MA crosses above 30-day MA
-  - **Bearish Signal**: When 10-day MA crosses below 30-day MA
-{{ ... }}
-  - **Confidence Levels**: High/Medium/Low based on volume and trend strength
-  - **Recommendations**: Actionable trading suggestions with price targets
-  - **Timeframe Analysis**: Signals for different time horizons (short/medium/long term)
+### 📈 Analysis Types
+- **Basic Analysis**: Quick overview with key metrics, price information, and basic statistics
+- **Technical Analysis**: Professional card-based layout featuring:
+  - RSI (14-period) with visual progress bar and overbought/oversold signals
+  - MACD with bullish/bearish trend indicators
+  - Bollinger Bands with position analysis (above/below/within bands)
+  - Moving averages (20-day and 50-day) with percentage comparisons
+- **Fundamental Analysis**: Company financial health metrics and valuation ratios
+- **Full Analysis**: Combines technical and fundamental analysis in one comprehensive report
+- **Prediction Analysis**: AI-powered price forecasting with confidence intervals
 
-### 📊 Interactive Charts & Analysis
-- **Price Action**: View OHLC candlesticks with volume
-- **Technical Indicators**:
-  - RSI (Relative Strength Index)
-  - MACD (Moving Average Convergence Divergence)
-  - Bollinger Bands
-  - Multiple Moving Averages (SMA 10, 20, 50, 200)
-- **Prediction Tools**:
-  - 1-day to 30-day price forecasts
-  - Confidence intervals for predictions
-  - Support and resistance levels
-  - Volatility analysis
+### 📊 Interactive Charts
+- **Real-time Price Charts**: Live stock price visualization with Chart.js
+- **Volume Analysis**: Trading volume charts with trend indicators
+- **Technical Overlays**: Moving averages and technical indicators on charts
+- **Multiple Timeframes**: 1 Month, 3 Months, 6 Months, 1 Year, or custom periods
+- **Chart Controls**: Zoom, pan, and interactive tooltips
+
+### 🌟 Additional Pages
+- **Watchlist**: Track and monitor your favorite stocks with real-time updates
+- **Stock Screener**: Discover stocks based on various criteria and filters
+- **Market News**: Latest financial news and market updates
+- **Analysis History**: View previous analysis results and comparisons
 
 ## 🔧 Troubleshooting
 
@@ -169,143 +170,43 @@ We welcome contributions! Please follow these steps:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
-
-- Built with ❤️ using Python, Flask, and modern web technologies
-- Powered by Yahoo Finance for market data
-- Special thanks to all contributors who have helped improve this project
-- **Technical Indicators**:
-  - RSI (14-period) with overbought/oversold signals
-  - MACD (12/26/9) for trend identification
-  - Moving Averages (SMA 50/200) for trend confirmation
-  - Bollinger Bands for volatility analysis
-- **Time Periods**: Analyze data across different timeframes (1D, 5D, 1M, 3M, 6M, 1Y, 5Y, MAX)
-- **Chart Controls**:
-  - **Zoom**: Use the range selector at the bottom or mouse wheel
-  - **Pan**: Click and drag to move around the chart
-  - **Reset**: Double-click to reset the view
-  - **Toggle Indicators**: Click on legend items to show/hide indicators
-  - **Timeframe**: Choose presets (1M, 3M, 6M, 1Y) or enter custom days (1-365)
-  - **Theme**: Toggle between light and dark modes
-  - **Tooltips**: Hover for detailed price information
-
-### ⭐ Watchlist Management
-- Add/remove stocks to your watchlist
-- View watchlist performance at a glance
-- Click on any watchlist item to view detailed analysis
-- Watchlist is saved in your browser's local storage
-
 ## ⚙️ Server Management
-- **Auto-start**: Server starts automatically when you run the application
-- **Auto-browser**: Automatically opens your default web browser to the application
-- **Port**: Runs on port 5001 by default (configurable in app.py)
-- **Shutdown**: Use the 'Quit' button in the web interface to safely shut down the server
 
 ### Starting the Server
 ```bash
 python3 app.py
 ```
+- Server starts automatically and opens your default web browser
+- Runs on port 5001 by default to avoid conflicts
+- Professional startup messages with clear status indicators
 
 ### Stopping the Server
 - **Normal Shutdown**: Press `Ctrl+C` in the terminal
+- **Web Interface**: Use the shutdown button (only visible when running locally)
 - **Force Quit** (if unresponsive):
   ```bash
   # Find the process ID
-  lsof -i :5000
+  lsof -i :5001
   
   # Kill the process (replace PID with actual number)
   kill -9 PID
   ```
 
-## 🔍 Analysis Types
+## 🙏 Acknowledgments
 
-### Basic Analysis
-- Quick overview with key metrics
-- Volatility and risk assessment
-- Volume and momentum analysis
-- Support/Resistance levels
-- Color-coded trend indicators
-
-### Technical Analysis
-- Advanced technical indicators
-- Moving average crossovers
-- Detailed RSI and MACD analysis
-- Price action patterns
-- Volume analysis
-
-### Full Analysis
-- Combines all analysis types
-- Comprehensive market insights
-- Detailed technical breakdown
-- Actionable trading signals
-
-### ✨ UI Enhancements
-- **Modern Card Design**: Clean, shadowed cards with subtle hover effects
-- **Interactive Elements**: Buttons and inputs with smooth transitions
-- **Loading States**: Animated spinners and skeleton loaders
-- **Copy to Clipboard**: One-click ticker symbol copying
-- **Form Validation**: Real-time feedback for input fields
-- **Responsive Layout**: Optimized for all screen sizes from mobile to desktop
-
-## 📱 Mobile & Troubleshooting
-
-### Mobile Experience
-- Fully responsive design for all screen sizes
-- Touch-optimized charts with pinch-to-zoom
-- Full feature parity with desktop version
-
-### Common Issues
-- **Charts not loading?**
-  - Check internet connection and ticker symbol
-  - Refresh the page
-- **Data issues?**
-  - Verify time period selection
-  - Note: Some stocks have limited historical data
-- **Performance?**
-  - Reduce time period
-  - Close other tabs
-  - Clear browser cache
+- Built with ❤️ using Python, Flask, and modern web technologies
+- Powered by Yahoo Finance for real-time market data
+- Uses Chart.js for interactive data visualization
+- Tailwind CSS for responsive design and styling
+- Special thanks to all contributors who have helped improve this project
 
 ## 💡 Tips & Best Practices
 
-- **Performance**:
-  - Analyze 90-180 days of data for optimal performance
-  - Reduce time period if experiencing slowdowns
-  - Close unnecessary browser tabs
+- **Performance**: Use 1-6 month periods for optimal performance
+- **Data Accuracy**: Refresh page to get the latest market data  
+- **Best Results**: Combine multiple analysis types for comprehensive insights
+- **Mobile Usage**: All features work on mobile devices with touch-optimized interface
 
-- **Data Usage**:
-  - First load fetches data from Yahoo Finance
-  - Subsequent views use cached data when possible
-  - Refresh to get the latest market data
+## ⚠️ Disclaimer
 
-### 📁 Project Structure
-
-- `app.py` - Main web application
-- `templates/` - Contains the web interface files
-  - `index.html` - Main web page
-- `market_analyzer.py` - Core analysis functions
-- `static/js/` - Frontend JavaScript modules
-  - `main.js` - Core application logic
-  - `chart.js` - Chart rendering and interactions
-  - `technical-analysis.js` - Technical indicator calculations
-  - `watchlist.js` - Watchlist management
-  - `utils.js` - Helper functions
-
-## 📊 Data Sources
-- Real-time and historical market data provided by Yahoo Finance
-- Technical indicators calculated in real-time
-- Moving average signals generated client-side for fast response
-- All data is for informational purposes only
-
-## 🛠️ Development
-
-### Added JavaScript Files
-- `enhancements.js`: UI improvements and interactive elements
-- `signals.js`: Moving average crossover signal generation and display
-
-### Added CSS
-- `enhancements.css`: Modern styling and animations
-
-## 📜 License
-
-This project is for educational purposes only. Use at your own risk. Not intended as financial advice.
+This application is for educational and informational purposes only. It is not intended as financial advice. Always consult with qualified financial professionals before making investment decisions. Past performance does not guarantee future results.
