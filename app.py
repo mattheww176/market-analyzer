@@ -1559,8 +1559,10 @@ if __name__ == '__main__':
         click_logger.setLevel(logging.ERROR)
         click_logger.disabled = True
         
-        # Run Flask normally - the logging configuration should suppress messages
-        app.run(host='127.0.0.1', port=5001, debug=False, use_reloader=False, threaded=True)
+        # Get port from environment variable or use default 10000
+        port = int(os.environ.get('PORT', 10000))
+        # Run with 0.0.0.0 to allow external connections
+        app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False, threaded=True)
         
     except KeyboardInterrupt:
         print_shutdown_message()
