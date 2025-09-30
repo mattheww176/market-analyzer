@@ -1562,8 +1562,12 @@ if __name__ == '__main__':
         # Get port from environment variable or use default 5001 for local development
         port = int(os.environ.get('PORT', 5001))
         
-        # Use localhost for local development, 0.0.0.0 for production
-        host = '127.0.0.1' if port == 5001 else '0.0.0.0'
+        # Use 0.0.0.0 for Render, 127.0.0.1 for local development
+        host = '0.0.0.0' if os.environ.get('RENDER') else '127.0.0.1'
+        
+        # Print environment info for debugging
+        print(f"\n🌐 Starting server on {host}:{port}")
+        print(f"🚀 Environment: {'Production' if host == '0.0.0.0' else 'Development'}")
         
         app.run(host=host, port=port, debug=False, use_reloader=False, threaded=True)
         
