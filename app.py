@@ -1559,10 +1559,13 @@ if __name__ == '__main__':
         click_logger.setLevel(logging.ERROR)
         click_logger.disabled = True
         
-        # Get port from environment variable or use default 10000
-        port = int(os.environ.get('PORT', 10000))
-        # Run with 0.0.0.0 to allow external connections
-        app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False, threaded=True)
+        # Get port from environment variable or use default 5001 for local development
+        port = int(os.environ.get('PORT', 5001))
+        
+        # Use localhost for local development, 0.0.0.0 for production
+        host = '127.0.0.1' if port == 5001 else '0.0.0.0'
+        
+        app.run(host=host, port=port, debug=False, use_reloader=False, threaded=True)
         
     except KeyboardInterrupt:
         print_shutdown_message()
