@@ -23,7 +23,7 @@ kiwisolver==1.4.7
 MarkupSafe==3.0.2
 matplotlib==3.9.4
 mplfinance==0.12.10b0
-multitasking==0.0.12
+multitasking==0.0.11
 narwhals==2.3.0
 numpy==1.26.4 --only-binary=:all:
 pandas==2.0.3 --only-binary=:all:
