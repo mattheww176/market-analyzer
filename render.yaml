@@ -1,0 +1,8 @@
+build:
+  os: ubuntu22.04
+  pythonVersion: "3.9.18"
+  install:
+    - pip install --upgrade pip
+    - pip install --no-cache-dir -r requirements.txt
+  commands:
+    - python app.py
