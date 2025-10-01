@@ -17,21 +17,21 @@ h11==0.16.0
 httptools==0.6.4
 idna==3.10
 itsdangerous==2.2.0
-Jinja2==3.1.6
+Jinja2==3.1.2
 joblib==1.5.2
 kiwisolver==1.4.7
 MarkupSafe==3.0.2
-matplotlib==3.9.4
+matplotlib==3.7.2
 mplfinance==0.12.10b0
 multitasking==0.0.11
 narwhals==2.3.0
-numpy==1.26.4 --only-binary=:all:
-pandas==2.0.3 --only-binary=:all:
+numpy==1.24.3
+pandas==2.0.3
 packaging==25.0
 peewee==3.18.2
 pillow==11.3.0
 platformdirs==4.4.0
-plotly==6.3.0
+plotly==5.16.1
 protobuf==6.32.0
 pycparser==2.22
 pydantic==2.11.9
