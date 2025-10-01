@@ -5,12 +5,13 @@ services:
         value: "app.py"
       - name: FLASK_ENV
         value: "production"
-      - name: PYTHON_VERSION
-        value: "3.9.18"
     build:
       args:
-        - BP_GO_VERSION=1.20.*
-        - BP_GO_TARGETS=./cmd/...
+        - PYTHON_VERSION=3.9.18
+      packages:
+        - python3.9
+        - python3.9-venv
+        - python3-pip
     ports:
       - port: 5001
         http: {}
