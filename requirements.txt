@@ -21,13 +21,13 @@ Jinja2==3.1.6
 joblib==1.5.2
 kiwisolver==1.4.7
 MarkupSafe==3.0.2
-matplotlib==3.10.6
+matplotlib==3.9.4
 mplfinance==0.12.10b0
 multitasking==0.0.12
 narwhals==2.3.0
-numpy==2.3.2
+numpy==1.26.4
 packaging==25.0
-pandas==2.3.2
+pandas==2.0.3
 peewee==3.18.2
 pillow==11.3.0
 platformdirs==4.4.0
