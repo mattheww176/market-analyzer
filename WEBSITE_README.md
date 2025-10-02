@@ -2,10 +2,30 @@
 
 A powerful and user-friendly web application for comprehensive stock market analysis, featuring interactive charts, technical indicators, and AI-powered price predictions. Get detailed technical analysis, fundamental metrics, and predictive insights for smarter trading decisions.
 
-## 🆕 Latest Updates (v1.3.0)
+## 🆕 Latest Updates (v1.4.0)
 
 ### New Features
-- **Enhanced Technical Analysis UI**: Professional card-based layout with visual indicators for RSI, MACD, and Bollinger Bands
+- **Redesigned Prediction Analysis UI**: Modern card-based layout with clear price forecasts and risk indicators
+- **Enhanced Forecast Cards**: Improved price prediction display with percentage changes and visual indicators
+- **Risk Assessment Section**: Clear visualization of market conditions and trading risks
+- **Trading Insights**: Actionable trading recommendations based on technical indicators
+- **Price Target Projections**: Multiple time horizon forecasts (1, 3, 7, 14, and 30 days)
+- **Market Condition Indicators**: Visual cues for overbought/oversold conditions and volatility
+
+### UI/UX Improvements
+- **Modern Card Layout**: Clean, organized sections with proper spacing and visual hierarchy
+- **Improved Readability**: Better font sizes, contrast, and spacing throughout the interface
+- **Responsive Design**: Optimized layout for all screen sizes from mobile to desktop
+- **Visual Feedback**: Hover effects and transitions for better interactivity
+- **Consistent Styling**: Unified design language across all analysis types
+- **Enhanced Data Visualization**: Clear presentation of price predictions and market data
+- **Interactive Elements**: Hover states and transitions for better user engagement
+- **Accessibility**: Improved color contrast and text sizing for better readability
+- **Performance**: Optimized rendering for faster load times
+- **Dark/Light Mode**: Seamless theme switching with persistent preferences
+
+### Previous Features
+- **Technical Analysis UI**: Professional card-based layout with visual indicators for RSI, MACD, and Bollinger Bands
 - **Interactive Price Charts**: Real-time stock charts with volume analysis and technical overlays
 - **Comprehensive Analysis Types**: Basic, Technical, Fundamental, Full, and Prediction analysis modes
 - **Multi-Page Navigation**: Dedicated pages for Analysis, Watchlist, Stock Screener, and Market News
@@ -26,6 +46,36 @@ A powerful and user-friendly web application for comprehensive stock market anal
 - Fixed theme persistence across page refreshes
 
 ## 📚 Understanding Stock Analysis
+
+### Prediction Analysis Terms
+
+#### Price Forecasts
+- **1-Day Forecast**: Short-term price prediction for the next trading day with percentage change
+- **3-Day Forecast**: Near-term price outlook for the next three trading days
+- **7-Day Forecast**: Weekly price projection with trend indicators
+- **14-Day Forecast**: Bi-weekly market outlook with volatility assessment
+- **30-Day Forecast**: Monthly price target projection with confidence intervals
+
+#### Risk Assessment
+- **RSI Extremes**: Visual indicators for overbought (>70) or oversold (<30) market conditions
+- **Volatility Alerts**: Color-coded volatility indicators (Low/Medium/High)
+- **Trend Confirmation**: Validates price movements with volume and moving averages
+- **Support/Resistance Levels**: Key price points where reversals are more likely
+- **Market Conditions**: Real-time assessment of current trading environment
+
+#### Trading Insights
+- **Buy/Sell Signals**: Clear visual indicators for potential trading opportunities
+- **Price Action Analysis**: Interpretation of current price movements
+- **Volume Analysis**: Trading volume context for price movements
+- **Moving Average Analysis**: Short and long-term trend confirmation
+- **Volatility Assessment**: Market condition indicators for risk management
+
+#### Data Visualization
+- **Price Cards**: Clear display of current and predicted prices
+- **Percentage Change**: Visual indicators for price movements (up/down arrows)
+- **Color Coding**: Intuitive color scheme for quick interpretation
+- **Responsive Layout**: Optimized for all device sizes
+- **Interactive Elements**: Hover effects and tooltips for additional information
 
 ### Technical Analysis Terms
 

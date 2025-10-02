@@ -261,73 +261,212 @@ def run_prediction_analysis(ticker, days):
             
         # Prediction results generated
         
-        # Format the prediction results
-        output = []
-        output.append(f"📈 Price Prediction Analysis for {ticker}")
-        output.append("=" * 50)
+        # Format the output with enhanced HTML
+        current_price = prediction_results.get('current_price', 0)
+        predictions = prediction_results.get('predictions', {})
         
-        try:
-            # Add current price
-            current_price = prediction_results.get('current_price', 0)
-            output.append(f"\n💵 Current Price: ${current_price:.2f}")
-            
-            # Add predictions if available
-            if 'predictions' in prediction_results and prediction_results['predictions']:
-                output.append("\n🔮 Price Predictions:")
-                for days_ahead, price in prediction_results['predictions'].items():
-                    if current_price > 0:  # Avoid division by zero
-                        change_pct = (price / current_price - 1) * 100
-                        output.append(f"   {days_ahead}-day forecast: ${price:.2f} ({change_pct:+.1f}%)")
-                    else:
-                        output.append(f"   {days_ahead}-day forecast: ${price:.2f}")
-            
-            # Add technical indicators
-            output.append("\n📊 Technical Indicators:")
-            
-            if 'rsi' in prediction_results:
-                rsi = prediction_results['rsi']
-                rsi_status = "(Oversold)" if rsi < 30 else "(Overbought)" if rsi > 70 else "(Neutral)"
-                output.append(f"   • RSI: {rsi:.1f} {rsi_status}")
-                
-            if 'volatility' in prediction_results:
-                output.append(f"   • Volatility: {prediction_results['volatility']*100:.1f}%")
-                
-            if 'price_vs_ma20' in prediction_results:
-                output.append(f"   • Price vs 20-day MA: {prediction_results['price_vs_ma20']:+.1f}%")
-                
-            if 'price_vs_ma50' in prediction_results:
-                output.append(f"   • Price vs 50-day MA: {prediction_results['price_vs_ma50']:+.1f}%")
-            
-            # Add trading insights
-            output.append("\n💡 Trading Insights:")
-            if 'rsi' in prediction_results:
-                rsi = prediction_results['rsi']
-                if rsi < 30:
-                    output.append("   • RSI indicates oversold conditions (potential buying opportunity)")
-                elif rsi > 70:
-                    output.append("   • RSI indicates overbought conditions (potential selling opportunity)")
-                    
-            if 'volatility' in prediction_results and prediction_results['volatility'] > 0.4:
-                output.append("   • High volatility detected - expect larger price swings")
-                
-            # Add risk assessment
-            output.append("\n⚠️ Risk Assessment:")
-            risk_factors = []
-            if 'rsi' in prediction_results and (prediction_results['rsi'] > 80 or prediction_results['rsi'] < 20):
-                risk_factors.append("extreme RSI levels")
-            if 'volatility' in prediction_results and prediction_results['volatility'] > 0.5:
-                risk_factors.append("high volatility")
-                
-            if risk_factors:
-                output.append(f"   • Caution: {' and '.join(risk_factors)} detected")
+        # Get RSI and style it
+        rsi = prediction_results.get('rsi')
+        if rsi is not None:
+            if rsi < 30:
+                rsi_status = "Oversold"
+                rsi_color = "text-green-600"
+            elif rsi > 70:
+                rsi_status = "Overbought"
+                rsi_color = "text-red-600"
             else:
-                output.append("   • Normal market conditions detected")
-                
-        except Exception as format_error:
-            # Error formatting results
-            output.append("\n⚠️ Analysis completed with partial results. Some data may be missing.")
+                rsi_status = "Neutral"
+                rsi_color = "text-gray-600"
+        
+        # Get volatility and style it
+        volatility = prediction_results.get('volatility', 0) * 100  # Convert to percentage
+        if volatility > 50:
+            volatility_color = "text-red-600"
+        elif volatility > 30:
+            volatility_color = "text-yellow-600"
+        else:
+            volatility_color = "text-green-600"
+        
+        # Format predictions as cards
+        prediction_cards = ""
+        for days_ahead, price in predictions.items():
+            if current_price > 0:
+                change_pct = (price / current_price - 1) * 100
+                change_color = "text-green-600" if change_pct >= 0 else "text-red-600"
+                change_icon = "↑" if change_pct >= 0 else "↓"
+                prediction_cards += f"""
+                <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden'>
+                    <h4 class='font-semibold text-base mb-3 text-gray-800 dark:text-white'>{days_ahead}-Day Forecast</h4>
+                    <div class='space-y-3'>
+                        <div class='flex flex-wrap items-baseline gap-x-3'>
+                            <span class='text-2xl font-bold text-gray-900 dark:text-white whitespace-nowrap'>${price:.2f}</span>
+                            <span class='{change_color} font-medium text-base whitespace-nowrap'>{change_icon} {abs(change_pct):.1f}%</span>
+                        </div>
+                        <div class='text-sm text-gray-500 dark:text-gray-400'>
+                            <span class='font-medium'>From:</span> <span class='whitespace-nowrap'>${current_price:,.2f}</span>
+                        </div>
+                    </div>
+                </div>
+                """
+        
+        # Generate risk assessment badges
+        risk_badges = ""
+        if 'rsi' in prediction_results:
+            if prediction_results['rsi'] > 80:
+                risk_badges += "<span class='inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100 mr-2 mb-2'>Extreme RSI High</span>"
+            elif prediction_results['rsi'] < 20:
+                risk_badges += "<span class='inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100 mr-2 mb-2'>Extreme RSI Low</span>"
+        
+        if 'volatility' in prediction_results and prediction_results['volatility'] > 0.5:
+            risk_badges += "<span class='inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100 mr-2 mb-2'>High Volatility</span>"
+        
+        if not risk_badges:
+            risk_badges = "<span class='inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100'>Normal Conditions</span>"
+        
+        output = f"""
+        <div class='p-6'>
+            <h3 class='text-xl font-bold mb-6 text-gray-800 dark:text-white'>Price Prediction Analysis for {ticker}</h3>
             
-        return "\n".join(output)
+            <!-- Current Price Section -->
+            <div class='bg-blue-50 dark:bg-blue-900/30 p-6 rounded-xl mb-8'>
+                <h4 class='font-bold text-lg mb-4 text-blue-800 dark:text-blue-200'>Current Market Data</h4>
+                <div class='grid grid-cols-1 md:grid-cols-3 gap-6'>
+                    <div class='bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm'>
+                        <p class='text-base font-medium text-gray-600 dark:text-gray-300 mb-1'>Current Price</p>
+                        <p class='text-3xl font-bold text-gray-900 dark:text-white'>${current_price:.2f}</p>
+                    </div>
+                    <div class='bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm'>
+                        <p class='text-base font-medium text-gray-600 dark:text-gray-300 mb-1'>RSI (14)</p>
+                        <div class='flex items-baseline space-x-3'>
+                            <span class='text-3xl font-bold text-gray-900 dark:text-white'>{rsi:.1f}</span>
+                            <span class='{rsi_color} text-base font-medium'>{rsi_status}</span>
+                        </div>
+                    </div>
+                    <div class='bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm'>
+                        <p class='text-base font-medium text-gray-600 dark:text-gray-300 mb-1'>Volatility</p>
+                        <p class='text-3xl font-bold {volatility_color}'>{volatility:.1f}%</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Price Predictions -->
+            <div class='mb-8'>
+                <h4 class='font-semibold text-lg mb-4 text-gray-800 dark:text-gray-200'>Price Forecasts</h4>
+                <div class='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-{min(len(predictions), 5)} gap-6'>
+                    {prediction_cards}
+                </div>
+            </div>
+            
+            <!-- Risk Assessment -->
+            <div class='bg-amber-50 dark:bg-amber-900/20 p-5 rounded-xl mb-8'>
+                <h4 class='font-semibold text-lg mb-3 text-amber-800 dark:text-amber-200'>Risk Assessment</h4>
+                <div class='flex flex-wrap gap-2'>
+                    {risk_badges}
+                </div>
+            </div>
+            
+            <!-- Trading Insights -->
+            <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm'>
+                <h4 class='font-semibold text-lg mb-4 text-gray-800 dark:text-white'>Trading Insights</h4>
+                <div class='space-y-4'>
+        """
+        
+        # Add trading insights
+        if 'rsi' in prediction_results:
+            if rsi < 30:
+                output += """
+                <div class='flex items-start space-x-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg'>
+                    <div class='flex-shrink-0 h-6 w-6 text-green-500 mt-0.5'>
+                        <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'>
+                            <path fill-rule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z' clip-rule='evenodd' />
+                        </svg>
+                    </div>
+                    <p class='text-base text-gray-700 dark:text-gray-300 leading-relaxed'>
+                        <span class='font-semibold'>Buying Opportunity:</span> RSI indicates oversold conditions.
+                    </p>
+                </div>
+                """
+            elif rsi > 70:
+                output += """
+                <div class='flex items-start space-x-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg'>
+                    <div class='flex-shrink-0 h-6 w-6 text-red-500 mt-0.5'>
+                        <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'>
+                            <path fill-rule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z' clip-rule='evenodd' />
+                        </svg>
+                    </div>
+                    <p class='text-base text-gray-700 dark:text-gray-300 leading-relaxed'>
+                        <span class='font-semibold'>Caution:</span> RSI indicates overbought conditions.
+                    </p>
+                </div>
+                """
+        
+        if 'volatility' in prediction_results and prediction_results['volatility'] > 0.4:
+            output += """
+            <div class='flex items-start space-x-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg'>
+                <div class='flex-shrink-0 h-6 w-6 text-yellow-500 mt-0.5'>
+                    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'>
+                        <path fill-rule='evenodd' d='M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z' clip-rule='evenodd' />
+                    </svg>
+                </div>
+                <p class='text-base text-gray-700 dark:text-gray-300 leading-relaxed'>
+                    <span class='font-semibold'>High Volatility:</span> Expect larger than normal price movements.
+                </p>
+            </div>
+            """
+        
+        # Add moving average insights if available
+        if 'price_vs_ma20' in prediction_results and 'price_vs_ma50' in prediction_results:
+            ma20 = prediction_results['price_vs_ma20']
+            ma50 = prediction_results['price_vs_ma50']
+            
+            if ma20 > 0 and ma50 > 0:
+                output += f"""
+                <div class='flex items-start space-x-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg'>
+                    <div class='flex-shrink-0 h-6 w-6 text-green-500 mt-0.5'>
+                        <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'>
+                            <path fill-rule='evenodd' d='M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z' clip-rule='evenodd' />
+                        </svg>
+                    </div>
+                    <p class='text-base text-gray-700 dark:text-gray-300 leading-relaxed'>
+                        <span class='font-semibold'>Uptrend:</span> Price is above both 20-day and 50-day moving averages.
+                    </p>
+                </div>
+                """
+            elif ma20 < 0 and ma50 < 0:
+                output += f"""
+                <div class='flex items-start space-x-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg'>
+                    <div class='flex-shrink-0 h-6 w-6 text-red-500 mt-0.5'>
+                        <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'>
+                            <path fill-rule='evenodd' d='M12 13a1 1 0 100 2h5a1 1 0 001-1v-5a1 1 0 10-2 0v2.586l-4.293-4.293a1 1 0 00-1.414 0L8 9.586l-4.293-4.293a1 1 0 00-1.414 1.414l5 5a1 1 0 001.414 0L11 9.414 14.586 13H12z' clip-rule='evenodd' />
+                        </svg>
+                    </div>
+                    <p class='text-base text-gray-700 dark:text-gray-300 leading-relaxed'>
+                        <span class='font-semibold'>Downtrend:</span> Price is below both 20-day and 50-day moving averages.
+                    </p>
+                </div>
+                """
+            else:
+                output += """
+                <div class='flex items-start space-x-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg'>
+                    <div class='flex-shrink-0 h-6 w-6 text-yellow-500 mt-0.5'>
+                        <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'>
+                            <path fill-rule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 100-2 1 1 0 000 2zm7-1a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 100 2h2a1 1 0 100-2H9z' clip-rule='evenodd' />
+                        </svg>
+                    </div>
+                    <p class='text-base text-gray-700 dark:text-gray-300 leading-relaxed'>
+                        <span class='font-semibold'>Mixed Signals:</span> Moving averages show conflicting trends.
+                    </p>
+                </div>
+                """
+        
+        # Close the insights div and main container
+        output += """
+                </div>
+            </div>
+        </div>
+        """
+        
+        return output
         
     except Exception as e:
         error_msg = f"Error in prediction analysis: {str(e)}\n{traceback.format_exc()}"
@@ -352,13 +491,17 @@ def run_technical_analysis(ticker, days):
             return f"<div class='p-4'><h3 class='text-lg font-semibold mb-2 text-red-600'>Error</h3><p>No data available for {ticker}. Please check the ticker symbol.</p></div>"
         
         # Import technical analysis functions from market_analyzer
-        from market_analyzer import calculate_rsi, calculate_macd, calculate_bollinger_bands
+        from market_analyzer import calculate_rsi, calculate_macd, calculate_bollinger_bands, calculate_stochastic, calculate_mfi, calculate_ichimoku, calculate_atr
         
         # Calculate technical indicators
         rsi = calculate_rsi(hist['Close'])
         macd_line, macd_signal = calculate_macd(hist['Close'])
         macd_histogram = macd_line - macd_signal  # Calculate histogram manually
         bb_upper, bb_middle, bb_lower = calculate_bollinger_bands(hist['Close'])
+        k, d = calculate_stochastic(hist['High'], hist['Low'], hist['Close'])
+        mfi = calculate_mfi(hist['High'], hist['Low'], hist['Close'], hist['Volume'])
+        ichimoku = calculate_ichimoku(hist['High'], hist['Low'], hist['Close'])
+        atr = calculate_atr(hist['High'], hist['Low'], hist['Close'])
         
         # Get current values
         current_price = hist['Close'].iloc[-1]
@@ -367,6 +510,21 @@ def run_technical_analysis(ticker, days):
         current_macd_signal = macd_signal.iloc[-1] if not macd_signal.empty else 0
         current_bb_upper = bb_upper.iloc[-1] if not bb_upper.empty else 0
         current_bb_lower = bb_lower.iloc[-1] if not bb_lower.empty else 0
+        current_k = k.iloc[-1] if not k.empty else 0
+        current_d = d.iloc[-1] if not d.empty else 0
+        current_mfi = mfi.iloc[-1] if not mfi.empty else 0
+        current_atr = atr.iloc[-1] if not atr.empty else 0
+        
+        # Get current Ichimoku values if available
+        current_ichimoku = {}
+        if ichimoku and all(k in ichimoku for k in ['tenkan_sen', 'kijun_sen', 'senkou_span_a', 'senkou_span_b', 'chikou_span']):
+            current_ichimoku = {
+                'tenkan_sen': ichimoku['tenkan_sen'].iloc[-1],
+                'kijun_sen': ichimoku['kijun_sen'].iloc[-1],
+                'senkou_span_a': ichimoku['senkou_span_a'].iloc[-1],
+                'senkou_span_b': ichimoku['senkou_span_b'].iloc[-1],
+                'chikou_span': ichimoku['chikou_span'].iloc[-26] if len(ichimoku['chikou_span']) > 26 else 0  # 26 periods ago
+            }
         
         # Calculate moving averages
         ma_20 = hist['Close'].rolling(window=20).mean().iloc[-1]
@@ -401,6 +559,28 @@ def run_technical_analysis(ticker, days):
         else:
             bb_position = "Within Bands (Normal)"
             bb_color = "text-gray-600"
+            
+        # Determine Stochastic signal
+        if current_k > 80:
+            stoch_signal = "Overbought"
+            stoch_color = "text-red-600"
+        elif current_k < 20:
+            stoch_signal = "Oversold"
+            stoch_color = "text-green-600"
+        else:
+            stoch_signal = "Neutral"
+            stoch_color = "text-gray-600"
+            
+        # Determine MFI signal
+        if current_mfi > 80:
+            mfi_signal = "Overbought"
+            mfi_color = "text-red-600"
+        elif current_mfi < 20:
+            mfi_signal = "Oversold"
+            mfi_color = "text-green-600"
+        else:
+            mfi_signal = "Neutral"
+            mfi_color = "text-gray-600"
         
         # Get company info
         info = stock.info
@@ -428,7 +608,32 @@ def run_technical_analysis(ticker, days):
             </div>
             
             <!-- Technical Indicators Grid -->
-            <div class='grid grid-cols-1 md:grid-cols-3 gap-4 mb-4'>
+            <div class='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4'>
+                <!-- ATR Card -->
+                <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4'>
+                    <h4 class='font-semibold mb-2 text-gray-800 dark:text-white'>ATR (14)</h4>
+                    <div class='space-y-2'>
+                        <div>
+                            <p class='text-sm text-gray-600 dark:text-gray-400'>ATR Value</p>
+                            <p class='text-2xl font-bold text-gray-800 dark:text-white'>{current_atr:.2f}</p>
+                        </div>
+                        <div>
+                            <p class='text-sm text-gray-600 dark:text-gray-400'>% of Price</p>
+                            <p class='font-semibold'>{(current_atr / current_price * 100):.2f}%</p>
+                        </div>
+                    </div>
+                    <div class='mt-3'>
+                        <div class='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2'>
+                            <div class='bg-amber-500 h-2 rounded-full' style='width: {min((current_atr / current_price * 100) * 2, 100)}%'></div>
+                        </div>
+                        <div class='flex justify-between text-xs text-gray-500 mt-1'>
+                            <span>0%</span>
+                            <span>2.5%</span>
+                            <span>5%</span>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- RSI Card -->
                 <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4'>
                     <h4 class='font-semibold mb-2 text-gray-800 dark:text-white'>RSI (14)</h4>
@@ -484,6 +689,63 @@ def run_technical_analysis(ticker, days):
                             <p class='text-sm text-gray-600 dark:text-gray-400'>Position</p>
                             <p class='{bb_color} font-semibold text-sm'>{bb_position}</p>
                         </div>
+                    </div>
+                </div>
+                
+                <!-- Stochastic Oscillator Card -->
+                <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4'>
+                    <h4 class='font-semibold mb-2 text-gray-800 dark:text-white'>Stochastic (14,3,3)</h4>
+                    <div class='space-y-2'>
+                        <div>
+                            <p class='text-sm text-gray-600 dark:text-gray-400'>%K (Current)</p>
+                            <p class='text-2xl font-bold'>{current_k:.1f}</p>
+                        </div>
+                        <div>
+                            <p class='text-sm text-gray-600 dark:text-gray-400'>%D (Signal)</p>
+                            <p class='font-semibold'>{current_d:.1f}</p>
+                        </div>
+                        <div>
+                            <p class='text-sm text-gray-600 dark:text-gray-400'>Signal</p>
+                            <p class='{stoch_color} font-semibold text-sm'>{stoch_signal}</p>
+                        </div>
+                    </div>
+                    <div class='mt-3'>
+                        <div class='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2'>
+                            <div class='bg-purple-600 h-2 rounded-full' style='width: {min(current_k, 100)}%'></div>
+                        </div>
+                        <div class='flex justify-between text-xs text-gray-500 mt-1'>
+                            <span>0</span>
+                            <span>20</span>
+                            <span>80</span>
+                            <span>100</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Money Flow Index (MFI) Card -->
+                <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4'>
+                    <h4 class='font-semibold mb-2 text-gray-800 dark:text-white'>Money Flow Index (14)</h4>
+                    <div class='space-y-2'>
+                        <div>
+                            <p class='text-sm text-gray-600 dark:text-gray-400'>MFI Value</p>
+                            <p class='text-2xl font-bold'>{current_mfi:.1f}</p>
+                        </div>
+                        <div>
+                            <p class='text-sm text-gray-600 dark:text-gray-400'>Signal</p>
+                            <p class='{mfi_color} font-semibold'>{mfi_signal}</p>
+                        </div>
+                    </div>
+                    <div class='mt-3'>
+                        <div class='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2'>
+                            <div class='bg-indigo-600 h-2 rounded-full' style='width: {min(current_mfi, 100)}%'></div>
+                        </div>
+                        <div class='flex justify-between text-xs text-gray-500 mt-1'>
+                            <span>0</span>
+                            <span>20</span>
+                            <span>80</span>
+                            <span>100</span>
+                        </div>
+                    </div>
                     </div>
                 </div>
             </div>

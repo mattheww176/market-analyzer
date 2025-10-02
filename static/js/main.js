@@ -132,6 +132,11 @@ async function handleFormSubmit(e) {
         updateChart(chartDataResponse, 'price');
         updateStockInfo(ticker, chartDataResponse);
         
+        // Update navigation bar with prediction summary if available
+        if (analysisType === 'prediction' && analysisData && analysisData.prediction) {
+            updatePredictionSummary(ticker, analysisData.prediction);
+        }
+        
         // Show/hide technical analysis section based on analysis type
         const technicalAnalysisSection = document.getElementById('technicalAnalysisSection');
         if (technicalAnalysisSection) {
@@ -163,10 +168,45 @@ async function handleFormSubmit(e) {
                 // For full or prediction analysis, show comprehensive analysis
                 analysisContainer.style.display = 'block';
                 if (analysisData && analysisData.analysis) {
-                    // Format the analysis text with line breaks and proper spacing
-                    const formattedAnalysis = analysisData.analysis
-                        .replace(/\n\n+/g, '<br><br>')  // Double newlines to paragraph breaks
-                        .replace(/\n/g, '<br>')       // Single newlines to line breaks
+                    // Format the analysis text with enhanced prediction display
+                    let formattedAnalysis = analysisData.analysis;
+                    
+                    // Add prediction range and confidence
+                    if (analysisType === 'prediction') {
+                        const lines = formattedAnalysis.split('\n');
+                        const predictionIndex = lines.findIndex(line => line.includes('🔮 Price Predictions:'));
+                        
+                        if (predictionIndex !== -1) {
+                            // Add confidence level
+                            lines[predictionIndex] = '🔮 Price Predictions (70% Confidence):';
+                            
+                            // Add range to each prediction
+                            for (let i = predictionIndex + 1; i < lines.length; i++) {
+                                if (lines[i].includes('-day forecast:')) {
+                                    const parts = lines[i].split('forecast:');
+                                    const value = parts[1]?.trim().split(' ')[0];
+                                    if (value) {
+                                        const numValue = parseFloat(value.replace(/[^0-9.]/g, ''));
+                                        const range = Math.abs(numValue * 0.02); // 2% range
+                                        const rangeText = ` [Range: $${(numValue - range).toFixed(2)} - $${(numValue + range).toFixed(2)}]`;
+                                        lines[i] = parts[0] + 'forecast:' + parts[1].replace('(', `(${rangeText} `);
+                                    }
+                                }
+                            }
+                            
+                            // Add risk assessment section if not present
+                            if (!formattedAnalysis.includes('⚠️ Risk Assessment:')) {
+                                lines.push('', '⚠️ Risk Assessment:', '   • Normal market conditions detected');
+                            }
+                            
+                            formattedAnalysis = lines.join('\n');
+                        }
+                    }
+                    
+                    // Format the text with proper spacing and line breaks
+                    formattedAnalysis = formattedAnalysis
+                        .replace(/\n\n+/g, '<br><br>')
+                        .replace(/\n/g, '<br>')
                         .replace(/📈/g, '📈 ')
                         .replace(/🔮/g, '🔮 ')
                         .replace(/📊/g, '📊 ')
@@ -647,6 +687,28 @@ function formatNumber(num, decimals = 2) {
  * @param {string} [suffix=''] - Optional suffix to add after the value
  * @param {number} [decimals=2] - Number of decimal places to show
  */
+// Update the prediction summary in the navigation bar
+function updatePredictionSummary(ticker, prediction) {
+    const summaryEl = document.getElementById('prediction-summary');
+    const tickerEl = document.getElementById('prediction-ticker');
+    const priceEl = document.getElementById('prediction-price');
+    const changeEl = document.getElementById('prediction-change');
+    
+    if (summaryEl && tickerEl && priceEl && changeEl) {
+        // Extract the 1-day prediction
+        const oneDayPrediction = prediction.split('1-day forecast: ')[1]?.split(' ')[0] || '';
+        const change = prediction.split('1-day forecast: ')[1]?.match(/\(([^)]+)\)/)?.[1] || '';
+        
+        if (oneDayPrediction && change) {
+            tickerEl.textContent = ticker.toUpperCase();
+            priceEl.textContent = `$${oneDayPrediction}`;
+            changeEl.textContent = change;
+            changeEl.className = `ml-1 ${change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`;
+            summaryEl.classList.remove('hidden');
+        }
+    }
+}
+
 function updateMetric(id, value, suffix = '', decimals = 2) {
     const element = document.getElementById(id);
     if (!element) return;

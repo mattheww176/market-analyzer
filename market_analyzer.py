@@ -52,11 +52,175 @@ def calculate_macd(series, short=12, long=26, signal=9):
     return macd, signal_line
 
 def calculate_bollinger_bands(series, window=20, num_std=2):
-    ma = series.rolling(window, min_periods=1).mean()
-    std = series.rolling(window, min_periods=1).std()
-    upper_band = ma + num_std * std
-    lower_band = ma - num_std * std
+    """
+    Calculate Bollinger Bands for a given price series.
+    
+    Args:
+        series: Pandas Series of price data
+        window: Moving average window (default: 20)
+        num_std: Number of standard deviations for the bands (default: 2)
+        
+    Returns:
+        Tuple of (middle_band, upper_band, lower_band)
+    """
+    ma = series.rolling(window=window, min_periods=1).mean()
+    std = series.rolling(window=window, min_periods=1).std()
+    upper_band = ma + (num_std * std)
+    lower_band = ma - (num_std * std)
     return ma, upper_band, lower_band
+
+def calculate_stochastic(high, low, close, k_period=14, d_period=3, slowing=3):
+    """
+    Calculate Stochastic Oscillator
+    %K = (Current Close - Lowest Low) / (Highest High - Lowest Low) * 100
+    %D = 3-day SMA of %K
+    
+    Args:
+        high: Pandas Series of high prices
+        low: Pandas Series of low prices
+        close: Pandas Series of close prices
+        k_period: Lookback period for %K calculation (default: 14)
+        d_period: Smoothing period for %D calculation (default: 3)
+        slowing: Slowing period for %K (default: 3)
+        
+    Returns:
+        Tuple of (k, d) where k is the %K line and d is the %D line
+    """
+    try:
+        lowest_low = low.rolling(window=k_period).min()
+        highest_high = high.rolling(window=k_period).max()
+        
+        k = 100 * ((close - lowest_low) / (highest_high - lowest_low))
+        d = k.rolling(window=d_period).mean()
+        
+        # Apply slowing if specified
+        if slowing > 1:
+            k = k.rolling(window=slowing).mean()
+            d = k.rolling(window=d_period).mean()
+            
+        return k, d
+    except Exception as e:
+        print(f"Error calculating Stochastic Oscillator: {e}")
+        return pd.Series(), pd.Series()
+
+def calculate_ichimoku(high, low, close, tenkan_period=9, kijun_period=26, senkou_span_b_period=52, displacement=26):
+    """
+    Calculate Ichimoku Cloud components
+    
+    Args:
+        high: Pandas Series of high prices
+        low: Pandas Series of low prices
+        close: Pandas Series of close prices
+        tenkan_period: Tenkan-sen period (default: 9)
+        kijun_period: Kijun-sen period (default: 26)
+        senkou_span_b_period: Senkou Span B period (default: 52)
+        displacement: Displacement for Senkou Span (default: 26)
+        
+    Returns:
+        Dictionary containing all Ichimoku components
+    """
+    try:
+        # Tenkan-sen (Conversion Line)
+        tenkan_high = high.rolling(window=tenkan_period).max()
+        tenkan_low = low.rolling(window=tenkan_period).min()
+        tenkan_sen = (tenkan_high + tenkan_low) / 2
+        
+        # Kijun-sen (Base Line)
+        kijun_high = high.rolling(window=kijun_period).max()
+        kijun_low = low.rolling(window=kijun_period).min()
+        kijun_sen = (kijun_high + kijun_low) / 2
+        
+        # Senkou Span A (Leading Span A)
+        senkou_span_a = ((tenkan_sen + kijun_sen) / 2).shift(displacement)
+        
+        # Senkou Span B (Leading Span B)
+        senkou_high = high.rolling(window=senkou_span_b_period).max()
+        senkou_low = low.rolling(window=senkou_span_b_period).min()
+        senkou_span_b = ((senkou_high + senkou_low) / 2).shift(displacement)
+        
+        # Chikou Span (Lagging Span)
+        chikou_span = close.shift(-displacement)
+        
+        return {
+            'tenkan_sen': tenkan_sen,
+            'kijun_sen': kijun_sen,
+            'senkou_span_a': senkou_span_a,
+            'senkou_span_b': senkou_span_b,
+            'chikou_span': chikou_span
+        }
+    except Exception as e:
+        print(f"Error calculating Ichimoku Cloud: {e}")
+        return {}
+
+def calculate_atr(high, low, close, period=14):
+    """
+    Calculate Average True Range (ATR)
+    
+    Args:
+        high: Pandas Series of high prices
+        low: Pandas Series of low prices
+        close: Pandas Series of close prices
+        period: Lookback period (default: 14)
+        
+    Returns:
+        Pandas Series containing ATR values
+    """
+    # Calculate True Range
+    tr1 = high - low
+    tr2 = (high - close.shift(1)).abs()
+    tr3 = (low - close.shift(1)).abs()
+    true_range = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+    
+    # Calculate ATR using simple moving average of true range
+    atr = true_range.rolling(window=period).mean()
+    
+    return atr
+
+def calculate_mfi(high, low, close, volume, period=14):
+    """
+    Calculate Money Flow Index (MFI)
+    
+    Args:
+        high: Pandas Series of high prices
+        low: Pandas Series of low prices
+        close: Pandas Series of close prices
+        volume: Pandas Series of volume data
+        period: Lookback period (default: 14)
+        
+    Returns:
+        Pandas Series containing MFI values
+    """
+    try:
+        # Calculate typical price
+        typical_price = (high + low + close) / 3
+        
+        # Calculate raw money flow
+        money_flow = typical_price * volume
+        
+        # Get the direction of the money flow
+        money_flow_positive = pd.Series(0.0, index=close.index)
+        money_flow_negative = pd.Series(0.0, index=close.index)
+        
+        # Calculate positive and negative money flow
+        for i in range(1, len(typical_price)):
+            if typical_price[i] > typical_price[i-1]:
+                money_flow_positive[i] = money_flow[i]
+            elif typical_price[i] < typical_price[i-1]:
+                money_flow_negative[i] = money_flow[i]
+        
+        # Calculate the money flow ratio
+        mf_ratio = (
+            money_flow_positive.rolling(window=period).sum() / 
+            money_flow_negative.rolling(window=period).sum()
+        )
+        
+        # Calculate MFI
+        mfi = 100 - (100 / (1 + mf_ratio))
+        
+        return mfi
+    except Exception as e:
+        print(f"Error calculating Money Flow Index: {e}")
+        return pd.Series()
 
 def generate_signals(data):
     signals = []

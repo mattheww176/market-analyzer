@@ -439,6 +439,12 @@
             
             <div class="flex items-center">
                 <div class="nav-links">
+                    <div id="prediction-summary" class="hidden ml-4 px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full flex items-center">
+                        <i class="fas fa-chart-line mr-1"></i>
+                        <span id="prediction-ticker">AAPL</span>:
+                        <span id="prediction-price" class="ml-1 font-semibold">$150.25</span>
+                        <span id="prediction-change" class="ml-1 text-green-600">+1.5%</span>
+                    </div>
                     <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}" title="Home">
                         <i class="fas fa-home"></i>
                         <span>Home</span>

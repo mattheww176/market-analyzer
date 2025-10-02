@@ -182,19 +182,20 @@ function updateVolumeAnalysis(chartData) {
         if (volumeElements.length > 1) {
             volumeElements[1].textContent = formatVolume(avgVolume);
         }
+        
+        // Update volume trend indicator
+        const volumeTrendElement = document.querySelector('#volume-analysis .volume-trend');
+        if (volumeTrendElement) {
+            const trend = currentVolume > avgVolume * 1.5 ? 'High' : 
+                         currentVolume > avgVolume * 0.75 ? 'Normal' : 'Low';
+            
+            let trendClass = 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-200';
+            if (trend === 'High') trendClass = 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200';
+            if (trend === 'Low') trendClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200';
+            
+            volumeTrendElement.textContent = trend;
+            volumeTrendElement.className = `px-2.5 py-0.5 rounded-full text-xs font-medium ${trendClass} ml-2`;
+        }
     }
 }
 
-/**
- * Format volume number with appropriate units
- * @param {number} volume - Volume number to format
- * @returns {string} Formatted volume string
- */
-function formatVolume(volume) {
-    if (volume >= 1000000) {
-        return `${(volume / 1000000).toFixed(1)}M`;
-    } else if (volume >= 1000) {
-        return `${(volume / 1000).toFixed(1)}K`;
-    }
-    return volume.toLocaleString();
-}
