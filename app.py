@@ -287,6 +287,54 @@ def run_prediction_analysis(ticker, days):
         else:
             volatility_color = "text-green-600"
         
+        # Calculate market sentiment
+        sentiment_score = 0
+        
+        # RSI-based sentiment
+        if rsi < 30:
+            sentiment_score += 2  # Strong buy signal
+        elif rsi < 40:
+            sentiment_score += 1  # Mild buy signal
+        elif rsi > 70:
+            sentiment_score -= 2  # Strong sell signal
+        elif rsi > 60:
+            sentiment_score -= 1  # Mild sell signal
+            
+        # Volatility adjustment
+        if volatility > 50:
+            sentiment_score -= 1  # High volatility reduces confidence
+            
+        # Moving average trend (if available)
+        if 'price_vs_ma20' in prediction_results and 'price_vs_ma50' in prediction_results:
+            ma20 = prediction_results['price_vs_ma20']
+            ma50 = prediction_results['price_vs_ma50']
+            if ma20 > 0 and ma50 > 0:
+                sentiment_score += 1  # Uptrend
+            elif ma20 < 0 and ma50 < 0:
+                sentiment_score -= 1  # Downtrend
+                
+        # Determine sentiment text and icon
+        if sentiment_score >= 2:
+            sentiment_text = "Very Bullish"
+            sentiment_icon = "🚀"
+            sentiment_color = "text-green-500"
+        elif sentiment_score >= 1:
+            sentiment_text = "Bullish"
+            sentiment_icon = "📈"
+            sentiment_color = "text-green-500"
+        elif sentiment_score <= -2:
+            sentiment_text = "Very Bearish"
+            sentiment_icon = "⚠️"
+            sentiment_color = "text-red-500"
+        elif sentiment_score <= -1:
+            sentiment_text = "Bearish"
+            sentiment_icon = "📉"
+            sentiment_color = "text-red-500"
+        else:
+            sentiment_text = "Neutral"
+            sentiment_icon = "➡️"
+            sentiment_color = "text-gray-500"
+        
         # Format predictions as cards
         prediction_cards = ""
         for days_ahead, price in predictions.items():
@@ -330,7 +378,7 @@ def run_prediction_analysis(ticker, days):
             <!-- Current Price Section -->
             <div class='bg-blue-50 dark:bg-blue-900/30 p-6 rounded-xl mb-8'>
                 <h4 class='font-bold text-lg mb-4 text-blue-800 dark:text-blue-200'>Current Market Data</h4>
-                <div class='grid grid-cols-1 md:grid-cols-3 gap-6'>
+                <div class='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
                     <div class='bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm'>
                         <p class='text-base font-medium text-gray-600 dark:text-gray-300 mb-1'>Current Price</p>
                         <p class='text-3xl font-bold text-gray-900 dark:text-white'>${current_price:.2f}</p>
@@ -345,6 +393,13 @@ def run_prediction_analysis(ticker, days):
                     <div class='bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm'>
                         <p class='text-base font-medium text-gray-600 dark:text-gray-300 mb-1'>Volatility</p>
                         <p class='text-3xl font-bold {volatility_color}'>{volatility:.1f}%</p>
+                    </div>
+                    <div class='bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm'>
+                        <p class='text-base font-medium text-gray-600 dark:text-gray-300 mb-1'>Market Sentiment</p>
+                        <div class='flex items-center space-x-3'>
+                            <span class='text-3xl {sentiment_color}'>{sentiment_icon}</span>
+                            <span class='text-xl font-semibold text-gray-800 dark:text-white'>{sentiment_text}</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1048,38 +1103,142 @@ def analyze():
                     # Calculate basic metrics
                     high_52w = hist['High'].max()
                     low_52w = hist['Low'].min()
+                    current_52w_range = (current_price - low_52w) / (high_52w - low_52w) * 100 if high_52w != low_52w else 50
                     avg_volume = hist['Volume'].mean()
+                    latest_volume = hist['Volume'].iloc[-1]
+                    volume_ratio = (latest_volume / avg_volume) if avg_volume > 0 else 1
+                    market_cap = info.get('marketCap', 0)
+                    pe_ratio = info.get('trailingPE', info.get('forwardPE', 'N/A'))
+                    
+                    # Calculate performance metrics
+                    def calculate_return(days_ago):
+                        if len(hist) > days_ago:
+                            # Get the price 'days_ago' trading days back
+                            prev_price = hist['Close'].iloc[-days_ago-1] if days_ago < len(hist) else hist['Close'].iloc[0]
+                            return ((current_price - prev_price) / prev_price) * 100
+                        return None
+                    
+                    # Get current year start date for YTD calculation
+                    current_year = datetime.now().year
+                    ytd_mask = (hist.index >= f'{current_year}-01-01') & (hist.index <= hist.index[-1])
+                    ytd_return = None
+                    if not hist[ytd_mask].empty and len(hist[ytd_mask]) > 1:
+                        ytd_return = ((current_price - hist[ytd_mask]['Close'].iloc[0]) / hist[ytd_mask]['Close'].iloc[0]) * 100
+                    
+                    # Calculate performance metrics using business days
+                    trading_days_in_week = min(5, len(hist)-1)
+                    trading_days_in_month = min(21, len(hist)-1)
+                    
+                    performance_metrics = {
+                        '1w': calculate_return(trading_days_in_week),
+                        '1m': calculate_return(trading_days_in_month),
+                        'ytd': ytd_return
+                    }
                     
                     # Format the output
                     change_color = "text-green-600" if price_change >= 0 else "text-red-600"
+                    volume_color = "text-green-600" if latest_volume > avg_volume * 1.2 else "text-yellow-600" if latest_volume > avg_volume * 0.8 else "text-red-600"
                     change_symbol = "+" if price_change >= 0 else ""
+                    
+                    # Format market cap
+                    if market_cap >= 1e12:
+                        market_cap_str = f"${market_cap/1e12:.2f}T"
+                    elif market_cap >= 1e9:
+                        market_cap_str = f"${market_cap/1e9:.2f}B"
+                    elif market_cap >= 1e6:
+                        market_cap_str = f"${market_cap/1e6:.2f}M"
+                    else:
+                        market_cap_str = f"${market_cap:,.2f}"
                     
                     company_name = info.get('longName', ticker)
                     
                     output = f"""
                     <div class='p-4'>
-                        <h3 class='text-lg font-semibold mb-4'>Basic Analysis for {company_name} ({ticker})</h3>
+                        <div class='flex justify-between items-center mb-4'>
+                            <h3 class='text-xl font-bold text-gray-800 dark:text-white'>{company_name} <span class='text-blue-600'>({ticker})</span></h3>
+                            <span class='px-3 py-1 rounded-full text-sm font-medium {change_color} bg-opacity-20 {change_color.replace('text-', 'bg-').replace('600', '100')}'>
+                                {change_symbol}{price_change_pct:.2f}% Today
+                            </span>
+                        </div>
                         
-                        <div class='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
-                            <div class='bg-gray-50 dark:bg-gray-700 p-4 rounded'>
-                                <h4 class='font-semibold mb-2'>Current Price</h4>
-                                <p class='text-2xl font-bold'>${current_price:.2f}</p>
-                                <p class='{change_color} text-sm'>
-                                    {change_symbol}{price_change:.2f} ({change_symbol}{price_change_pct:.2f}%)
-                                </p>
+                        <div class='grid grid-cols-1 md:grid-cols-2 gap-4 mb-6'>
+                            <!-- Price and Change -->
+                            <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl'>
+                                <div class='flex items-baseline space-x-2 mb-1'>
+                                    <span class='text-3xl font-bold text-gray-900 dark:text-white'>${current_price:,.2f}</span>
+                                    <span class='{change_color} text-sm font-medium'>{change_symbol}{price_change:.2f} ({change_symbol}{price_change_pct:.2f}%)</span>
+                                </div>
+                                <p class='text-sm text-gray-500 dark:text-gray-400'>Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M')}</p>
                             </div>
                             
-                            <div class='bg-gray-50 dark:bg-gray-700 p-4 rounded'>
-                                <h4 class='font-semibold mb-2'>52-Week Range</h4>
-                                <p class='text-sm'>High: <span class='font-semibold'>${high_52w:.2f}</span></p>
-                                <p class='text-sm'>Low: <span class='font-semibold'>${low_52w:.2f}</span></p>
+                            <!-- Market Cap and P/E -->
+                            <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl'>
+                                <div class='grid grid-cols-2 gap-4'>
+                                    <div>
+                                        <p class='text-sm text-gray-500 dark:text-gray-400'>Market Cap</p>
+                                        <p class='font-medium text-gray-900 dark:text-white'>{market_cap_str}</p>
+                                    </div>
+                                    <div>
+                                        <p class='text-sm text-gray-500 dark:text-gray-400'>P/E Ratio</p>
+                                        <p class='font-medium text-gray-900 dark:text-white'>{pe_ratio if pe_ratio != 'N/A' else 'N/A'}</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         
-                        <div class='bg-gray-50 dark:bg-gray-700 p-4 rounded mb-4'>
-                            <h4 class='font-semibold mb-2'>Volume Information</h4>
-                            <p class='text-sm'>Average Daily Volume: <span class='font-semibold'>{avg_volume:,.0f}</span></p>
-                            <p class='text-sm'>Latest Volume: <span class='font-semibold'>{hist['Volume'].iloc[-1]:,.0f}</span></p>
+                        <!-- 52-Week Range with Visual -->
+                        <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl mb-4'>
+                            <div class='flex justify-between text-sm text-gray-500 dark:text-gray-400 mb-2'>
+                                <span>52-Week Range</span>
+                                <span>${low_52w:,.2f} - ${high_52w:,.2f}</span>
+                            </div>
+                            <div class='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-1'>
+                                <div class='bg-blue-600 h-2.5 rounded-full' style='width: {current_52w_range:.2f}%'></div>
+                            </div>
+                            <div class='flex justify-between text-xs text-gray-500 dark:text-gray-400'>
+                                <span>${low_52w:,.2f}</span>
+                                <span class='text-center'>Current: ${current_price:,.2f}</span>
+                                <span>${high_52w:,.2f}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Volume Information -->
+                        <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl mb-4'>
+                            <div class='flex justify-between items-center mb-2'>
+                                <h4 class='font-semibold text-gray-900 dark:text-white'>Volume</h4>
+                                <span class='text-sm px-2 py-0.5 rounded-full {volume_color} bg-opacity-20 {volume_color.replace('text-', 'bg-').replace('600', '100')}'>
+                                    {volume_ratio:.1f}x average
+                                </span>
+                            </div>
+                            <div class='grid grid-cols-2 gap-4'>
+                                <div>
+                                    <p class='text-sm text-gray-500 dark:text-gray-400'>Latest</p>
+                                    <p class='font-medium text-gray-900 dark:text-white'>{latest_volume:,.0f}</p>
+                                </div>
+                                <div>
+                                    <p class='text-sm text-gray-500 dark:text-gray-400'>Average</p>
+                                    <p class='font-medium text-gray-900 dark:text-white'>{avg_volume:,.0f}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Performance Metrics -->
+                        <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl mb-4'>
+                            <h4 class='font-semibold text-gray-900 dark:text-white mb-3'>Performance</h4>
+                            <div class='grid grid-cols-3 gap-4'>
+                                <div class='text-center'>
+                                    <p class='text-sm text-gray-500 dark:text-gray-400'>1 Week</p>
+                                    {f"<p class='font-medium text-green-600'>{performance_metrics['1w']:+.2f}%</p>" if performance_metrics['1w'] is not None else "<p class='text-sm text-gray-400'>N/A</p>"}
+                                </div>
+                                <div class='text-center'>
+                                    <p class='text-sm text-gray-500 dark:text-gray-400'>1 Month</p>
+                                    {f"<p class='font-medium {('text-green-600' if performance_metrics['1m'] >= 0 else 'text-red-600')}'>{performance_metrics['1m']:+.2f}%</p>" if performance_metrics['1m'] is not None else "<p class='text-sm text-gray-400'>N/A</p>"}
+                                </div>
+                                <div class='text-center'>
+                                    <p class='text-sm text-gray-500 dark:text-gray-400'>YTD</p>
+                                    {f"<p class='font-medium {('text-green-600' if performance_metrics['ytd'] >= 0 else 'text-red-600')}'>{performance_metrics['ytd']:+.2f}%</p>" if performance_metrics['ytd'] is not None else "<p class='text-sm text-gray-400'>N/A</p>"}
+                                </div>
+                            </div>
                         </div>
                         
                         <div class='bg-blue-50 dark:bg-blue-900/30 p-4 rounded'>

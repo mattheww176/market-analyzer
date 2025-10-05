@@ -2,36 +2,37 @@
 
 A powerful and user-friendly web application for comprehensive stock market analysis, featuring interactive charts, technical indicators, and AI-powered price predictions. Get detailed technical analysis, fundamental metrics, and predictive insights for smarter trading decisions.
 
-## 🆕 Latest Updates (v1.4.0)
+## 🆕 Latest Updates (v1.5.0)
 
 ### New Features
-- **Redesigned Prediction Analysis UI**: Modern card-based layout with clear price forecasts and risk indicators
-- **Enhanced Forecast Cards**: Improved price prediction display with percentage changes and visual indicators
-- **Risk Assessment Section**: Clear visualization of market conditions and trading risks
-- **Trading Insights**: Actionable trading recommendations based on technical indicators
-- **Price Target Projections**: Multiple time horizon forecasts (1, 3, 7, 14, and 30 days)
-- **Market Condition Indicators**: Visual cues for overbought/oversold conditions and volatility
+- **Enhanced Basic Analysis**: Comprehensive stock overview with key metrics and performance indicators
+- **Performance Metrics Card**: Quick view of 1-week, 1-month, and YTD returns with color-coded indicators
+- **52-Week Range Visualizer**: Interactive range slider showing current price position within yearly range
+- **Volume Analysis**: Real-time volume comparison with historical averages
+- **Market Cap & Valuation**: Formatted market cap display and P/E ratio integration
+- **Price & Change Tracking**: Prominent display of current price with daily change and percentage
 
 ### UI/UX Improvements
-- **Modern Card Layout**: Clean, organized sections with proper spacing and visual hierarchy
-- **Improved Readability**: Better font sizes, contrast, and spacing throughout the interface
-- **Responsive Design**: Optimized layout for all screen sizes from mobile to desktop
-- **Visual Feedback**: Hover effects and transitions for better interactivity
-- **Consistent Styling**: Unified design language across all analysis types
-- **Enhanced Data Visualization**: Clear presentation of price predictions and market data
+- **Unified Design System**: Consistent card-based layout across all analysis types
+- **Data-Rich Visualizations**: Clear presentation of complex metrics with intuitive indicators
+- **Responsive Grid Layout**: Optimized display for all device sizes
+- **Interactive Elements**: Hover states, tooltips, and visual feedback for better engagement
+- **Performance Optimizations**: Faster data loading and rendering
+- **Accessibility**: Improved color contrast and keyboard navigation
 - **Interactive Elements**: Hover states and transitions for better user engagement
 - **Accessibility**: Improved color contrast and text sizing for better readability
 - **Performance**: Optimized rendering for faster load times
 - **Dark/Light Mode**: Seamless theme switching with persistent preferences
 
-### Previous Features
-- **Technical Analysis UI**: Professional card-based layout with visual indicators for RSI, MACD, and Bollinger Bands
-- **Interactive Price Charts**: Real-time stock charts with volume analysis and technical overlays
-- **Comprehensive Analysis Types**: Basic, Technical, Fundamental, Full, and Prediction analysis modes
-- **Multi-Page Navigation**: Dedicated pages for Analysis, Watchlist, Stock Screener, and Market News
-- **Dark/Light Mode Support**: Full theme switching with persistent user preferences
-- **Responsive Design**: Optimized mobile-first design that works on all devices
-- **Real-time Data Integration**: Live stock data from Yahoo Finance with error handling
+### Key Features
+- **Comprehensive Stock Analysis**: Basic, Technical, Fundamental, and Predictive analytics in one platform
+- **Real-time Market Data**: Live stock prices, volume, and key metrics from reliable sources
+- **Performance Tracking**: Monitor stock performance across multiple timeframes (1D, 1W, 1M, YTD)
+- **Technical Indicators**: RSI, MACD, Moving Averages, and more with visual overlays
+- **Fundamental Analysis**: Financial ratios, valuation metrics, and company information
+- **Prediction Engine**: AI-powered price forecasts and trend analysis
+- **Watchlist & Alerts**: Track your favorite stocks and set price alerts
+- **Market News & Insights**: Latest financial news and market-moving events
 
 ### Improvements
 - **UI/UX**: Redesigned interface with dark/light mode support and improved data visualization
