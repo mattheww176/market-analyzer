@@ -2,7 +2,20 @@
 
 A powerful and user-friendly web application for comprehensive stock market analysis, featuring interactive charts, technical indicators, and AI-powered price predictions. Get detailed technical analysis, fundamental metrics, and predictive insights for smarter trading decisions.
 
-## 🆕 Latest Updates (v1.5.0)
+## 🆕 Latest Updates (v1.6.0)
+
+### New Features
+- **Industry Comparison**: Added industry benchmarking with sector-specific metrics
+- **Default Industry Averages**: Included estimated industry benchmarks for Technology, Finance, and Healthcare sectors
+- **Visual Comparison**: Color-coded indicators show performance relative to industry averages
+- **Sector-Specific Metrics**: Comparison includes key ratios like P/E, P/B, margins, and financial health indicators
+
+### Improvements
+- **Data Fallback**: Graceful degradation when real industry data is unavailable
+- **UI Enhancements**: Clear visual indicators for better data interpretation
+- **Performance**: Optimized data loading for industry comparisons
+
+## Previous Updates (v1.5.0)
 
 ### New Features
 - **Enhanced Basic Analysis**: Comprehensive stock overview with key metrics and performance indicators
@@ -98,6 +111,19 @@ A powerful and user-friendly web application for comprehensive stock market anal
 - **Relative Strength Index (RSI)**: Measures the speed and change of price movements, indicating overbought (>70) or oversold (<30) conditions.
 - **Moving Average Convergence Divergence (MACD)**: Shows the relationship between two moving averages, helping identify trend changes and momentum.
 
+### Industry Comparison
+
+#### How It Works
+- **Sector Matching**: Automatically identifies the company's sector for relevant comparisons
+- **Benchmark Metrics**: Compares key financial ratios against industry standards
+- **Visual Indicators**: Color-coded feedback (Blue = Better than average, Gray = Similar, Red = Below average)
+- **Data Sources**: Uses default industry benchmarks when real-time data is unavailable
+
+#### Current Limitations
+- Default industry averages are estimates and may not reflect real-time market conditions
+- Limited to major sectors (Technology, Finance, Healthcare) in the current version
+- For more accurate industry comparisons, consider integrating with premium data providers
+
 ### Fundamental Analysis Terms
 
 #### Valuation Metrics
@@ -152,12 +178,16 @@ A powerful and user-friendly web application for comprehensive stock market anal
 
 ### 📊 Analysis Dashboard
 - **Home Page**: Main analysis interface with stock ticker input and comprehensive results
+- **Industry Comparison**: Visual comparison of company metrics against sector averages
 - **Interactive Navigation**: Clean navigation bar with dedicated sections
 - **Dark/Light Theme**: Toggle between themes with persistent preferences
 - **Responsive Design**: Optimized for desktop, tablet, and mobile devices
 
 ### 📈 Analysis Types
-- **Basic Analysis**: Quick overview with key metrics, price information, and basic statistics
+- **Basic Analysis**: Quick overview with key metrics, price information, and industry comparisons
+  - **Profit Margins**: Operating and profit margins compared to industry
+  - **Valuation**: P/E, P/B, and PEG ratios vs industry standards
+  - **Financial Health**: Debt/Equity, Current and Quick ratios relative to sector
 - **Technical Analysis**: Professional card-based layout featuring:
   - RSI (14-period) with visual progress bar and overbought/oversold signals
   - MACD with bullish/bearish trend indicators

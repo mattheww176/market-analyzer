@@ -827,6 +827,133 @@ def run_technical_analysis(ticker, days):
     except Exception as e:
         return f"<div class='p-4'><h3 class='text-lg font-semibold mb-2 text-red-600'>Error</h3><p>Failed to perform technical analysis for {ticker}: {str(e)}</p></div>"
 
+# Default industry averages (can be expanded as needed)
+DEFAULT_INDUSTRY_AVERAGES = {
+    'Technology': {
+        'pe': 30.0,
+        'peg': 2.0,
+        'pb': 10.0,
+        'operating_margin': 0.25,  # 25%
+        'profit_margin': 0.20,     # 20%
+        'roe': 0.25,              # 25%
+        'debt_to_equity': 0.5,    # 0.5x
+        'current_ratio': 2.0,     # 2.0x
+        'quick_ratio': 1.8,       # 1.8x
+    },
+    'Finance': {
+        'pe': 15.0,
+        'peg': 1.5,
+        'pb': 1.5,
+        'operating_margin': 0.35,
+        'profit_margin': 0.25,
+        'roe': 0.15,
+        'debt_to_equity': 2.0,
+        'current_ratio': 1.2,
+        'quick_ratio': 1.1,
+    },
+    'Healthcare': {
+        'pe': 25.0,
+        'peg': 1.8,
+        'pb': 4.0,
+        'operating_margin': 0.20,
+        'profit_margin': 0.15,
+        'roe': 0.18,
+        'debt_to_equity': 0.8,
+        'current_ratio': 1.8,
+        'quick_ratio': 1.6,
+    },
+    # Add more sectors as needed
+}
+
+def get_industry_average(sector, metric):
+    """Get industry average for a given sector and metric."""
+    if not sector or sector == 'N/A':
+        return None
+    
+    # Map metric names to keys in our default data
+    metric_map = {
+        'P/E Ratio': 'pe',
+        'PEG Ratio': 'peg',
+        'P/B Ratio': 'pb',
+        'Operating Margin': 'operating_margin',
+        'Profit Margin': 'profit_margin',
+        'ROE': 'roe',
+        'Debt/Equity': 'debt_to_equity',
+        'Current Ratio': 'current_ratio',
+        'Quick Ratio': 'quick_ratio',
+    }
+    
+    key = metric_map.get(metric)
+    if not key:
+        return None
+        
+    # Try to find a matching sector (case insensitive)
+    for sector_name, values in DEFAULT_INDUSTRY_AVERAGES.items():
+        if sector_name.lower() in sector.lower():
+            return values.get(key)
+    
+    # If no exact match, return first available sector's value
+    first_sector = next(iter(DEFAULT_INDUSTRY_AVERAGES.values()), {})
+    return first_sector.get(key)
+
+def get_comparison_row(metric_name, company_value, industry_avg, sector, is_percentage=False):
+    """Helper function to generate a comparison row with appropriate styling."""
+    # Try to get default industry average if not provided
+    if industry_avg is None and sector and sector != 'N/A':
+        industry_avg = get_industry_average(sector, metric_name)
+    
+    if company_value == 'N/A' and industry_avg is None:
+        return f'''
+        <div class='flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800/50 rounded'>
+            <span class='text-sm text-gray-600 dark:text-gray-400'>{metric_name}</span>
+            <span class='text-sm text-gray-500'>No data available</span>
+        </div>'''
+    
+    try:
+        company_num = float(company_value)
+        industry_num = float(industry_avg)
+        
+        # Format values
+        if is_percentage:
+            company_display = f"{company_num * 100:.1f}%"
+            industry_display = f"{industry_num * 100:.1f}%"
+            diff = (company_num - industry_num) * 100
+        else:
+            company_display = f"{company_num:.2f}"
+            industry_display = f"{industry_num:.2f}"
+            diff = company_num - industry_num
+        
+        # Determine style based on comparison
+        if metric_name in ['P/E Ratio', 'PEG Ratio', 'P/B Ratio', 'Debt/Equity']:
+            is_better = company_num <= industry_num
+        else:
+            is_better = company_num >= industry_num
+            
+        diff_text = f"{abs(diff):.2f}{'%' if is_percentage else ''} "
+        diff_text += "higher" if diff > 0 else "lower" if diff < 0 else "same as"
+        
+        bg_color = 'bg-blue-50 dark:bg-blue-900/20' if is_better else 'bg-red-50 dark:bg-red-900/20' if diff != 0 else 'bg-gray-50 dark:bg-gray-800/50'
+        text_color = 'text-blue-600 dark:text-blue-400' if is_better else 'text-red-600 dark:text-red-400' if diff != 0 else 'text-gray-600 dark:text-gray-400'
+        
+        return f'''
+        <div class='p-2 rounded {bg_color}'>
+            <div class='flex justify-between items-center mb-1'>
+                <span class='text-sm font-medium text-gray-600 dark:text-gray-300'>{metric_name}</span>
+                <span class='text-sm font-medium {text_color}'>{company_display}</span>
+            </div>
+            <div class='flex justify-between text-xs text-gray-500 dark:text-gray-400'>
+                <span>Industry: {industry_display}</span>
+                <span class='{text_color}'>{diff_text if diff != 0 else 'Same as average'}</span>
+            </div>
+        </div>'''
+        
+    except (ValueError, TypeError):
+        return f'''
+        <div class='flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800/50 rounded'>
+            <span class='text-sm text-gray-600 dark:text-gray-400'>{metric_name}</span>
+            <span class='text-sm text-gray-500'>N/A</span>
+        </div>'''
+
 def run_fundamental_analysis(ticker):
     """Run enhanced fundamental analysis with better formatting."""
     try:
@@ -1008,6 +1135,71 @@ def run_fundamental_analysis(ticker):
                             <span class='text-sm text-gray-600 dark:text-gray-400'>Payout Ratio</span>
                             <span class='font-semibold'>{format_percentage(payout_ratio)}</span>
                         </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Industry Comparison -->
+            <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-lg mb-4'>
+                <h4 class='font-semibold mb-3 text-gray-800 dark:text-white'>How {company_name} Stacks Up</h4>
+                <div class='space-y-4'>
+                    <div class='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                        <!-- Profitability Comparison -->
+                        <div class='bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg'>
+                            <div class='flex items-center mb-2'>
+                                <span class='font-medium text-gray-700 dark:text-gray-300'>Profit Margins</span>
+                                <span class='ml-2 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'>
+                                    vs {sector if sector != 'N/A' else 'Industry'}
+                                </span>
+                            </div>
+                            <div class='space-y-2'>
+                                {get_comparison_row('Operating Margin', operating_margin, info.get('industryAverageOperatingMargin'), sector, is_percentage=True)}
+                                {get_comparison_row('Profit Margin', profit_margin, info.get('industryAverageProfitMargin'), sector, is_percentage=True)}
+                                {get_comparison_row('ROE', roe, info.get('industryAverageReturnOnEquity'), sector, is_percentage=True)}
+                            </div>
+                        </div>
+                        
+                        <!-- Valuation Comparison -->
+                        <div class='bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg'>
+                            <div class='flex items-center mb-2'>
+                                <span class='font-medium text-gray-700 dark:text-gray-300'>Valuation</span>
+                                <span class='ml-2 text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'>
+                                    vs {sector if sector != 'N/A' else 'Industry'}
+                                </span>
+                            </div>
+                            <div class='space-y-2'>
+                                {get_comparison_row('P/E Ratio', pe_ratio, info.get('industryAveragePE'), sector, is_percentage=False)}
+                                {get_comparison_row('PEG Ratio', peg_ratio, info.get('industryAveragePEG'), sector, is_percentage=False)}
+                                {get_comparison_row('P/B Ratio', price_to_book, info.get('industryAveragePB'), sector, is_percentage=False)}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Financial Health Comparison -->
+                    <div class='bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg'>
+                        <div class='flex items-center mb-2'>
+                            <span class='font-medium text-gray-700 dark:text-gray-300'>Financial Health</span>
+                            <span class='ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'>
+                                vs {sector if sector != 'N/A' else 'Industry'}
+                            </span>
+                        </div>
+                        <div class='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                            <div class='space-y-2'>
+                                {get_comparison_row('Debt/Equity', debt_to_equity, info.get('industryAverageDebtToEquity'), sector, is_percentage=False)}
+                            </div>
+                            <div class='space-y-2'>
+                                {get_comparison_row('Current Ratio', current_ratio, info.get('industryAverageCurrentRatio'), sector, is_percentage=False)}
+                            </div>
+                            <div class='space-y-2'>
+                                {get_comparison_row('Quick Ratio', quick_ratio, info.get('industryAverageQuickRatio'), sector, is_percentage=False)}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class='text-xs text-gray-500 dark:text-gray-400 italic space-y-1'>
+                        <p>ℹ️ Comparison with {sector if sector != 'N/A' else 'industry'} average. Blue = Better than average, Gray = Similar, Red = Below average</p>
+                        {'<p class="text-yellow-600 dark:text-yellow-400">⚠️ Using estimated industry averages as actual data is not available. Consider upgrading to a premium data source for more accurate comparisons.</p>' 
+                         if not any(k.startswith('industryAverage') and v is not None for k, v in info.items()) else ''}
                     </div>
                 </div>
             </div>
@@ -1238,6 +1430,128 @@ def analyze():
                                     <p class='text-sm text-gray-500 dark:text-gray-400'>YTD</p>
                                     {f"<p class='font-medium {('text-green-600' if performance_metrics['ytd'] >= 0 else 'text-red-600')}'>{performance_metrics['ytd']:+.2f}%</p>" if performance_metrics['ytd'] is not None else "<p class='text-sm text-gray-400'>N/A</p>"}
                                 </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Market Context -->
+                        <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl mb-4'>
+                            <h4 class='font-semibold text-gray-900 dark:text-white mb-3'>Market Context</h4>
+                            <div class='space-y-4'>
+                                <!-- Sector/Industry -->
+                                <div>
+                                    <div class='flex justify-between items-center mb-1'>
+                                        <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Sector/Industry</span>
+                                    </div>
+                                    <div class='bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg'>
+                                        <p class='text-sm'><span class='font-medium'>Sector:</span> {info.get('sector', 'N/A')}</p>
+                                        <p class='text-sm mt-1'><span class='font-medium'>Industry:</span> {info.get('industry', 'N/A')}</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Market Cap Classification -->
+                                <div>
+                                    <div class='flex justify-between items-center mb-1'>
+                                        <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Market Cap Classification</span>
+                                    </div>
+                                    <div class='bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg'>
+                                        {
+                                            f"<p class='text-sm'><span class='font-medium'>Market Cap:</span> {market_cap_str} ({'Mega Cap' if market_cap >= 200e9 else 'Large Cap' if market_cap >= 10e9 else 'Mid Cap' if market_cap >= 2e9 else 'Small Cap' if market_cap >= 300e6 else 'Micro Cap' if market_cap >= 50e6 else 'Nano Cap'})</p>"
+                                            if market_cap > 0 else "<p class='text-sm'>Market Cap: N/A</p>"
+                                        }
+                                        <div class='w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5 mt-2'>
+                                            <div class='bg-blue-600 h-2.5 rounded-full' style='width: {
+                                                min(100, max(0, (market_cap / 2e12) * 100)) if market_cap > 0 else 0
+                                            }%'></div>
+                                        </div>
+                                        <div class='flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1'>
+                                            <span>Small</span>
+                                            <span>Mid</span>
+                                            <span>Large</span>
+                                            <span>Mega</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Market Comparison (placeholder) -->
+                                <div class='text-xs text-gray-500 dark:text-gray-400 italic'>
+                                    <p>ℹ️ Compare with: {info.get('sector', 'sector')} average P/E: {info.get('sectorPE', 'N/A')}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Key Financial Health Metrics -->
+                        <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl mb-4'>
+                            <h4 class='font-semibold text-gray-900 dark:text-white mb-3'>Financial Health</h4>
+                            <div class='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                                <!-- Profitability -->
+                                <div class='space-y-4'>
+                                    <div class='bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg'>
+                                        <h5 class='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>Profitability</h5>
+                                        <div class='space-y-2'>
+                                            <div class='flex justify-between'>
+                                                <span class='text-xs text-gray-500 dark:text-gray-400'>ROE</span>
+                                                <span class='text-sm font-medium'>{"{:.1f}%".format(info.get('returnOnEquity', 0) * 100) if info.get('returnOnEquity') else 'N/A'}</span>
+                                            </div>
+                                            <div class='flex justify-between'>
+                                                <span class='text-xs text-gray-500 dark:text-gray-400'>Operating Margin</span>
+                                                <span class='text-sm font-medium'>{"{:.1f}%".format(info.get('operatingMargins', 0) * 100) if info.get('operatingMargins') else 'N/A'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Liquidity -->
+                                    <div class='bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg'>
+                                        <h5 class='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>Liquidity</h5>
+                                        <div class='space-y-2'>
+                                            <div class='flex justify-between'>
+                                                <span class='text-xs text-gray-500 dark:text-gray-400'>Current Ratio</span>
+                                                <span class='text-sm font-medium'>{info.get('currentRatio', 'N/A')}</span>
+                                            </div>
+                                            <div class='flex justify-between'>
+                                                <span class='text-xs text-gray-500 dark:text-gray-400'>Quick Ratio</span>
+                                                <span class='text-sm font-medium'>{info.get('quickRatio', 'N/A')}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Debt & Efficiency -->
+                                <div class='space-y-4'>
+                                    <!-- Debt -->
+                                    <div class='bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg'>
+                                        <h5 class='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>Debt</h5>
+                                        <div class='space-y-2'>
+                                            <div class='flex justify-between'>
+                                                <span class='text-xs text-gray-500 dark:text-gray-400'>Debt/Equity</span>
+                                                <span class='text-sm font-medium'>{"{:.2f}".format(info.get('debtToEquity', 0)) if info.get('debtToEquity') else 'N/A'}</span>
+                                            </div>
+                                            <div class='flex justify-between'>
+                                                <span class='text-xs text-gray-500 dark:text-gray-400'>Interest Coverage</span>
+                                                <span class='text-sm font-medium'>{"{:.1f}x".format(info.get('interestCoverage', 0)) if info.get('interestCoverage') else 'N/A'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Efficiency -->
+                                    <div class='bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg'>
+                                        <h5 class='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>Efficiency</h5>
+                                        <div class='space-y-2'>
+                                            <div class='flex justify-between'>
+                                                <span class='text-xs text-gray-500 dark:text-gray-400'>Asset Turnover</span>
+                                                <span class='text-sm font-medium'>{"{:.2f}".format(info.get('assetTurnover', 0)) if info.get('assetTurnover') else 'N/A'}</span>
+                                            </div>
+                                            <div class='flex justify-between'>
+                                                <span class='text-xs text-gray-500 dark:text-gray-400'>Inventory Turnover</span>
+                                                <span class='text-sm font-medium'>{"{:.1f}x".format(info.get('inventoryTurnover', 0)) if info.get('inventoryTurnover') else 'N/A'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Financial Health Summary -->
+                            <div class='mt-4 text-xs text-gray-500 dark:text-gray-400 italic'>
+                                <p>ℹ️ Financial health indicators help assess the company's financial stability and operational efficiency.</p>
                             </div>
                         </div>
                         
