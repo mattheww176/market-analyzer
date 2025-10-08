@@ -340,64 +340,174 @@ def run_prediction_analysis(ticker, days):
         for days_ahead, price in predictions.items():
             if current_price > 0:
                 change_pct = (price / current_price - 1) * 100
-                change_color = "text-green-600" if change_pct >= 0 else "text-red-600"
+                change_color = "text-green-600 dark:text-green-400" if change_pct >= 0 else "text-red-600 dark:text-red-400"
+                change_bg = "bg-green-50 dark:bg-green-900/20" if change_pct >= 0 else "bg-red-50 dark:bg-red-900/20"
                 change_icon = "↑" if change_pct >= 0 else "↓"
                 prediction_cards += f"""
-                <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden'>
-                    <h4 class='font-semibold text-base mb-3 text-gray-800 dark:text-white'>{days_ahead}-Day Forecast</h4>
-                    <div class='space-y-3'>
-                        <div class='flex flex-wrap items-baseline gap-x-3'>
-                            <span class='text-2xl font-bold text-gray-900 dark:text-white whitespace-nowrap'>${price:.2f}</span>
-                            <span class='{change_color} font-medium text-base whitespace-nowrap'>{change_icon} {abs(change_pct):.1f}%</span>
-                        </div>
-                        <div class='text-sm text-gray-500 dark:text-gray-400'>
+                <div class='bg-white/80 dark:bg-gray-800/70 border border-gray-100 dark:border-gray-700/50 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden backdrop-blur-sm'>
+                    <div class='flex items-center justify-between mb-2'>
+                        <h4 class='text-sm font-semibold text-gray-700 dark:text-gray-200'>{days_ahead}-Day</h4>
+                        <span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {change_bg} {change_color} border border-opacity-20 border-current'>
+                            {change_icon} {abs(change_pct):.1f}%
+                        </span>
+                    </div>
+                    <div class='space-y-0.5'>
+                        <p class='text-xl font-bold text-gray-900 dark:text-white'>${price:,.2f}</p>
+                        <p class='text-xs text-gray-500 dark:text-gray-400'>
                             <span class='font-medium'>From:</span> <span class='whitespace-nowrap'>${current_price:,.2f}</span>
-                        </div>
+                        </p>
                     </div>
                 </div>
                 """
         
-        # Generate risk assessment badges
+        # Generate risk assessment badges with icons
         risk_badges = ""
+        risk_indicators = []
+        
         if 'rsi' in prediction_results:
-            if prediction_results['rsi'] > 80:
-                risk_badges += "<span class='inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100 mr-2 mb-2'>Extreme RSI High</span>"
-            elif prediction_results['rsi'] < 20:
-                risk_badges += "<span class='inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100 mr-2 mb-2'>Extreme RSI Low</span>"
+            rsi = prediction_results['rsi']
+            if rsi > 80:
+                risk_indicators.append({
+                    'text': 'Extreme RSI High',
+                    'color': 'red',
+                    'icon': 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+                    'tooltip': f'RSI at {rsi:.1f} indicates overbought conditions.'
+                })
+            elif rsi < 20:
+                risk_indicators.append({
+                    'text': 'Extreme RSI Low',
+                    'color': 'green',
+                    'icon': 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+                    'tooltip': f'RSI at {rsi:.1f} indicates oversold conditions.'
+                })
         
-        if 'volatility' in prediction_results and prediction_results['volatility'] > 0.5:
-            risk_badges += "<span class='inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100 mr-2 mb-2'>High Volatility</span>"
+        volatility = prediction_results.get('volatility', 0)
+        if volatility > 0.5:
+            risk_indicators.append({
+                'text': 'High Volatility',
+                'color': 'yellow',
+                'icon': 'M13 10V3L4 14h7v7l9-11h-7z',
+                'tooltip': f'High volatility ({volatility*100:.1f}%) detected.'
+            })
         
-        if not risk_badges:
-            risk_badges = "<span class='inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100'>Normal Conditions</span>"
+        if not risk_indicators:
+            risk_indicators.append({
+                'text': 'Normal Conditions',
+                'color': 'blue',
+                'icon': 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z',
+                'tooltip': 'No significant risk indicators detected.'
+            })
         
+        # Format risk badges with consistent styling
+        for indicator in risk_indicators:
+            risk_badges += f"""
+            <div class='group relative inline-block'>
+                <span class='inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium 
+                    bg-{indicator['color']}-100 text-{indicator['color']}-800 
+                    dark:bg-{indicator['color']}-900/40 dark:text-{indicator['color']}-200 
+                    border border-{indicator['color']}-200 dark:border-{indicator['color']}-800/50 
+                    hover:shadow-sm transition-shadow mr-2 mb-2'>
+                    <svg class='w-3.5 h-3.5 mr-1.5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='{indicator['icon']}' />
+                    </svg>
+                    {indicator['text']}
+                </span>
+                <div class='absolute z-10 hidden group-hover:block w-48 p-2 -mt-1 -ml-1 text-xs text-gray-700 bg-white dark:bg-gray-800 rounded shadow-lg border border-gray-200 dark:border-gray-700'>
+                    {indicator['tooltip']}
+                </div>
+            </div>
+            """
+        
+        # Format the output with enhanced HTML
         output = f"""
-        <div class='p-6'>
-            <h3 class='text-xl font-bold mb-6 text-gray-800 dark:text-white'>Price Prediction Analysis for {ticker}</h3>
+        <div class='p-6 space-y-6'>
+            <div class='border-b border-gray-200 dark:border-gray-700 pb-4'>
+                <h2 class='text-2xl font-bold text-gray-900 dark:text-white'>Price Predictions</h2>
+                <div class='flex items-center mt-1 space-x-2'>
+                    <span class='text-xl font-semibold text-gray-800 dark:text-gray-200'>{ticker}</span>
+                    <span class='px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full'>
+                        {sentiment_icon} {sentiment_text}
+                    </span>
+                </div>
+            </div>
             
-            <!-- Current Price Section -->
-            <div class='bg-blue-50 dark:bg-blue-900/30 p-6 rounded-xl mb-8'>
-                <h4 class='font-bold text-lg mb-4 text-blue-800 dark:text-blue-200'>Current Market Data</h4>
-                <div class='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
-                    <div class='bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm'>
-                        <p class='text-base font-medium text-gray-600 dark:text-gray-300 mb-1'>Current Price</p>
-                        <p class='text-3xl font-bold text-gray-900 dark:text-white'>${current_price:.2f}</p>
+            <!-- Risk Indicators -->
+            <div class='bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800/30 rounded-xl p-4'>
+                <div class='flex items-center mb-3'>
+                    <svg class='w-5 h-5 text-orange-500 dark:text-orange-400 mr-2' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' />
+                    </svg>
+                    <h3 class='font-semibold text-orange-800 dark:text-orange-200'>Market Indicators</h3>
+                </div>
+                <div class='flex flex-wrap items-center'>{risk_badges}</div>
+            </div>
+            
+            <!-- Current Market Data -->
+            <div class='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5'>
+                <!-- Current Price -->
+                <div class='bg-white/80 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 p-5 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 backdrop-blur-sm'>
+                    <div class='flex items-center mb-3'>
+                        <div class='p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3'>
+                            <svg class='w-5 h-5 text-blue-600 dark:text-blue-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                                <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' />
+                            </svg>
+                        </div>
+                        <h4 class='font-semibold text-gray-800 dark:text-white'>Current Price</h4>
                     </div>
-                    <div class='bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm'>
-                        <p class='text-base font-medium text-gray-600 dark:text-gray-300 mb-1'>RSI (14)</p>
-                        <div class='flex items-baseline space-x-3'>
-                            <span class='text-3xl font-bold text-gray-900 dark:text-white'>{rsi:.1f}</span>
-                            <span class='{rsi_color} text-base font-medium'>{rsi_status}</span>
+                    <p class='text-3xl font-bold text-gray-900 dark:text-white'>${current_price:,.2f}</p>
+                    <p class='mt-1 text-sm text-gray-500 dark:text-gray-400'>Latest market price</p>
+                </div>
+                
+                <!-- RSI Indicator -->
+                <div class='bg-white/80 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 p-5 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 backdrop-blur-sm'>
+                    <div class='flex items-center justify-between mb-3'>
+                        <div class='flex items-center'>
+                            <div class='p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg mr-3'>
+                                <svg class='w-5 h-5 text-purple-600 dark:text-purple-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                                    <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' />
+                                </svg>
+                            </div>
+                            <h4 class='font-semibold text-gray-800 dark:text-white'>RSI (14)</h4>
+                        </div>
+                        <span class='px-2 py-0.5 text-xs rounded-full {rsi_color} bg-opacity-20'>{rsi_status}</span>
+                    </div>
+                    <div class='flex items-baseline space-x-2'>
+                        <p class='text-3xl font-bold text-gray-900 dark:text-white'>{rsi:.1f}</p>
+                        <div class='w-full max-w-xs bg-gray-200 dark:bg-gray-700 rounded-full h-2.5'>
+                            <div class='bg-purple-600 h-2.5 rounded-full' style='width: {min(max(rsi, 0), 100)}%'></div>
                         </div>
                     </div>
-                    <div class='bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm'>
-                        <p class='text-base font-medium text-gray-600 dark:text-gray-300 mb-1'>Volatility</p>
-                        <p class='text-3xl font-bold {volatility_color}'>{volatility:.1f}%</p>
+                    <div class='mt-1 flex justify-between text-xs text-gray-500 dark:text-gray-400'>
+                        <span>0</span>
+                        <span>30</span>
+                        <span>70</span>
+                        <span>100</span>
                     </div>
-                    <div class='bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm'>
-                        <p class='text-base font-medium text-gray-600 dark:text-gray-300 mb-1'>Market Sentiment</p>
-                        <div class='flex items-center space-x-3'>
-                            <span class='text-3xl {sentiment_color}'>{sentiment_icon}</span>
+                </div>
+                
+                <!-- Volatility -->
+                <div class='bg-white/80 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 p-5 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 backdrop-blur-sm'>
+                    <div class='flex items-center mb-3'>
+                        <div class='p-1.5 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg mr-3'>
+                            <svg class='w-5 h-5 text-yellow-600 dark:text-yellow-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                                <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 10V3L4 14h7v7l9-11h-7z' />
+                            </svg>
+                        </div>
+                        <h4 class='font-semibold text-gray-800 dark:text-white'>Volatility</h4>
+                    </div>
+                    <div class='flex items-baseline space-x-2'>
+                        <p class='text-3xl font-bold {volatility_color}'>{volatility:.1f}%</p>
+                        <div class='w-full max-w-xs bg-gray-200 dark:bg-gray-700 rounded-full h-2.5'>
+                            <div class='bg-yellow-500 h-2.5 rounded-full' style='width: {min(volatility, 100)}%'></div>
+                        </div>
+                    </div>
+                    <p class='mt-1 text-sm text-gray-500 dark:text-gray-400'>
+                        {f"High volatility - {volatility:.1f}%" if volatility > 30 else 
+                          f"Moderate volatility - {volatility:.1f}%" if volatility > 15 else 
+                          f"Low volatility - {volatility:.1f}%"}
+                    </p>
+                </div>
+            </div>
                             <span class='text-xl font-semibold text-gray-800 dark:text-white'>{sentiment_text}</span>
                         </div>
                     </div>
@@ -896,6 +1006,214 @@ def get_industry_average(sector, metric):
     first_sector = next(iter(DEFAULT_INDUSTRY_AVERAGES.values()), {})
     return first_sector.get(key)
 
+def create_basic_analysis_pages(ticker, hist, info, current_price, prev_price, price_change, price_change_pct, 
+                             high_52w, low_52w, current_52w_range, avg_volume, latest_volume, 
+                             volume_ratio, market_cap_str, pe_ratio, company_name, performance_metrics):
+    """Create paginated content for basic analysis with comprehensive metrics."""
+    from datetime import datetime
+    
+    # Format the change display
+    change_color = "text-green-600" if price_change >= 0 else "text-red-600"
+    volume_color = "text-green-600" if latest_volume > avg_volume * 1.2 else "text-yellow-600" if latest_volume > avg_volume * 0.8 else "text-red-600"
+    change_symbol = "+" if price_change >= 0 else ""
+    
+    # Calculate market cap for classification
+    market_cap = info.get('marketCap', 0)
+    market_cap_class = (
+        'Mega Cap' if market_cap >= 200e9 else
+        'Large Cap' if market_cap >= 10e9 else
+        'Mid Cap' if market_cap >= 2e9 else
+        'Small Cap' if market_cap >= 300e6 else
+        'Micro Cap' if market_cap >= 50e6 else 'Nano Cap'
+    )
+    
+    # Create pages dictionary
+    pages = {}
+    
+    # Page 1: Overview
+    pages['overview'] = f"""
+    <div id="overview" class="page-content">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <!-- Price and Change -->
+            <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl'>
+                <div class='flex items-baseline space-x-2 mb-1'>
+                    <span class='text-3xl font-bold text-gray-900 dark:text-white'>${current_price:,.2f}</span>
+                    <span class='{change_color} text-sm font-medium'>{change_symbol}{price_change:.2f} ({change_symbol}{price_change_pct:.2f}%)</span>
+                </div>
+                <p class='text-sm text-gray-500 dark:text-gray-400'>Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M')}</p>
+                
+                <!-- Additional Price Metrics -->
+                <div class='grid grid-cols-2 gap-2 mt-3 text-sm'>
+                    <div>
+                        <span class='text-gray-500 dark:text-gray-400'>Open</span>
+                        <p class='font-medium'>{'$' + format(hist['Open'].iloc[-1], '.2f') if not hist.empty else 'N/A'}</p>
+                    </div>
+                    <div>
+                        <span class='text-gray-500 dark:text-gray-400'>Previous Close</span>
+                        <p class='font-medium'>${prev_price:,.2f}</p>
+                    </div>
+                    <div>
+                        <span class='text-gray-500 dark:text-gray-400'>Day's Range</span>
+                        <p class='font-medium'>{'$' + format(hist['Low'].iloc[-1], '.2f') + ' - $' + format(hist['High'].iloc[-1], '.2f') if not hist.empty else 'N/A'}</p>
+                    </div>
+                    <div>
+                        <span class='text-gray-500 dark:text-gray-400'>52-Week Range</span>
+                        <p class='font-medium'>${low_52w:,.2f} - ${high_52w:,.2f}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Market Cap and P/E -->
+            <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl'>
+                <div class='space-y-4'>
+                    <div>
+                        <p class='text-sm text-gray-500 dark:text-gray-400'>Market Cap</p>
+                        <p class='text-lg font-bold text-gray-900 dark:text-white'>{market_cap_str}</p>
+                        <p class='text-xs text-gray-500 dark:text-gray-400'>{market_cap_class}</p>
+                    </div>
+                    <div class='grid grid-cols-2 gap-4'>
+                        <div>
+                            <p class='text-sm text-gray-500 dark:text-gray-400'>P/E Ratio</p>
+                            <p class='text-lg font-bold text-gray-900 dark:text-white'>{pe_ratio if pe_ratio != 'N/A' else 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p class='text-sm text-gray-500 dark:text-gray-400'>Beta (5Y)</p>
+                            <p class='text-lg font-bold text-gray-900 dark:text-white'>{info.get('beta', 'N/A')}</p>
+                        </div>
+                    </div>
+                    <div class='grid grid-cols-2 gap-4'>
+                        <div>
+                            <p class='text-sm text-gray-500 dark:text-gray-400'>EPS</p>
+                            <p class='font-medium'>{'$' + format(info.get('trailingEps', 'N/A'), '.2f') if info.get('trailingEps') else 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p class='text-sm text-gray-500 dark:text-gray-400'>Shares Out</p>
+                            <p class='font-medium'>{f"{info.get('sharesOutstanding', 0) / 1e6:,.0f}M" if info.get('sharesOutstanding') else 'N/A'}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 52-Week Range with Visual -->
+        <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl mb-6'>
+            <div class='flex justify-between text-sm text-gray-500 dark:text-gray-400 mb-2'>
+                <span>52-Week Range</span>
+                <span>${low_52w:,.2f} - ${high_52w:,.2f}</span>
+            </div>
+            <div class='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-1'>
+                <div class='bg-blue-600 h-2.5 rounded-full' style='width: {current_52w_range:.2f}%'></div>
+            </div>
+            <div class='flex justify-between text-xs text-gray-500 dark:text-gray-400'>
+                <span>${low_52w:,.2f}</span>
+                <span class='text-center'>Current: ${current_price:,.2f}</span>
+                <span>${high_52w:,.2f}</span>
+            </div>
+        </div>
+        
+        <!-- Market Cap Classification -->
+        <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl mb-6'>
+            <h4 class='font-semibold text-gray-900 dark:text-white mb-3'>Market Cap Classification</h4>
+            <div class='space-y-2'>
+                <div class='flex justify-between text-sm'>
+                    <span class='text-gray-500 dark:text-gray-400'>Size</span>
+                    <span class='font-medium'>{market_cap_class}</span>
+                </div>
+                <div class='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mt-2'>
+                    <div class='bg-blue-600 h-2.5 rounded-full' style='width: {min(100, max(0, (market_cap / 2e12) * 100)) if market_cap > 0 else 0}%'></div>
+                </div>
+                <div class='flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1'>
+                    <span>Small</span>
+                    <span>Mid</span>
+                    <span>Large</span>
+                    <span>Mega</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    """
+    
+    # Page 2: Volume and Liquidity
+    pages['volume'] = f"""
+    <div id="volume" class="page-content">
+        <!-- Volume Information -->
+        <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl mb-4'>
+            <div class='flex justify-between items-center mb-2'>
+                <h4 class='font-semibold text-gray-900 dark:text-white'>Volume</h4>
+                <span class='text-sm px-2 py-0.5 rounded-full {volume_color} bg-opacity-20 {volume_color.replace("text-", "bg-").replace("600", "100")}'>
+                    {volume_ratio:.1f}x average
+                </span>
+            </div>
+            <div class='grid grid-cols-2 gap-4'>
+                <div>
+                    <p class='text-sm text-gray-500 dark:text-gray-400'>Latest Volume</p>
+                    <p class='font-medium text-gray-900 dark:text-white'>{latest_volume:,.0f}</p>
+                </div>
+                <div>
+                    <p class='text-sm text-gray-500 dark:text-gray-400'>Average Volume</p>
+                    <p class='font-medium text-gray-900 dark:text-white'>{avg_volume:,.0f}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Additional volume metrics can go here -->
+    </div>
+    """
+    
+    # Page 3: Performance
+    pages['performance'] = f"""
+    <div id="performance" class="page-content">
+        <!-- Performance Metrics -->
+        <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl mb-4'>
+            <h4 class='font-semibold text-gray-900 dark:text-white mb-3'>Performance</h4>
+            <div class='grid grid-cols-2 md:grid-cols-3 gap-4'>
+                <div class='text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg'>
+                    <p class='text-sm text-gray-500 dark:text-gray-400'>1 Week</p>
+                    {f"<p class='font-medium {('text-green-600' if performance_metrics['1w'] >= 0 else 'text-red-600')}'>{performance_metrics['1w']:+.2f}%</p>" if performance_metrics['1w'] is not None else "<p class='text-sm text-gray-400'>N/A</p>"}
+                </div>
+                <div class='text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg'>
+                    <p class='text-sm text-gray-500 dark:text-gray-400'>1 Month</p>
+                    {f"<p class='font-medium {('text-green-600' if performance_metrics['1m'] >= 0 else 'text-red-600')}'>{performance_metrics['1m']:+.2f}%</p>" if performance_metrics['1m'] is not None else "<p class='text-sm text-gray-400'>N/A</p>"}
+                </div>
+                <div class='text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg'>
+                    <p class='text-sm text-gray-500 dark:text-gray-400'>YTD</p>
+                    {f"<p class='font-medium {('text-green-600' if performance_metrics['ytd'] >= 0 else 'text-red-600')}'>{performance_metrics['ytd']:+.2f}%</p>" if performance_metrics['ytd'] is not None else "<p class='text-sm text-gray-400'>N/A</p>"}
+                </div>
+            </div>
+        </div>
+    </div>
+    """
+    
+    # Page 4: Company Info
+    pages['company'] = f"""
+    <div id="company" class="page-content">
+        <!-- Company Information -->
+        <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl mb-4'>
+            <h4 class='font-semibold text-gray-900 dark:text-white mb-3'>Company Information</h4>
+            <div class='space-y-3'>
+                <div class='flex justify-between py-2 border-b border-gray-100 dark:border-gray-700'>
+                    <span class='text-sm text-gray-500 dark:text-gray-400'>Sector</span>
+                    <span class='text-sm font-medium text-gray-900 dark:text-white'>{info.get('sector', 'N/A')}</span>
+                </div>
+                <div class='flex justify-between py-2 border-b border-gray-100 dark:border-gray-700'>
+                    <span class='text-sm text-gray-500 dark:text-gray-400'>Industry</span>
+                    <span class='text-sm font-medium text-gray-900 dark:text-white'>{info.get('industry', 'N/A')}</span>
+                </div>
+                <div class='flex justify-between py-2 border-b border-gray-100 dark:border-gray-700'>
+                    <span class='text-sm text-gray-500 dark:text-gray-400'>Employees</span>
+                    <span class='text-sm font-medium text-gray-900 dark:text-white'>{info.get('fullTimeEmployees', 'N/A'):,}</span>
+                </div>
+                <div class='flex justify-between py-2'>
+                    <span class='text-sm text-gray-500 dark:text-gray-400'>Website</span>
+                    <a href='{info.get('website', '#')}' target='_blank' class='text-sm font-medium text-blue-600 hover:underline dark:text-blue-400'>{info.get('website', 'N/A')}</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    """
+    
+    return pages
+
 def get_comparison_row(metric_name, company_value, industry_avg, sector, is_percentage=False):
     """Helper function to generate a comparison row with appropriate styling."""
     # Try to get default industry average if not provided
@@ -954,8 +1272,364 @@ def get_comparison_row(metric_name, company_value, industry_avg, sector, is_perc
             <span class='text-sm text-gray-500'>N/A</span>
         </div>'''
 
+def create_fundamental_analysis_pages(ticker, info, company_name, sector, industry, market_cap_formatted, 
+                                   pe_ratio, forward_pe, peg_ratio, price_to_book, price_to_sales,
+                                   profit_margin, operating_margin, roe, roa, revenue_growth, earnings_growth,
+                                   dividend_yield, payout_ratio, debt_to_equity, current_ratio, quick_ratio):
+    """Create paginated content for fundamental analysis."""
+    # Helper function to format percentage
+    def format_percentage(value):
+        if value == 'N/A' or value is None:
+            return 'N/A'
+        try:
+            return f"{float(value) * 100:.2f}%" if isinstance(value, (int, float)) else 'N/A'
+        except:
+            return 'N/A'
+    
+    # Helper function to format ratio
+    def format_ratio(value):
+        if value == 'N/A' or value is None:
+            return 'N/A'
+        try:
+            return f"{float(value):.2f}" if isinstance(value, (int, float)) else 'N/A'
+        except:
+            return 'N/A'
+    
+    # Create pages dictionary to hold different sections
+    pages = {}
+    
+    # Page 1: Company Overview and Key Metrics
+    pages['overview'] = f"""
+    <div class='p-4 space-y-6'>
+        <div class='border-b border-gray-200 dark:border-gray-700 pb-4'>
+            <h2 class='text-2xl font-bold text-gray-900 dark:text-white'>Fundamental Analysis</h2>
+            <div class='flex items-center mt-1 space-x-2'>
+                <span class='text-xl font-semibold text-gray-800 dark:text-gray-200'>{company_name}</span>
+                <span class='px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full'>{ticker}</span>
+            </div>
+        </div>
+        
+        <!-- Company Overview -->
+        <div class='bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/30 p-6 rounded-xl border border-blue-100 dark:border-blue-800/50 shadow-sm'>
+            <div class='flex items-center mb-4'>
+                <div class='p-2 bg-blue-100 dark:bg-blue-800/50 rounded-lg mr-3'>
+                    <svg class='w-6 h-6 text-blue-600 dark:text-blue-300' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'></path>
+                    </svg>
+                </div>
+                <h3 class='text-lg font-semibold text-gray-900 dark:text-white'>Company Overview</h3>
+            </div>
+            <div class='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
+                <div class='bg-white/50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <p class='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1'>Sector</p>
+                    <p class='font-medium text-gray-900 dark:text-white'>{sector}</p>
+                </div>
+                <div class='bg-white/50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <p class='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1'>Industry</p>
+                    <p class='font-medium text-gray-900 dark:text-white'>{industry}</p>
+                </div>
+                <div class='bg-white/50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <p class='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1'>Market Cap</p>
+                    <p class='font-medium text-gray-900 dark:text-white'>{market_cap_formatted}</p>
+                </div>
+                <div class='bg-white/50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <p class='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1'>Employees</p>
+                    <p class='font-medium text-gray-900 dark:text-white'>{info.get('fullTimeEmployees', 'N/A'):,}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Key Metrics -->
+        <div class='grid grid-cols-1 md:grid-cols-2 gap-5'>
+            <!-- Valuation Metrics -->
+            <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg mr-3'>
+                        <svg class='w-5 h-5 text-purple-600 dark:text-purple-400' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'></path>
+                        </svg>
+                    </div>
+                    <h4 class='font-semibold text-gray-800 dark:text-white'>Valuation Ratios</h4>
+                </div>
+                <div class='space-y-2.5'>
+                    <div class='flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors'>
+                        <span class='text-sm font-medium text-gray-600 dark:text-gray-300'>P/E Ratio (TTM)</span>
+                        <span class='font-semibold text-gray-900 dark:text-white'>{format_ratio(pe_ratio)}</span>
+                    </div>
+                    <div class='flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors'>
+                        <span class='text-sm font-medium text-gray-600 dark:text-gray-300'>Forward P/E</span>
+                        <span class='font-semibold text-gray-900 dark:text-white'>{format_ratio(forward_pe)}</span>
+                    </div>
+                    <div class='flex justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors'>
+                        <span class='text-sm text-gray-600 dark:text-gray-400'>PEG Ratio</span>
+                        <span class='font-semibold'>{format_ratio(peg_ratio)}</span>
+                    </div>
+                    <div class='flex justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors'>
+                        <span class='text-sm text-gray-600 dark:text-gray-400'>Price-to-Book</span>
+                        <span class='font-semibold'>{format_ratio(price_to_book)}</span>
+                    </div>
+                    <div class='flex justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors'>
+                        <span class='text-sm text-gray-600 dark:text-gray-400'>Price-to-Sales</span>
+                        <span class='font-semibold'>{format_ratio(price_to_sales)}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Profitability Metrics -->
+            <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg mr-3'>
+                        <svg class='w-5 h-5 text-green-600 dark:text-green-400' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'></path>
+                        </svg>
+                    </div>
+                    <h4 class='font-semibold text-gray-800 dark:text-white'>Profitability</h4>
+                </div>
+                <div class='space-y-2.5'>
+                    <div class='flex justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors'>
+                        <span class='text-sm text-gray-600 dark:text-gray-400'>Profit Margin</span>
+                        <span class='font-semibold'>{format_percentage(profit_margin)}</span>
+                    </div>
+                    <div class='flex justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors'>
+                        <span class='text-sm text-gray-600 dark:text-gray-400'>Operating Margin</span>
+                        <span class='font-semibold'>{format_percentage(operating_margin)}</span>
+                    </div>
+                    <div class='flex justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors'>
+                        <span class='text-sm text-gray-600 dark:text-gray-400'>Return on Equity</span>
+                        <span class='font-semibold'>{format_percentage(roe)}</span>
+                    </div>
+                    <div class='flex justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors'>
+                        <span class='text-sm text-gray-600 dark:text-gray-400'>Return on Assets</span>
+                        <span class='font-semibold'>{format_percentage(roa)}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    """
+
+    # Page 2: Growth and Dividend Information
+    pages['growth_dividend'] = f"""
+    <div class='p-4 space-y-6'>
+        <div class='border-b border-gray-200 dark:border-gray-700 pb-4'>
+            <h2 class='text-2xl font-bold text-gray-900 dark:text-white'>Growth & Dividend Analysis</h2>
+            <div class='flex items-center mt-1 space-x-2'>
+                <span class='text-xl font-semibold text-gray-800 dark:text-gray-200'>{company_name}</span>
+                <span class='px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full'>{ticker}</span>
+            </div>
+        </div>
+        
+        <!-- Growth and Dividend -->
+        <div class='grid grid-cols-1 md:grid-cols-2 gap-5'>
+            <!-- Growth Metrics -->
+            <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3'>
+                        <svg class='w-5 h-5 text-blue-600 dark:text-blue-400' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 7h8m0 0v8m0-8l-8 8-4-4-6 6'></path>
+                        </svg>
+                    </div>
+                    <h4 class='font-semibold text-gray-800 dark:text-white'>Growth Metrics</h4>
+                </div>
+                <div class='space-y-2.5'>
+                    <div class='flex justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors'>
+                        <span class='text-sm text-gray-600 dark:text-gray-400'>Revenue Growth</span>
+                        <span class='font-semibold'>{format_percentage(revenue_growth)}</span>
+                    </div>
+                    <div class='flex justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors'>
+                        <span class='text-sm text-gray-600 dark:text-gray-400'>Earnings Growth</span>
+                        <span class='font-semibold'>{format_percentage(earnings_growth)}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Dividend Information -->
+            <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-1.5 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg mr-3'>
+                        <svg class='w-5 h-5 text-yellow-600 dark:text-yellow-400' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'></path>
+                        </svg>
+                    </div>
+                    <h4 class='font-semibold text-gray-800 dark:text-white'>Dividend Information</h4>
+                </div>
+                <div class='space-y-2.5'>
+                    <div class='flex justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors'>
+                        <span class='text-sm text-gray-600 dark:text-gray-400'>Dividend Yield</span>
+                        <span class='font-semibold'>{format_percentage(dividend_yield)}</span>
+                    </div>
+                    <div class='flex justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors'>
+                        <span class='text-sm text-gray-600 dark:text-gray-400'>Payout Ratio</span>
+                        <span class='font-semibold'>{format_percentage(payout_ratio)}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    """
+
+    # Page 3: Industry Comparison
+    pages['industry'] = f"""
+    <div class='p-4 space-y-6'>
+        <div class='border-b border-gray-200 dark:border-gray-700 pb-4'>
+            <h2 class='text-2xl font-bold text-gray-900 dark:text-white'>Industry Comparison</h2>
+            <div class='flex items-center mt-1 space-x-2'>
+                <span class='text-xl font-semibold text-gray-800 dark:text-gray-200'>{company_name}</span>
+                <span class='px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full'>{ticker}</span>
+            </div>
+        </div>
+        
+        <!-- Industry Comparison -->
+        <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 p-6 rounded-xl shadow-sm'>
+            <div class='flex items-center mb-4'>
+                <div class='p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg mr-3'>
+                    <svg class='w-5 h-5 text-indigo-600 dark:text-indigo-400' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'></path>
+                    </svg>
+                </div>
+                <h3 class='text-lg font-semibold text-gray-900 dark:text-white'>Industry Comparison</h3>
+            </div>
+            <p class='text-sm text-gray-500 dark:text-gray-400 mb-5'>How {company_name} compares to the {sector if sector != 'N/A' else 'industry'} average</p>
+            <div class='space-y-4'>
+                <div class='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                    <!-- Profitability Comparison -->
+                    <div class='bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg'>
+                        <div class='flex items-center mb-2'>
+                            <span class='font-medium text-gray-700 dark:text-gray-300'>Profit Margins</span>
+                            <span class='ml-2 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'>
+                                vs {sector if sector != 'N/A' else 'Industry'}
+                            </span>
+                        </div>
+                        <div class='space-y-2'>
+                            {get_comparison_row('Operating Margin', operating_margin, info.get('industryAverageOperatingMargin'), sector, is_percentage=True)}
+                            {get_comparison_row('Profit Margin', profit_margin, info.get('industryAverageProfitMargin'), sector, is_percentage=True)}
+                            {get_comparison_row('ROE', roe, info.get('industryAverageReturnOnEquity'), sector, is_percentage=True)}
+                        </div>
+                    </div>
+                    
+                    <!-- Valuation Comparison -->
+                    <div class='bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg'>
+                        <div class='flex items-center mb-2'>
+                            <span class='font-medium text-gray-700 dark:text-gray-300'>Valuation</span>
+                            <span class='ml-2 text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'>
+                                vs {sector if sector != 'N/A' else 'Industry'}
+                            </span>
+                        </div>
+                        <div class='space-y-2'>
+                            {get_comparison_row('P/E Ratio', pe_ratio, info.get('industryAveragePE'), sector, is_percentage=False)}
+                            {get_comparison_row('PEG Ratio', peg_ratio, info.get('industryAveragePEG'), sector, is_percentage=False)}
+                            {get_comparison_row('P/B Ratio', price_to_book, info.get('industryAveragePB'), sector, is_percentage=False)}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Financial Health Comparison -->
+                <div class='bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg'>
+                    <div class='flex items-center mb-2'>
+                        <span class='font-medium text-gray-700 dark:text-gray-300'>Financial Health</span>
+                        <span class='ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'>
+                            vs {sector if sector != 'N/A' else 'Industry'}
+                        </span>
+                    </div>
+                    <div class='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                        <div class='space-y-2'>
+                            {get_comparison_row('Debt/Equity', debt_to_equity, info.get('industryAverageDebtToEquity'), sector, is_percentage=False)}
+                        </div>
+                        <div class='space-y-2'>
+                            {get_comparison_row('Current Ratio', current_ratio, info.get('industryAverageCurrentRatio'), sector, is_percentage=False)}
+                        </div>
+                        <div class='space-y-2'>
+                            {get_comparison_row('Quick Ratio', quick_ratio, info.get('industryAverageQuickRatio'), sector, is_percentage=False)}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class='mt-6 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 rounded-lg'>
+                    <div class='flex'>
+                        <svg class='h-5 w-5 text-blue-500 dark:text-blue-400 mt-0.5 mr-2 flex-shrink-0' fill='currentColor' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'>
+                            <path fill-rule='evenodd' d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h2a1 1 0 100-2v-3a1 1 0 00-1-1H9z' clip-rule='evenodd'></path>
+                        </svg>
+                        <div class='text-sm text-blue-700 dark:text-blue-300'>
+                            <p class='font-medium'>How to read this comparison:</p>
+                            <div class='flex flex-wrap items-center gap-2 mt-1 text-xs'>
+                                <span class='inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200'>Better than average</span>
+                                <span class='inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'>Similar to average</span>
+                                <span class='inline-flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200'>Below average</span>
+                            </div>
+                            {'<p class="mt-2 text-yellow-700 dark:text-yellow-300 font-medium">ℹ️ Using estimated industry averages. For more accurate comparisons, consider upgrading to a premium data source.</p>' 
+                            if not any(k.startswith('industryAverage') and v is not None for k, v in info.items()) else ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    """
+
+    # Page 4: Financial Health
+    pages['financial_health'] = f"""
+    <div class='p-4 space-y-6'>
+        <div class='border-b border-gray-200 dark:border-gray-700 pb-4'>
+            <h2 class='text-2xl font-bold text-gray-900 dark:text-white'>Financial Health</h2>
+            <div class='flex items-center mt-1 space-x-2'>
+                <span class='text-xl font-semibold text-gray-800 dark:text-gray-200'>{company_name}</span>
+                <span class='px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full'>{ticker}</span>
+            </div>
+        </div>
+        
+        <!-- Financial Health -->
+        <div class='bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-6 rounded-xl border border-green-100 dark:border-green-800/50 shadow-sm'>
+            <div class='flex items-center mb-4'>
+                <div class='p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg mr-3'>
+                    <svg class='w-5 h-5 text-green-600 dark:text-green-400' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'></path>
+                    </svg>
+                </div>
+                <h3 class='text-lg font-semibold text-green-800 dark:text-green-200'>Financial Health</h3>
+            </div>
+            <div class='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                <div class='bg-white/60 dark:bg-gray-800/40 p-4 rounded-lg border border-green-100 dark:border-green-800/30'>
+                    <p class='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1'>Debt-to-Equity</p>
+                    <p class='text-xl font-semibold text-gray-900 dark:text-white'>{format_ratio(debt_to_equity)}</p>
+                    <p class='mt-1 text-xs text-gray-500 dark:text-gray-400'>Lower is better</p>
+                </div>
+                <div class='bg-white/60 dark:bg-gray-800/40 p-4 rounded-lg border border-green-100 dark:border-green-800/30'>
+                    <p class='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1'>Current Ratio</p>
+                    <p class='text-xl font-semibold text-gray-900 dark:text-white'>{format_ratio(current_ratio)}</p>
+                    <p class='mt-1 text-xs text-gray-500 dark:text-gray-400'>Above 1.5 is good</p>
+                </div>
+                <div class='bg-white/60 dark:bg-gray-800/40 p-4 rounded-lg border border-green-100 dark:border-green-800/30'>
+                    <p class='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1'>Quick Ratio</p>
+                    <p class='text-xl font-semibold text-gray-900 dark:text-white'>{format_ratio(quick_ratio)}</p>
+                    <p class='mt-1 text-xs text-gray-500 dark:text-gray-400'>Above 1.0 is good</p>
+                </div>
+            </div>
+            
+            <div class='mt-6 p-4 bg-white/60 dark:bg-gray-800/40 rounded-lg border border-green-100 dark:border-green-800/30'>
+                <h4 class='font-medium text-gray-800 dark:text-gray-200 mb-2'>Liquidity Analysis</h4>
+                <p class='text-sm text-gray-600 dark:text-gray-400'>
+                    The current ratio measures a company's ability to pay short-term obligations with current assets. 
+                    A ratio above 1.5 is generally considered healthy. The quick ratio is a more conservative measure 
+                    that excludes inventory from current assets.
+                </p>
+            </div>
+            
+            <div class='mt-4 p-4 bg-white/60 dark:bg-gray-800/40 rounded-lg border border-green-100 dark:border-green-800/30'>
+                <h4 class='font-medium text-gray-800 dark:text-gray-200 mb-2'>Debt Analysis</h4>
+                <p class='text-sm text-gray-600 dark:text-gray-400'>
+                    The debt-to-equity ratio indicates the relative proportion of shareholders' equity and debt used to 
+                    finance a company's assets. Lower values generally indicate less risk, but the appropriate level 
+                    varies by industry.
+                </p>
+            </div>
+        </div>
+    </div>
+    """
+    
+    return pages
+
 def run_fundamental_analysis(ticker):
-    """Run enhanced fundamental analysis with better formatting."""
+    """Run enhanced fundamental analysis with pagination."""
     try:
         import yfinance as yf
         
@@ -963,7 +1637,10 @@ def run_fundamental_analysis(ticker):
         info = stock.info
         
         if not info or len(info) < 5:
-            return f"<div class='p-4'><h3 class='text-lg font-semibold mb-2 text-red-600'>Error</h3><p>No fundamental data available for {ticker}. Please check the ticker symbol.</p></div>"
+            return {
+                'error': True,
+                'content': f"<div class='p-4'><h3 class='text-lg font-semibold mb-2 text-red-600'>Error</h3><p>No fundamental data available for {ticker}. Please check the ticker symbol.</p></div>"
+            }
         
         # Get company information
         company_name = info.get('longName', ticker)
@@ -1010,64 +1687,149 @@ def run_fundamental_analysis(ticker):
         else:
             market_cap_formatted = "N/A"
         
-        # Helper function to format percentage
-        def format_percentage(value):
-            if value == 'N/A' or value is None:
-                return 'N/A'
-            try:
-                return f"{float(value) * 100:.2f}%" if isinstance(value, (int, float)) else 'N/A'
-            except:
-                return 'N/A'
+        # Create paginated content
+        pages = create_fundamental_analysis_pages(
+            ticker, info, company_name, sector, industry, market_cap_formatted,
+            pe_ratio, forward_pe, peg_ratio, price_to_book, price_to_sales,
+            profit_margin, operating_margin, roe, roa, revenue_growth, earnings_growth,
+            dividend_yield, payout_ratio, debt_to_equity, current_ratio, quick_ratio
+        )
         
-        # Helper function to format ratio
-        def format_ratio(value):
-            if value == 'N/A' or value is None:
-                return 'N/A'
-            try:
-                return f"{float(value):.2f}" if isinstance(value, (int, float)) else 'N/A'
-            except:
-                return 'N/A'
+        # Add navigation tabs to each page
+        nav_tabs = """
+        <div class='flex flex-wrap border-b border-gray-200 dark:border-gray-700 mb-6'>
+            <button onclick="showPage('overview')" class='tab-button px-4 py-2 font-medium text-sm rounded-t-lg hover:bg-gray-100 dark:hover:bg-gray-700 active' data-page='overview'>
+                <i class='fas fa-home mr-2'></i>Overview
+            </button>
+            <button onclick="showPage('growth_dividend')" class='tab-button px-4 py-2 font-medium text-sm rounded-t-lg hover:bg-gray-100 dark:hover:bg-gray-700' data-page='growth_dividend'>
+                <i class='fas fa-chart-line mr-2'></i>Growth & Dividend
+            </button>
+            <button onclick="showPage('industry')" class='tab-button px-4 py-2 font-medium text-sm rounded-t-lg hover:bg-gray-100 dark:hover:bg-gray-700' data-page='industry'>
+                <i class='fas fa-industry mr-2'></i>Industry
+            </button>
+            <button onclick="showPage('financial_health')" class='tab-button px-4 py-2 font-medium text-sm rounded-t-lg hover:bg-gray-100 dark:hover:bg-gray-700' data-page='financial_health'>
+                <i class='fas fa-heartbeat mr-2'></i>Financial Health
+            </button>
+        </div>
+        
+        <script>
+            function showPage(pageId) {
+                // Hide all pages
+                document.querySelectorAll('.page-content').forEach(function(page) {
+                    page.classList.add('hidden');
+                });
+                
+                // Show selected page
+                document.getElementById(pageId).classList.remove('hidden');
+                
+                // Update active tab
+                document.querySelectorAll('.tab-button').forEach(function(button) {
+                    button.classList.remove('active', 'border-b-2', 'border-blue-500', 'text-blue-600', 'dark:text-blue-400');
+                });
+                
+                const activeTab = document.querySelector(`.tab-button[data-page='${pageId}']`);
+                if (activeTab) {
+                    activeTab.classList.add('active', 'border-b-2', 'border-blue-500', 'text-blue-600', 'dark:text-blue-400');
+                }
+                
+                // Store the active tab in session storage
+                sessionStorage.setItem('activeFundamentalTab', pageId);
+            }
+            
+            // Load the previously active tab or default to 'overview'
+            document.addEventListener('DOMContentLoaded', function() {
+                const activeTab = sessionStorage.getItem('activeFundamentalTab') || 'overview';
+                showPage(activeTab);
+            });
+        </script>
+        """
+        
+        # Wrap each page content with the navigation and page container
+        for page_id, content in pages.items():
+            pages[page_id] = f"""
+            <div id='{page_id}' class='page-content {'block' if page_id == 'overview' else 'hidden'}'>
+                {nav_tabs}
+                {content}
+            </div>
+            """
+        
+        return {
+            'error': False,
+            'pages': pages,
+            'company_name': company_name,
+            'ticker': ticker
+        }
+        
+    except Exception as e:
+        import traceback
+        error_msg = f"Error in fundamental analysis: {str(e)}\n\n{traceback.format_exc()}"
+        logging.error(error_msg)
+        return {
+            'error': True,
+            'content': f"<div class='p-4'><h3 class='text-lg font-semibold mb-2 text-red-600'>Error</h3><p>An error occurred while processing your request. Please try again later.</p><p class='text-sm text-gray-500 mt-2'>{str(e)}</p></div>"
+        }
         
         # Format the output with enhanced HTML
         output = f"""
-        <div class='p-4'>
-            <h3 class='text-lg font-semibold mb-4'>Fundamental Analysis for {company_name} ({ticker})</h3>
+        <div class='p-4 space-y-6'>
+            <div class='border-b border-gray-200 dark:border-gray-700 pb-4'>
+                <h2 class='text-2xl font-bold text-gray-900 dark:text-white'>Fundamental Analysis</h2>
+                <div class='flex items-center mt-1 space-x-2'>
+                    <span class='text-xl font-semibold text-gray-800 dark:text-gray-200'>{company_name}</span>
+                    <span class='px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full'>{ticker}</span>
+                </div>
+            </div>
             
             <!-- Company Overview -->
-            <div class='bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg mb-4'>
-                <h4 class='font-semibold mb-2 text-blue-800 dark:text-blue-200'>Company Overview</h4>
-                <div class='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
-                    <div>
-                        <p class='text-sm text-gray-600 dark:text-gray-400'>Sector</p>
-                        <p class='font-semibold'>{sector}</p>
+            <div class='bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/30 p-6 rounded-xl border border-blue-100 dark:border-blue-800/50 shadow-sm'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-2 bg-blue-100 dark:bg-blue-800/50 rounded-lg mr-3'>
+                        <svg class='w-6 h-6 text-blue-600 dark:text-blue-300' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'></path>
+                        </svg>
                     </div>
-                    <div>
-                        <p class='text-sm text-gray-600 dark:text-gray-400'>Industry</p>
-                        <p class='font-semibold'>{industry}</p>
+                    <h3 class='text-lg font-semibold text-gray-900 dark:text-white'>Company Overview</h3>
+                </div>
+                <div class='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
+                    <div class='bg-white/50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-700'>
+                        <p class='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1'>Sector</p>
+                        <p class='font-medium text-gray-900 dark:text-white'>{sector}</p>
                     </div>
-                    <div>
-                        <p class='text-sm text-gray-600 dark:text-gray-400'>Market Cap</p>
-                        <p class='font-semibold'>{market_cap_formatted}</p>
+                    <div class='bg-white/50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-700'>
+                        <p class='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1'>Industry</p>
+                        <p class='font-medium text-gray-900 dark:text-white'>{industry}</p>
                     </div>
-                    <div>
-                        <p class='text-sm text-gray-600 dark:text-gray-400'>Employees</p>
-                        <p class='font-semibold'>{info.get('fullTimeEmployees', 'N/A'):,}</p>
+                    <div class='bg-white/50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-700'>
+                        <p class='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1'>Market Cap</p>
+                        <p class='font-medium text-gray-900 dark:text-white'>{market_cap_formatted}</p>
+                    </div>
+                    <div class='bg-white/50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-700'>
+                        <p class='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1'>Employees</p>
+                        <p class='font-medium text-gray-900 dark:text-white'>{info.get('fullTimeEmployees', 'N/A'):,}</p>
                     </div>
                 </div>
             </div>
             
-            <!-- Valuation Metrics -->
-            <div class='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
-                <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4'>
-                    <h4 class='font-semibold mb-3 text-gray-800 dark:text-white'>Valuation Ratios</h4>
-                    <div class='space-y-3'>
-                        <div class='flex justify-between'>
-                            <span class='text-sm text-gray-600 dark:text-gray-400'>P/E Ratio (TTM)</span>
-                            <span class='font-semibold'>{format_ratio(pe_ratio)}</span>
+            <!-- Metrics Grid -->
+            <div class='grid grid-cols-1 md:grid-cols-2 gap-5'>
+                <!-- Valuation Metrics -->
+                <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200'>
+                    <div class='flex items-center mb-4'>
+                        <div class='p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg mr-3'>
+                            <svg class='w-5 h-5 text-purple-600 dark:text-purple-400' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+                                <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'></path>
+                            </svg>
                         </div>
-                        <div class='flex justify-between'>
-                            <span class='text-sm text-gray-600 dark:text-gray-400'>Forward P/E</span>
-                            <span class='font-semibold'>{format_ratio(forward_pe)}</span>
+                        <h4 class='font-semibold text-gray-800 dark:text-white'>Valuation Ratios</h4>
+                    </div>
+                    <div class='space-y-2.5'>
+                        <div class='flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors'>
+                            <span class='text-sm font-medium text-gray-600 dark:text-gray-300'>P/E Ratio (TTM)</span>
+                            <span class='font-semibold text-gray-900 dark:text-white'>{format_ratio(pe_ratio)}</span>
+                        </div>
+                        <div class='flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors'>
+                            <span class='text-sm font-medium text-gray-600 dark:text-gray-300'>Forward P/E</span>
+                            <span class='font-semibold text-gray-900 dark:text-white'>{format_ratio(forward_pe)}</span>
                         </div>
                         <div class='flex justify-between'>
                             <span class='text-sm text-gray-600 dark:text-gray-400'>PEG Ratio</span>
@@ -1085,9 +1847,16 @@ def run_fundamental_analysis(ticker):
                 </div>
                 
                 <!-- Profitability Metrics -->
-                <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4'>
-                    <h4 class='font-semibold mb-3 text-gray-800 dark:text-white'>Profitability</h4>
-                    <div class='space-y-3'>
+                <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200'>
+                    <div class='flex items-center mb-4'>
+                        <div class='p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg mr-3'>
+                            <svg class='w-5 h-5 text-green-600 dark:text-green-400' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+                                <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'></path>
+                            </svg>
+                        </div>
+                        <h4 class='font-semibold text-gray-800 dark:text-white'>Profitability</h4>
+                    </div>
+                    <div class='space-y-2.5'>
                         <div class='flex justify-between'>
                             <span class='text-sm text-gray-600 dark:text-gray-400'>Profit Margin</span>
                             <span class='font-semibold'>{format_percentage(profit_margin)}</span>
@@ -1109,10 +1878,17 @@ def run_fundamental_analysis(ticker):
             </div>
             
             <!-- Growth and Dividend -->
-            <div class='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
-                <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4'>
-                    <h4 class='font-semibold mb-3 text-gray-800 dark:text-white'>Growth Metrics</h4>
-                    <div class='space-y-3'>
+            <div class='grid grid-cols-1 md:grid-cols-2 gap-5'>
+                <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200'>
+                    <div class='flex items-center mb-4'>
+                        <div class='p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3'>
+                            <svg class='w-5 h-5 text-blue-600 dark:text-blue-400' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+                                <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 7h8m0 0v8m0-8l-8 8-4-4-6 6'></path>
+                            </svg>
+                        </div>
+                        <h4 class='font-semibold text-gray-800 dark:text-white'>Growth Metrics</h4>
+                    </div>
+                    <div class='space-y-2.5'>
                         <div class='flex justify-between'>
                             <span class='text-sm text-gray-600 dark:text-gray-400'>Revenue Growth</span>
                             <span class='font-semibold'>{format_percentage(revenue_growth)}</span>
@@ -1124,9 +1900,16 @@ def run_fundamental_analysis(ticker):
                     </div>
                 </div>
                 
-                <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4'>
-                    <h4 class='font-semibold mb-3 text-gray-800 dark:text-white'>Dividend Information</h4>
-                    <div class='space-y-3'>
+                <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200'>
+                    <div class='flex items-center mb-4'>
+                        <div class='p-1.5 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg mr-3'>
+                            <svg class='w-5 h-5 text-yellow-600 dark:text-yellow-400' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+                                <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'></path>
+                            </svg>
+                        </div>
+                        <h4 class='font-semibold text-gray-800 dark:text-white'>Dividend Information</h4>
+                    </div>
+                    <div class='space-y-2.5'>
                         <div class='flex justify-between'>
                             <span class='text-sm text-gray-600 dark:text-gray-400'>Dividend Yield</span>
                             <span class='font-semibold'>{format_percentage(dividend_yield)}</span>
@@ -1140,8 +1923,16 @@ def run_fundamental_analysis(ticker):
             </div>
             
             <!-- Industry Comparison -->
-            <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-lg mb-4'>
-                <h4 class='font-semibold mb-3 text-gray-800 dark:text-white'>How {company_name} Stacks Up</h4>
+            <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 p-6 rounded-xl shadow-sm'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg mr-3'>
+                        <svg class='w-5 h-5 text-indigo-600 dark:text-indigo-400' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'></path>
+                        </svg>
+                    </div>
+                    <h3 class='text-lg font-semibold text-gray-900 dark:text-white'>Industry Comparison</h3>
+                </div>
+                <p class='text-sm text-gray-500 dark:text-gray-400 mb-5'>How {company_name} compares to the {sector if sector != 'N/A' else 'industry'} average</p>
                 <div class='space-y-4'>
                     <div class='grid grid-cols-1 md:grid-cols-2 gap-4'>
                         <!-- Profitability Comparison -->
@@ -1196,29 +1987,51 @@ def run_fundamental_analysis(ticker):
                         </div>
                     </div>
                     
-                    <div class='text-xs text-gray-500 dark:text-gray-400 italic space-y-1'>
-                        <p>ℹ️ Comparison with {sector if sector != 'N/A' else 'industry'} average. Blue = Better than average, Gray = Similar, Red = Below average</p>
-                        {'<p class="text-yellow-600 dark:text-yellow-400">⚠️ Using estimated industry averages as actual data is not available. Consider upgrading to a premium data source for more accurate comparisons.</p>' 
-                         if not any(k.startswith('industryAverage') and v is not None for k, v in info.items()) else ''}
+                    <div class='mt-6 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 rounded-lg'>
+                        <div class='flex'>
+                            <svg class='h-5 w-5 text-blue-500 dark:text-blue-400 mt-0.5 mr-2 flex-shrink-0' fill='currentColor' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'>
+                                <path fill-rule='evenodd' d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h2a1 1 0 100-2v-3a1 1 0 00-1-1H9z' clip-rule='evenodd'></path>
+                            </svg>
+                            <div class='text-sm text-blue-700 dark:text-blue-300'>
+                                <p class='font-medium'>How to read this comparison:</p>
+                                <div class='flex flex-wrap items-center gap-2 mt-1 text-xs'>
+                                    <span class='inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200'>Better than average</span>
+                                    <span class='inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'>Similar to average</span>
+                                    <span class='inline-flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200'>Below average</span>
+                                </div>
+                                {'<p class="mt-2 text-yellow-700 dark:text-yellow-300 font-medium">ℹ️ Using estimated industry averages. For more accurate comparisons, consider upgrading to a premium data source.</p>' 
+                                if not any(k.startswith('industryAverage') and v is not None for k, v in info.items()) else ''}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
             
             <!-- Financial Health -->
-            <div class='bg-green-50 dark:bg-green-900/30 p-4 rounded-lg'>
-                <h4 class='font-semibold mb-3 text-green-800 dark:text-green-200'>Financial Health</h4>
+            <div class='bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-6 rounded-xl border border-green-100 dark:border-green-800/50 shadow-sm'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg mr-3'>
+                        <svg class='w-5 h-5 text-green-600 dark:text-green-400' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'></path>
+                        </svg>
+                    </div>
+                    <h3 class='text-lg font-semibold text-green-800 dark:text-green-200'>Financial Health</h3>
+                </div>
                 <div class='grid grid-cols-1 md:grid-cols-3 gap-4'>
-                    <div>
-                        <p class='text-sm text-gray-600 dark:text-gray-400'>Debt-to-Equity</p>
-                        <p class='font-semibold'>{format_ratio(debt_to_equity)}</p>
+                    <div class='bg-white/60 dark:bg-gray-800/40 p-4 rounded-lg border border-green-100 dark:border-green-800/30'>
+                        <p class='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1'>Debt-to-Equity</p>
+                        <p class='text-xl font-semibold text-gray-900 dark:text-white'>{format_ratio(debt_to_equity)}</p>
+                        <p class='mt-1 text-xs text-gray-500 dark:text-gray-400'>Lower is better</p>
                     </div>
-                    <div>
-                        <p class='text-sm text-gray-600 dark:text-gray-400'>Current Ratio</p>
-                        <p class='font-semibold'>{format_ratio(current_ratio)}</p>
+                    <div class='bg-white/60 dark:bg-gray-800/40 p-4 rounded-lg border border-green-100 dark:border-green-800/30'>
+                        <p class='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1'>Current Ratio</p>
+                        <p class='text-xl font-semibold text-gray-900 dark:text-white'>{format_ratio(current_ratio)}</p>
+                        <p class='mt-1 text-xs text-gray-500 dark:text-gray-400'>Above 1.5 is good</p>
                     </div>
-                    <div>
-                        <p class='text-sm text-gray-600 dark:text-gray-400'>Quick Ratio</p>
-                        <p class='font-semibold'>{format_ratio(quick_ratio)}</p>
+                    <div class='bg-white/60 dark:bg-gray-800/40 p-4 rounded-lg border border-green-100 dark:border-green-800/30'>
+                        <p class='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1'>Quick Ratio</p>
+                        <p class='text-xl font-semibold text-gray-900 dark:text-white'>{format_ratio(quick_ratio)}</p>
+                        <p class='mt-1 text-xs text-gray-500 dark:text-gray-400'>Above 1.0 is good</p>
                     </div>
                 </div>
             </div>
@@ -1327,12 +2140,7 @@ def analyze():
                         'ytd': ytd_return
                     }
                     
-                    # Format the output
-                    change_color = "text-green-600" if price_change >= 0 else "text-red-600"
-                    volume_color = "text-green-600" if latest_volume > avg_volume * 1.2 else "text-yellow-600" if latest_volume > avg_volume * 0.8 else "text-red-600"
-                    change_symbol = "+" if price_change >= 0 else ""
-                    
-                    # Format market cap
+                    # Format market cap for display
                     if market_cap >= 1e12:
                         market_cap_str = f"${market_cap/1e12:.2f}T"
                     elif market_cap >= 1e9:
@@ -1344,236 +2152,48 @@ def analyze():
                     
                     company_name = info.get('longName', ticker)
                     
-                    output = f"""
-                    <div class='p-4'>
-                        <div class='flex justify-between items-center mb-4'>
-                            <h3 class='text-xl font-bold text-gray-800 dark:text-white'>{company_name} <span class='text-blue-600'>({ticker})</span></h3>
-                            <span class='px-3 py-1 rounded-full text-sm font-medium {change_color} bg-opacity-20 {change_color.replace('text-', 'bg-').replace('600', '100')}'>
-                                {change_symbol}{price_change_pct:.2f}% Today
-                            </span>
-                        </div>
-                        
-                        <div class='grid grid-cols-1 md:grid-cols-2 gap-4 mb-6'>
-                            <!-- Price and Change -->
-                            <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl'>
-                                <div class='flex items-baseline space-x-2 mb-1'>
-                                    <span class='text-3xl font-bold text-gray-900 dark:text-white'>${current_price:,.2f}</span>
-                                    <span class='{change_color} text-sm font-medium'>{change_symbol}{price_change:.2f} ({change_symbol}{price_change_pct:.2f}%)</span>
-                                </div>
-                                <p class='text-sm text-gray-500 dark:text-gray-400'>Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M')}</p>
-                            </div>
-                            
-                            <!-- Market Cap and P/E -->
-                            <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl'>
-                                <div class='grid grid-cols-2 gap-4'>
-                                    <div>
-                                        <p class='text-sm text-gray-500 dark:text-gray-400'>Market Cap</p>
-                                        <p class='font-medium text-gray-900 dark:text-white'>{market_cap_str}</p>
-                                    </div>
-                                    <div>
-                                        <p class='text-sm text-gray-500 dark:text-gray-400'>P/E Ratio</p>
-                                        <p class='font-medium text-gray-900 dark:text-white'>{pe_ratio if pe_ratio != 'N/A' else 'N/A'}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 52-Week Range with Visual -->
-                        <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl mb-4'>
-                            <div class='flex justify-between text-sm text-gray-500 dark:text-gray-400 mb-2'>
-                                <span>52-Week Range</span>
-                                <span>${low_52w:,.2f} - ${high_52w:,.2f}</span>
-                            </div>
-                            <div class='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-1'>
-                                <div class='bg-blue-600 h-2.5 rounded-full' style='width: {current_52w_range:.2f}%'></div>
-                            </div>
-                            <div class='flex justify-between text-xs text-gray-500 dark:text-gray-400'>
-                                <span>${low_52w:,.2f}</span>
-                                <span class='text-center'>Current: ${current_price:,.2f}</span>
-                                <span>${high_52w:,.2f}</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Volume Information -->
-                        <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl mb-4'>
-                            <div class='flex justify-between items-center mb-2'>
-                                <h4 class='font-semibold text-gray-900 dark:text-white'>Volume</h4>
-                                <span class='text-sm px-2 py-0.5 rounded-full {volume_color} bg-opacity-20 {volume_color.replace('text-', 'bg-').replace('600', '100')}'>
-                                    {volume_ratio:.1f}x average
-                                </span>
-                            </div>
-                            <div class='grid grid-cols-2 gap-4'>
-                                <div>
-                                    <p class='text-sm text-gray-500 dark:text-gray-400'>Latest</p>
-                                    <p class='font-medium text-gray-900 dark:text-white'>{latest_volume:,.0f}</p>
-                                </div>
-                                <div>
-                                    <p class='text-sm text-gray-500 dark:text-gray-400'>Average</p>
-                                    <p class='font-medium text-gray-900 dark:text-white'>{avg_volume:,.0f}</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Performance Metrics -->
-                        <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl mb-4'>
-                            <h4 class='font-semibold text-gray-900 dark:text-white mb-3'>Performance</h4>
-                            <div class='grid grid-cols-3 gap-4'>
-                                <div class='text-center'>
-                                    <p class='text-sm text-gray-500 dark:text-gray-400'>1 Week</p>
-                                    {f"<p class='font-medium text-green-600'>{performance_metrics['1w']:+.2f}%</p>" if performance_metrics['1w'] is not None else "<p class='text-sm text-gray-400'>N/A</p>"}
-                                </div>
-                                <div class='text-center'>
-                                    <p class='text-sm text-gray-500 dark:text-gray-400'>1 Month</p>
-                                    {f"<p class='font-medium {('text-green-600' if performance_metrics['1m'] >= 0 else 'text-red-600')}'>{performance_metrics['1m']:+.2f}%</p>" if performance_metrics['1m'] is not None else "<p class='text-sm text-gray-400'>N/A</p>"}
-                                </div>
-                                <div class='text-center'>
-                                    <p class='text-sm text-gray-500 dark:text-gray-400'>YTD</p>
-                                    {f"<p class='font-medium {('text-green-600' if performance_metrics['ytd'] >= 0 else 'text-red-600')}'>{performance_metrics['ytd']:+.2f}%</p>" if performance_metrics['ytd'] is not None else "<p class='text-sm text-gray-400'>N/A</p>"}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Market Context -->
-                        <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl mb-4'>
-                            <h4 class='font-semibold text-gray-900 dark:text-white mb-3'>Market Context</h4>
-                            <div class='space-y-4'>
-                                <!-- Sector/Industry -->
-                                <div>
-                                    <div class='flex justify-between items-center mb-1'>
-                                        <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Sector/Industry</span>
-                                    </div>
-                                    <div class='bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg'>
-                                        <p class='text-sm'><span class='font-medium'>Sector:</span> {info.get('sector', 'N/A')}</p>
-                                        <p class='text-sm mt-1'><span class='font-medium'>Industry:</span> {info.get('industry', 'N/A')}</p>
-                                    </div>
-                                </div>
-                                
-                                <!-- Market Cap Classification -->
-                                <div>
-                                    <div class='flex justify-between items-center mb-1'>
-                                        <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Market Cap Classification</span>
-                                    </div>
-                                    <div class='bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg'>
-                                        {
-                                            f"<p class='text-sm'><span class='font-medium'>Market Cap:</span> {market_cap_str} ({'Mega Cap' if market_cap >= 200e9 else 'Large Cap' if market_cap >= 10e9 else 'Mid Cap' if market_cap >= 2e9 else 'Small Cap' if market_cap >= 300e6 else 'Micro Cap' if market_cap >= 50e6 else 'Nano Cap'})</p>"
-                                            if market_cap > 0 else "<p class='text-sm'>Market Cap: N/A</p>"
-                                        }
-                                        <div class='w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5 mt-2'>
-                                            <div class='bg-blue-600 h-2.5 rounded-full' style='width: {
-                                                min(100, max(0, (market_cap / 2e12) * 100)) if market_cap > 0 else 0
-                                            }%'></div>
-                                        </div>
-                                        <div class='flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1'>
-                                            <span>Small</span>
-                                            <span>Mid</span>
-                                            <span>Large</span>
-                                            <span>Mega</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Market Comparison (placeholder) -->
-                                <div class='text-xs text-gray-500 dark:text-gray-400 italic'>
-                                    <p>ℹ️ Compare with: {info.get('sector', 'sector')} average P/E: {info.get('sectorPE', 'N/A')}</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Key Financial Health Metrics -->
-                        <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl mb-4'>
-                            <h4 class='font-semibold text-gray-900 dark:text-white mb-3'>Financial Health</h4>
-                            <div class='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                                <!-- Profitability -->
-                                <div class='space-y-4'>
-                                    <div class='bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg'>
-                                        <h5 class='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>Profitability</h5>
-                                        <div class='space-y-2'>
-                                            <div class='flex justify-between'>
-                                                <span class='text-xs text-gray-500 dark:text-gray-400'>ROE</span>
-                                                <span class='text-sm font-medium'>{"{:.1f}%".format(info.get('returnOnEquity', 0) * 100) if info.get('returnOnEquity') else 'N/A'}</span>
-                                            </div>
-                                            <div class='flex justify-between'>
-                                                <span class='text-xs text-gray-500 dark:text-gray-400'>Operating Margin</span>
-                                                <span class='text-sm font-medium'>{"{:.1f}%".format(info.get('operatingMargins', 0) * 100) if info.get('operatingMargins') else 'N/A'}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Liquidity -->
-                                    <div class='bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg'>
-                                        <h5 class='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>Liquidity</h5>
-                                        <div class='space-y-2'>
-                                            <div class='flex justify-between'>
-                                                <span class='text-xs text-gray-500 dark:text-gray-400'>Current Ratio</span>
-                                                <span class='text-sm font-medium'>{info.get('currentRatio', 'N/A')}</span>
-                                            </div>
-                                            <div class='flex justify-between'>
-                                                <span class='text-xs text-gray-500 dark:text-gray-400'>Quick Ratio</span>
-                                                <span class='text-sm font-medium'>{info.get('quickRatio', 'N/A')}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Debt & Efficiency -->
-                                <div class='space-y-4'>
-                                    <!-- Debt -->
-                                    <div class='bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg'>
-                                        <h5 class='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>Debt</h5>
-                                        <div class='space-y-2'>
-                                            <div class='flex justify-between'>
-                                                <span class='text-xs text-gray-500 dark:text-gray-400'>Debt/Equity</span>
-                                                <span class='text-sm font-medium'>{"{:.2f}".format(info.get('debtToEquity', 0)) if info.get('debtToEquity') else 'N/A'}</span>
-                                            </div>
-                                            <div class='flex justify-between'>
-                                                <span class='text-xs text-gray-500 dark:text-gray-400'>Interest Coverage</span>
-                                                <span class='text-sm font-medium'>{"{:.1f}x".format(info.get('interestCoverage', 0)) if info.get('interestCoverage') else 'N/A'}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Efficiency -->
-                                    <div class='bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg'>
-                                        <h5 class='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>Efficiency</h5>
-                                        <div class='space-y-2'>
-                                            <div class='flex justify-between'>
-                                                <span class='text-xs text-gray-500 dark:text-gray-400'>Asset Turnover</span>
-                                                <span class='text-sm font-medium'>{"{:.2f}".format(info.get('assetTurnover', 0)) if info.get('assetTurnover') else 'N/A'}</span>
-                                            </div>
-                                            <div class='flex justify-between'>
-                                                <span class='text-xs text-gray-500 dark:text-gray-400'>Inventory Turnover</span>
-                                                <span class='text-sm font-medium'>{"{:.1f}x".format(info.get('inventoryTurnover', 0)) if info.get('inventoryTurnover') else 'N/A'}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Financial Health Summary -->
-                            <div class='mt-4 text-xs text-gray-500 dark:text-gray-400 italic'>
-                                <p>ℹ️ Financial health indicators help assess the company's financial stability and operational efficiency.</p>
-                            </div>
-                        </div>
-                        
-                        <div class='bg-blue-50 dark:bg-blue-900/30 p-4 rounded'>
-                            <h4 class='font-semibold mb-2'>Analysis Period</h4>
-                            <p class='text-sm'>Data from the last {days} days ({len(hist)} trading days)</p>
-                            <p class='text-sm'>Period: {hist.index[0].strftime('%Y-%m-%d')} to {hist.index[-1].strftime('%Y-%m-%d')}</p>
-                        </div>
-                    </div>
-                    """
+                    # Generate the paginated analysis
+                    pages = create_basic_analysis_pages(
+                        ticker=ticker,
+                        hist=hist,
+                        info=info,
+                        current_price=current_price,
+                        prev_price=prev_price,
+                        price_change=price_change,
+                        price_change_pct=price_change_pct,
+                        high_52w=high_52w,
+                        low_52w=low_52w,
+                        current_52w_range=current_52w_range,
+                        avg_volume=avg_volume,
+                        latest_volume=latest_volume,
+                        volume_ratio=volume_ratio,
+                        market_cap_str=market_cap_str,
+                        pe_ratio=pe_ratio,
+                        company_name=company_name,
+                        performance_metrics=performance_metrics
+                    )
+                    
+                    # Combine all pages into a single HTML string for the response
+                    # The frontend will handle showing/hiding pages using the page-content class
+                    combined_pages = ''.join(pages.values())
+                    
+                    return jsonify({
+                        'ticker': ticker.upper(),
+                        'company_name': company_name,
+                        'analysis': combined_pages,
+                        'analysis_type': analysis_type,
+                        'status': 'success',
+                        'is_paginated': True,  # Indicate to frontend that this is paginated content
+                        'page_ids': list(pages.keys())  # List of page IDs for navigation
+                    })
                     
             except Exception as e:
-                # Error in basic analysis logged
-                output = f"<div class='p-4'><h3 class='text-lg font-semibold mb-2 text-red-600'>Error</h3><p>Failed to fetch data for {ticker}: {str(e)}</p></div>"
-                
-            # Return the basic analysis result
-            return jsonify({
-                'ticker': ticker,
-                'analysis': output,
-                'analysis_type': analysis_type,
-                'status': 'success'
-            })
+                logging.error(f"Error in basic analysis: {str(e)}\n{traceback.format_exc()}")
+                return jsonify({
+                    'error': f"Error in basic analysis: {str(e)}",
+                    'status': 'error',
+                    'traceback': traceback.format_exc()
+                }), 500
         
         elif analysis_type == 'technical':
             # Enhanced Technical Analysis
@@ -1592,21 +2212,37 @@ def analyze():
                 }), 500
                 
         elif analysis_type == 'fundamental':
-            # Enhanced Fundamental Analysis
+            # Enhanced Fundamental Analysis with pagination
             try:
-                output = run_fundamental_analysis(ticker)
+                result = run_fundamental_analysis(ticker)
+                if result.get('error'):
+                    return jsonify({
+                        'error': result.get('content', 'Error in fundamental analysis'),
+                        'status': 'error'
+                    }), 500
+                
+                # Combine all pages into a single HTML string for the response
+                # The frontend will handle showing/hiding pages using the page-content class
+                combined_pages = ''.join(result['pages'].values())
+                
                 return jsonify({
-                    'ticker': ticker,
-                    'analysis': output,
+                    'ticker': result['ticker'],
+                    'company_name': result['company_name'],
+                    'analysis': combined_pages,
                     'analysis_type': analysis_type,
-                    'status': 'success'
+                    'status': 'success',
+                    'is_paginated': True,  # Indicate to frontend that this is paginated content
+                    'page_ids': list(result['pages'].keys())  # List of page IDs for navigation
                 })
+                
             except Exception as e:
+                logging.error(f"Error in fundamental analysis: {str(e)}\n{traceback.format_exc()}")
                 return jsonify({
                     'error': f"Error in fundamental analysis: {str(e)}",
-                    'status': 'error'
+                    'status': 'error',
+                    'traceback': traceback.format_exc()
                 }), 500
-        
+                
         else:
             # For other analysis types, capture stdout (fallback)
             old_stdout = sys.stdout
