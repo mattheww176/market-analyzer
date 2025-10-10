@@ -1434,28 +1434,317 @@ def create_technical_analysis_pages(ticker, hist, info, current_price, company_n
     </div>
     """
     
+    # Calculate comprehensive technical signals for summary
+    signals = []
+    signal_scores = []
+    
+    # RSI Signal
+    if technical_data["current_rsi"] > 70:
+        signals.append(("RSI", "Sell", "Overbought", "text-red-600", "⚠️"))
+        signal_scores.append(-2)
+    elif technical_data["current_rsi"] < 30:
+        signals.append(("RSI", "Buy", "Oversold", "text-green-600", "📈"))
+        signal_scores.append(2)
+    else:
+        signals.append(("RSI", "Hold", "Neutral", "text-gray-600", "➡️"))
+        signal_scores.append(0)
+    
+    # MACD Signal
+    if technical_data["current_macd"] > technical_data["current_macd_signal"]:
+        signals.append(("MACD", "Buy", "Bullish", "text-green-600", "📈"))
+        signal_scores.append(1)
+    else:
+        signals.append(("MACD", "Sell", "Bearish", "text-red-600", "📉"))
+        signal_scores.append(-1)
+    
+    # Moving Average Signal
+    if current_price > technical_data["ma_20"]:
+        if technical_data["ma_50"] and current_price > technical_data["ma_50"]:
+            signals.append(("MA Trend", "Buy", "Above MAs", "text-green-600", "🚀"))
+            signal_scores.append(2)
+        else:
+            signals.append(("MA Trend", "Buy", "Above 20-MA", "text-green-600", "📈"))
+            signal_scores.append(1)
+    else:
+        if technical_data["ma_50"] and current_price < technical_data["ma_50"]:
+            signals.append(("MA Trend", "Sell", "Below MAs", "text-red-600", "📉"))
+            signal_scores.append(-2)
+        else:
+            signals.append(("MA Trend", "Sell", "Below 20-MA", "text-red-600", "📉"))
+            signal_scores.append(-1)
+    
+    # Bollinger Bands Signal
+    bb_position = ""
+    if current_price > technical_data["current_bb_upper"]:
+        signals.append(("Bollinger", "Sell", "Above Upper", "text-red-600", "⚠️"))
+        signal_scores.append(-1)
+        bb_position = "Above Upper Band"
+    elif current_price < technical_data["current_bb_lower"]:
+        signals.append(("Bollinger", "Buy", "Below Lower", "text-green-600", "📈"))
+        signal_scores.append(1)
+        bb_position = "Below Lower Band"
+    else:
+        signals.append(("Bollinger", "Hold", "Within Bands", "text-gray-600", "➡️"))
+        signal_scores.append(0)
+        bb_position = "Within Bands"
+    
+    # Stochastic Signal
+    if technical_data["current_k"] > 80:
+        signals.append(("Stochastic", "Sell", "Overbought", "text-red-600", "⚠️"))
+        signal_scores.append(-1)
+    elif technical_data["current_k"] < 20:
+        signals.append(("Stochastic", "Buy", "Oversold", "text-green-600", "📈"))
+        signal_scores.append(1)
+    else:
+        signals.append(("Stochastic", "Hold", "Neutral", "text-gray-600", "➡️"))
+        signal_scores.append(0)
+    
+    # Calculate overall score
+    total_score = sum(signal_scores)
+    max_possible = len(signal_scores) * 2
+    score_percentage = ((total_score + max_possible) / (2 * max_possible)) * 100
+    
+    # Determine overall sentiment
+    if total_score >= 3:
+        overall_sentiment = "Strong Buy"
+        sentiment_color = "text-green-700 dark:text-green-400"
+        sentiment_bg = "bg-green-100 dark:bg-green-900/30"
+        sentiment_border = "border-green-300 dark:border-green-600"
+        sentiment_icon = "🚀"
+    elif total_score >= 1:
+        overall_sentiment = "Buy"
+        sentiment_color = "text-green-600 dark:text-green-400"
+        sentiment_bg = "bg-green-50 dark:bg-green-900/20"
+        sentiment_border = "border-green-200 dark:border-green-700"
+        sentiment_icon = "📈"
+    elif total_score <= -3:
+        overall_sentiment = "Strong Sell"
+        sentiment_color = "text-red-700 dark:text-red-400"
+        sentiment_bg = "bg-red-100 dark:bg-red-900/30"
+        sentiment_border = "border-red-300 dark:border-red-600"
+        sentiment_icon = "📉"
+    elif total_score <= -1:
+        overall_sentiment = "Sell"
+        sentiment_color = "text-red-600 dark:text-red-400"
+        sentiment_bg = "bg-red-50 dark:bg-red-900/20"
+        sentiment_border = "border-red-200 dark:border-red-700"
+        sentiment_icon = "📉"
+    else:
+        overall_sentiment = "Hold"
+        sentiment_color = "text-gray-600 dark:text-gray-400"
+        sentiment_bg = "bg-gray-50 dark:bg-gray-900/20"
+        sentiment_border = "border-gray-200 dark:border-gray-700"
+        sentiment_icon = "➡️"
+    
+    # Calculate volatility level
+    volatility_pct = (technical_data["current_atr"] / current_price) * 100
+    if volatility_pct > 5:
+        volatility_level = "High"
+        volatility_color = "text-red-600"
+        volatility_icon = "🔥"
+    elif volatility_pct > 2:
+        volatility_level = "Moderate"
+        volatility_color = "text-yellow-600"
+        volatility_icon = "⚡"
+    else:
+        volatility_level = "Low"
+        volatility_color = "text-green-600"
+        volatility_icon = "🟢"
+    
     # Summary Page
     pages['summary'] = f"""
     <div id='summary' class='page-content hidden'>
-        <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-6 shadow-sm'>
-            <div class='flex items-center mb-6'>
-                <div class='p-2 bg-green-100 dark:bg-green-900/30 rounded-lg mr-4'>
-                    <svg class='w-6 h-6 text-green-600 dark:text-green-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' />
-                    </svg>
+        <div class='space-y-6'>
+            <!-- Overall Technical Score -->
+            <div class='bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6'>
+                <div class='flex items-center justify-between mb-4'>
+                    <div class='flex items-center'>
+                        <div class='p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-4'>
+                            <svg class='w-6 h-6 text-blue-600 dark:text-blue-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                                <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Technical Analysis Summary</h3>
+                            <p class='text-sm text-gray-600 dark:text-gray-400'>Comprehensive technical indicator analysis</p>
+                        </div>
+                    </div>
+                    <div class='text-right'>
+                        <div class='text-2xl font-bold text-blue-600 dark:text-blue-400'>{score_percentage:.0f}/100</div>
+                        <div class='text-xs text-gray-500 dark:text-gray-400'>Technical Score</div>
+                    </div>
                 </div>
-                <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Technical Summary</h3>
+                
+                <!-- Overall Sentiment -->
+                <div class='flex items-center justify-center mb-4'>
+                    <div class='px-6 py-3 {sentiment_bg} border {sentiment_border} rounded-full'>
+                        <div class='flex items-center space-x-2'>
+                            <span class='text-2xl'>{sentiment_icon}</span>
+                            <span class='text-lg font-bold {sentiment_color}'>{overall_sentiment}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Score Bar -->
+                <div class='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-2'>
+                    <div class='h-3 rounded-full transition-all duration-500' style='width: {score_percentage}%; background: linear-gradient(to right, #ef4444, #f59e0b, #10b981);'></div>
+                </div>
+                <div class='flex justify-between text-xs text-gray-500 dark:text-gray-400'>
+                    <span>Strong Sell</span>
+                    <span>Hold</span>
+                    <span>Strong Buy</span>
+                </div>
             </div>
             
-            <div class='bg-gray-50 dark:bg-gray-700 p-4 rounded-lg'>
+            <!-- Signal Summary Grid -->
+            <div class='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+                <!-- Individual Signals -->
+                <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-6'>
+                    <div class='flex items-center mb-4'>
+                        <div class='p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg mr-3'>
+                            <svg class='w-5 h-5 text-purple-600 dark:text-purple-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                                <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 10V3L4 14h7v7l9-11h-7z' />
+                            </svg>
+                        </div>
+                        <h4 class='font-semibold text-gray-900 dark:text-white'>Technical Signals</h4>
+                    </div>
+                    <div class='space-y-3'>
+    """
+    
+    # Add individual signals
+    for indicator, signal, description, color, icon in signals:
+        pages['summary'] += f"""
+                        <div class='flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg'>
+                            <div class='flex items-center space-x-3'>
+                                <span class='text-lg'>{icon}</span>
+                                <div>
+                                    <div class='font-medium text-gray-900 dark:text-white'>{indicator}</div>
+                                    <div class='text-xs text-gray-500 dark:text-gray-400'>{description}</div>
+                                </div>
+                            </div>
+                            <span class='px-2 py-1 text-xs font-medium {color} bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded'>
+                                {signal}
+                            </span>
+                        </div>
+        """
+    
+    pages['summary'] += f"""
+                    </div>
+                </div>
+                
+                <!-- Key Metrics -->
+                <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-6'>
+                    <div class='flex items-center mb-4'>
+                        <div class='p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg mr-3'>
+                            <svg class='w-5 h-5 text-orange-600 dark:text-orange-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                                <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' />
+                            </svg>
+                        </div>
+                        <h4 class='font-semibold text-gray-900 dark:text-white'>Key Metrics</h4>
+                    </div>
+                    <div class='space-y-4'>
+                        <!-- Current Price vs MAs -->
+                        <div class='p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg'>
+                            <div class='flex items-center justify-between mb-2'>
+                                <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Price Position</span>
+                                <span class='text-xs text-blue-600 dark:text-blue-400'>Moving Averages</span>
+                            </div>
+                            <div class='space-y-1 text-sm'>
+                                <div class='flex justify-between'>
+                                    <span class='text-gray-600 dark:text-gray-400'>vs 20-MA:</span>
+                                    <span class='font-medium {"text-green-600" if current_price > technical_data["ma_20"] else "text-red-600"}'>{((current_price - technical_data["ma_20"]) / technical_data["ma_20"] * 100):+.1f}%</span>
+                                </div>
+                                {f'<div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">vs 50-MA:</span><span class="font-medium {"text-green-600" if current_price > technical_data["ma_50"] else "text-red-600"}">{((current_price - technical_data["ma_50"]) / technical_data["ma_50"] * 100):+.1f}%</span></div>' if technical_data["ma_50"] else '<div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">vs 50-MA:</span><span class="text-gray-500 dark:text-gray-400">Insufficient data</span></div>'}
+                            </div>
+                        </div>
+                        
+                        <!-- Volatility -->
+                        <div class='p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg'>
+                            <div class='flex items-center justify-between mb-2'>
+                                <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Volatility</span>
+                                <div class='flex items-center space-x-1'>
+                                    <span class='text-sm'>{volatility_icon}</span>
+                                    <span class='text-xs font-medium {volatility_color}'>{volatility_level}</span>
+                                </div>
+                            </div>
+                            <div class='text-sm text-gray-600 dark:text-gray-400'>
+                                ATR: ${technical_data["current_atr"]:.2f} ({volatility_pct:.1f}% of price)
+                            </div>
+                        </div>
+                        
+                        <!-- Bollinger Position -->
+                        <div class='p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg'>
+                            <div class='flex items-center justify-between mb-2'>
+                                <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Bollinger Bands</span>
+                                <span class='text-xs text-purple-600 dark:text-purple-400'>Price Position</span>
+                            </div>
+                            <div class='text-sm text-gray-600 dark:text-gray-400'>
+                                {bb_position}
+                            </div>
+                            <div class='mt-2 text-xs text-gray-500 dark:text-gray-400'>
+                                Upper: ${technical_data["current_bb_upper"]:.2f} | Lower: ${technical_data["current_bb_lower"]:.2f}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Analysis Details -->
+            <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-6'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-2 bg-gray-100 dark:bg-gray-700 rounded-lg mr-3'>
+                        <svg class='w-5 h-5 text-gray-600 dark:text-gray-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' />
+                        </svg>
+                    </div>
+                    <h4 class='font-semibold text-gray-900 dark:text-white'>Analysis Details</h4>
+                </div>
                 <div class='grid grid-cols-1 md:grid-cols-2 gap-4 text-sm'>
-                    <div>
-                        <p class='text-gray-600 dark:text-gray-400'>Analysis Period: {len(hist)} trading days</p>
-                        <p class='text-gray-600 dark:text-gray-400'>Data Range: {hist.index[0].strftime('%Y-%m-%d')} to {hist.index[-1].strftime('%Y-%m-%d')}</p>
+                    <div class='space-y-2'>
+                        <div class='flex justify-between'>
+                            <span class='text-gray-600 dark:text-gray-400'>Analysis Period:</span>
+                            <span class='font-medium text-gray-900 dark:text-white'>{len(hist)} trading days</span>
+                        </div>
+                        <div class='flex justify-between'>
+                            <span class='text-gray-600 dark:text-gray-400'>Data Range:</span>
+                            <span class='font-medium text-gray-900 dark:text-white'>{hist.index[0].strftime('%m/%d/%Y')}</span>
+                        </div>
+                        <div class='flex justify-between'>
+                            <span class='text-gray-600 dark:text-gray-400'>to:</span>
+                            <span class='font-medium text-gray-900 dark:text-white'>{hist.index[-1].strftime('%m/%d/%Y')}</span>
+                        </div>
+                    </div>
+                    <div class='space-y-2'>
+                        <div class='flex justify-between'>
+                            <span class='text-gray-600 dark:text-gray-400'>Current RSI:</span>
+                            <span class='font-medium {"text-red-600" if technical_data["current_rsi"] > 70 else "text-green-600" if technical_data["current_rsi"] < 30 else "text-gray-900 dark:text-white"}'>{technical_data["current_rsi"]:.1f}</span>
+                        </div>
+                        <div class='flex justify-between'>
+                            <span class='text-gray-600 dark:text-gray-400'>MACD Signal:</span>
+                            <span class='font-medium {"text-green-600" if technical_data["current_macd"] > technical_data["current_macd_signal"] else "text-red-600"}'>{("Bullish" if technical_data["current_macd"] > technical_data["current_macd_signal"] else "Bearish")}</span>
+                        </div>
+                        <div class='flex justify-between'>
+                            <span class='text-gray-600 dark:text-gray-400'>Stochastic %K:</span>
+                            <span class='font-medium {"text-red-600" if technical_data["current_k"] > 80 else "text-green-600" if technical_data["current_k"] < 20 else "text-gray-900 dark:text-white"}'>{technical_data["current_k"]:.1f}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Disclaimer -->
+            <div class='bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4'>
+                <div class='flex items-start space-x-3'>
+                    <div class='flex-shrink-0'>
+                        <svg class='w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' />
+                        </svg>
                     </div>
                     <div>
-                        <p class='text-gray-600 dark:text-gray-400'>Price vs 20-MA: {"Above" if current_price > technical_data["ma_20"] else "Below"} ({((current_price - technical_data["ma_20"]) / technical_data["ma_20"] * 100):+.1f}%)</p>
-                        {"<p class='text-gray-600 dark:text-gray-400'>Price vs 50-MA: " + ("Above" if current_price > technical_data["ma_50"] else "Below") + f" ({((current_price - technical_data['ma_50']) / technical_data['ma_50'] * 100):+.1f}%)</p>" if technical_data["ma_50"] else "<p class='text-gray-600 dark:text-gray-400'>50-MA: Insufficient data</p>"}
+                        <h5 class='font-semibold text-amber-900 dark:text-amber-200 mb-1'>Important Disclaimer</h5>
+                        <p class='text-xs text-amber-800 dark:text-amber-300 leading-relaxed'>
+                            This technical analysis is for informational purposes only and should not be considered financial advice. 
+                            Always conduct your own research and consider your risk tolerance before making investment decisions.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -1999,30 +2288,298 @@ def create_basic_analysis_pages(ticker, hist, info, current_price, prev_price, p
     </div>
     """
     
-    # Page 2: Volume and Liquidity
+    # Calculate enhanced volume metrics
+    volume_data = hist['Volume'].dropna()
+    if len(volume_data) > 0:
+        # Volume trend analysis (last 5 days vs previous 5 days)
+        recent_volume = volume_data.tail(5).mean()
+        previous_volume = volume_data.tail(10).head(5).mean() if len(volume_data) >= 10 else recent_volume
+        volume_trend = ((recent_volume - previous_volume) / previous_volume * 100) if previous_volume > 0 else 0
+        
+        # Volume volatility (coefficient of variation)
+        volume_volatility = (volume_data.std() / volume_data.mean() * 100) if volume_data.mean() > 0 else 0
+        
+        # High volume days (above 1.5x average)
+        high_volume_threshold = avg_volume * 1.5
+        high_volume_days = len(volume_data[volume_data > high_volume_threshold])
+        high_volume_pct = (high_volume_days / len(volume_data) * 100) if len(volume_data) > 0 else 0
+        
+        # Volume-Price correlation
+        price_changes = hist['Close'].pct_change().dropna()
+        volume_changes = hist['Volume'].pct_change().dropna()
+        if len(price_changes) > 1 and len(volume_changes) > 1:
+            # Align the series
+            min_len = min(len(price_changes), len(volume_changes))
+            price_changes = price_changes.tail(min_len)
+            volume_changes = volume_changes.tail(min_len)
+            volume_price_corr = price_changes.corr(volume_changes) if min_len > 1 else 0
+        else:
+            volume_price_corr = 0
+        
+        # Determine volume trend status
+        if volume_trend > 20:
+            trend_status = "Strong Increase"
+            trend_color = "text-green-600"
+            trend_icon = "🚀"
+        elif volume_trend > 5:
+            trend_status = "Increasing"
+            trend_color = "text-green-500"
+            trend_icon = "📈"
+        elif volume_trend < -20:
+            trend_status = "Strong Decrease"
+            trend_color = "text-red-600"
+            trend_icon = "📉"
+        elif volume_trend < -5:
+            trend_status = "Decreasing"
+            trend_color = "text-red-500"
+            trend_icon = "📉"
+        else:
+            trend_status = "Stable"
+            trend_color = "text-gray-600"
+            trend_icon = "➡️"
+        
+        # Volume volatility assessment
+        if volume_volatility > 100:
+            volatility_status = "Very High"
+            volatility_color = "text-red-600"
+            volatility_icon = "🔥"
+        elif volume_volatility > 50:
+            volatility_status = "High"
+            volatility_color = "text-orange-600"
+            volatility_icon = "⚡"
+        elif volume_volatility > 25:
+            volatility_status = "Moderate"
+            volatility_color = "text-yellow-600"
+            volatility_icon = "⚖️"
+        else:
+            volatility_status = "Low"
+            volatility_color = "text-green-600"
+            volatility_icon = "🟢"
+        
+        # Liquidity assessment based on volume
+        if latest_volume > avg_volume * 2:
+            liquidity_status = "Very High"
+            liquidity_color = "text-green-600"
+            liquidity_icon = "💧"
+        elif latest_volume > avg_volume * 1.5:
+            liquidity_status = "High"
+            liquidity_color = "text-green-500"
+            liquidity_icon = "💧"
+        elif latest_volume < avg_volume * 0.5:
+            liquidity_status = "Low"
+            liquidity_color = "text-red-600"
+            liquidity_icon = "🏜️"
+        elif latest_volume < avg_volume * 0.75:
+            liquidity_status = "Below Average"
+            liquidity_color = "text-orange-600"
+            liquidity_icon = "⚠️"
+        else:
+            liquidity_status = "Normal"
+            liquidity_color = "text-gray-600"
+            liquidity_icon = "💧"
+        
+        # Volume-Price correlation interpretation
+        if abs(volume_price_corr) > 0.5:
+            corr_strength = "Strong"
+            corr_color = "text-blue-600"
+        elif abs(volume_price_corr) > 0.3:
+            corr_strength = "Moderate"
+            corr_color = "text-blue-500"
+        else:
+            corr_strength = "Weak"
+            corr_color = "text-gray-600"
+        
+        if volume_price_corr > 0:
+            corr_direction = "Positive"
+            corr_icon = "📈"
+        elif volume_price_corr < 0:
+            corr_direction = "Negative"
+            corr_icon = "📉"
+        else:
+            corr_direction = "Neutral"
+            corr_icon = "➡️"
+    else:
+        # Default values if no volume data
+        volume_trend, trend_status, trend_color, trend_icon = 0, "No Data", "text-gray-500", "❓"
+        volume_volatility, volatility_status, volatility_color, volatility_icon = 0, "No Data", "text-gray-500", "❓"
+        liquidity_status, liquidity_color, liquidity_icon = "No Data", "text-gray-500", "❓"
+        high_volume_pct = 0
+        volume_price_corr, corr_strength, corr_direction, corr_color, corr_icon = 0, "No Data", "No Data", "text-gray-500", "❓"
+    
+    # Page 2: Enhanced Volume and Liquidity Analysis
     pages['volume'] = f"""
-    <div id="volume" class="page-content">
-        <!-- Volume Information -->
-        <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl mb-4'>
-            <div class='flex justify-between items-center mb-2'>
-                <h4 class='font-semibold text-gray-900 dark:text-white'>Volume</h4>
-                <span class='text-sm px-2 py-0.5 rounded-full {volume_color} bg-opacity-20 {volume_color.replace("text-", "bg-").replace("600", "100")}'>
-                    {volume_ratio:.1f}x average
-                </span>
-            </div>
-            <div class='grid grid-cols-2 gap-4'>
-                <div>
-                    <p class='text-sm text-gray-500 dark:text-gray-400'>Latest Volume</p>
-                    <p class='font-medium text-gray-900 dark:text-white'>{latest_volume:,.0f}</p>
+    <div id="volume" class="page-content space-y-6">
+        <!-- Volume Overview -->
+        <div class='bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6'>
+            <div class='flex items-center justify-between mb-4'>
+                <div class='flex items-center'>
+                    <div class='p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-4'>
+                        <svg class='w-6 h-6 text-blue-600 dark:text-blue-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Volume Analysis</h3>
+                        <p class='text-sm text-gray-600 dark:text-gray-400'>Trading volume and liquidity metrics</p>
+                    </div>
                 </div>
-                <div>
-                    <p class='text-sm text-gray-500 dark:text-gray-400'>Average Volume</p>
-                    <p class='font-medium text-gray-900 dark:text-white'>{avg_volume:,.0f}</p>
+                <div class='text-right'>
+                    <div class='text-2xl font-bold {volume_color}'>{volume_ratio:.1f}x</div>
+                    <div class='text-xs text-gray-500 dark:text-gray-400'>vs Average</div>
+                </div>
+            </div>
+            
+            <!-- Volume Metrics Grid -->
+            <div class='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                <!-- Current Volume -->
+                <div class='bg-white/70 dark:bg-gray-800/70 rounded-lg p-4'>
+                    <div class='flex items-center justify-between mb-2'>
+                        <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Current Volume</span>
+                        <span class='text-lg'>📊</span>
+                    </div>
+                    <div class='text-2xl font-bold text-gray-900 dark:text-white'>{latest_volume:,.0f}</div>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mt-1'>Latest trading session</div>
+                </div>
+                
+                <!-- Average Volume -->
+                <div class='bg-white/70 dark:bg-gray-800/70 rounded-lg p-4'>
+                    <div class='flex items-center justify-between mb-2'>
+                        <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Average Volume</span>
+                        <span class='text-lg'>📈</span>
+                    </div>
+                    <div class='text-2xl font-bold text-gray-900 dark:text-white'>{avg_volume:,.0f}</div>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mt-1'>{len(hist)} day average</div>
+                </div>
+                
+                <!-- Volume Trend -->
+                <div class='bg-white/70 dark:bg-gray-800/70 rounded-lg p-4'>
+                    <div class='flex items-center justify-between mb-2'>
+                        <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>5-Day Trend</span>
+                        <span class='text-lg'>{trend_icon}</span>
+                    </div>
+                    <div class='text-2xl font-bold {trend_color}'>{volume_trend:+.1f}%</div>
+                    <div class='text-xs {trend_color} mt-1'>{trend_status}</div>
                 </div>
             </div>
         </div>
         
-        <!-- Additional volume metrics can go here -->
+        <!-- Volume Analysis Grid -->
+        <div class='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+            <!-- Volume Characteristics -->
+            <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-6'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg mr-3'>
+                        <svg class='w-5 h-5 text-purple-600 dark:text-purple-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z' />
+                        </svg>
+                    </div>
+                    <h4 class='font-semibold text-gray-900 dark:text-white'>Volume Characteristics</h4>
+                </div>
+                <div class='space-y-4'>
+                    <!-- Volume Volatility -->
+                    <div class='p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg'>
+                        <div class='flex items-center justify-between mb-2'>
+                            <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Volume Volatility</span>
+                            <div class='flex items-center space-x-1'>
+                                <span class='text-sm'>{volatility_icon}</span>
+                                <span class='text-xs font-medium {volatility_color}'>{volatility_status}</span>
+                            </div>
+                        </div>
+                        <div class='text-lg font-bold text-gray-900 dark:text-white'>{volume_volatility:.1f}%</div>
+                        <div class='text-xs text-gray-500 dark:text-gray-400'>Coefficient of variation</div>
+                    </div>
+                    
+                    <!-- High Volume Days -->
+                    <div class='p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg'>
+                        <div class='flex items-center justify-between mb-2'>
+                            <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>High Volume Days</span>
+                            <span class='text-sm'>🔥</span>
+                        </div>
+                        <div class='text-lg font-bold text-gray-900 dark:text-white'>{high_volume_pct:.1f}%</div>
+                        <div class='text-xs text-gray-500 dark:text-gray-400'>Above 1.5x average volume</div>
+                    </div>
+                    
+                    <!-- Liquidity Status -->
+                    <div class='p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg'>
+                        <div class='flex items-center justify-between mb-2'>
+                            <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Current Liquidity</span>
+                            <div class='flex items-center space-x-1'>
+                                <span class='text-sm'>{liquidity_icon}</span>
+                                <span class='text-xs font-medium {liquidity_color}'>{liquidity_status}</span>
+                            </div>
+                        </div>
+                        <div class='text-lg font-bold {liquidity_color}'>{volume_ratio:.1f}x Average</div>
+                        <div class='text-xs text-gray-500 dark:text-gray-400'>Market depth indicator</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Volume-Price Relationship -->
+            <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-6'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-2 bg-green-100 dark:bg-green-900/30 rounded-lg mr-3'>
+                        <svg class='w-5 h-5 text-green-600 dark:text-green-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' />
+                        </svg>
+                    </div>
+                    <h4 class='font-semibold text-gray-900 dark:text-white'>Volume-Price Analysis</h4>
+                </div>
+                <div class='space-y-4'>
+                    <!-- Correlation -->
+                    <div class='p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg border border-green-200 dark:border-green-700'>
+                        <div class='flex items-center justify-between mb-3'>
+                            <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Price-Volume Correlation</span>
+                            <span class='text-lg'>{corr_icon}</span>
+                        </div>
+                        <div class='text-2xl font-bold {corr_color}'>{volume_price_corr:.3f}</div>
+                        <div class='text-sm {corr_color} mt-1'>{corr_strength} {corr_direction}</div>
+                        <div class='text-xs text-gray-500 dark:text-gray-400 mt-2'>
+                            {("Strong correlation suggests volume confirms price moves" if abs(volume_price_corr) > 0.5 else 
+                              "Moderate correlation indicates some volume-price relationship" if abs(volume_price_corr) > 0.3 else 
+                              "Weak correlation suggests volume and price move independently")}
+                        </div>
+                    </div>
+                    
+                    <!-- Volume Pattern Analysis -->
+                    <div class='p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg'>
+                        <h5 class='font-medium text-gray-800 dark:text-gray-200 mb-2'>Volume Pattern Insights</h5>
+                        <div class='space-y-2 text-sm text-gray-600 dark:text-gray-400'>
+                            {"<p>• <strong>High Volume Confirmation:</strong> Strong price moves supported by volume</p>" if volume_ratio > 1.5 and abs(volume_price_corr) > 0.3 else ""}
+                            {"<p>• <strong>Volume Breakout:</strong> Unusual volume may signal trend change</p>" if volume_ratio > 2 else ""}
+                            {"<p>• <strong>Low Volume Drift:</strong> Price moves without volume support</p>" if volume_ratio < 0.7 else ""}
+                            {"<p>• <strong>Volume Divergence:</strong> Price and volume moving in opposite directions</p>" if volume_price_corr < -0.3 else ""}
+                            <p>• <strong>Trend Strength:</strong> {("Strong" if volume_ratio > 1.5 else "Moderate" if volume_ratio > 1.0 else "Weak")} volume support</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Volume Trading Insights -->
+        <div class='bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-5'>
+            <div class='flex items-center mb-3'>
+                <div class='p-1.5 bg-amber-100 dark:bg-amber-900/30 rounded-lg mr-3'>
+                    <svg class='w-4 h-4 text-amber-600 dark:text-amber-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z' />
+                    </svg>
+                </div>
+                <h4 class='font-semibold text-amber-800 dark:text-amber-200'>Volume Trading Insights</h4>
+            </div>
+            <div class='grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-amber-700 dark:text-amber-300'>
+                <div class='space-y-1'>
+                    {"<p>• <strong>High Activity:</strong> Increased institutional interest likely</p>" if volume_ratio > 2 else ""}
+                    {"<p>• <strong>Breakout Potential:</strong> Volume spike may signal trend change</p>" if volume_ratio > 1.8 else ""}
+                    {"<p>• <strong>Accumulation Phase:</strong> Steady volume suggests building positions</p>" if 0.8 <= volume_ratio <= 1.2 and trend_status == "Stable" else ""}
+                    {"<p>• <strong>Distribution Phase:</strong> High volume with price weakness</p>" if volume_ratio > 1.5 and volume_price_corr < -0.2 else ""}
+                </div>
+                <div class='space-y-1'>
+                    <p>• <strong>Liquidity:</strong> {liquidity_status.lower()} trading liquidity</p>
+                    <p>• <strong>Volatility:</strong> {volatility_status.lower()} volume consistency</p>
+                    <p>• <strong>Trend Support:</strong> Volume {("confirms" if abs(volume_price_corr) > 0.3 else "doesn't confirm")} price direction</p>
+                    <p>• <strong>Risk Level:</strong> {("Higher" if volume_volatility > 75 else "Moderate" if volume_volatility > 40 else "Lower")} volume-based risk</p>
+                </div>
+            </div>
+        </div>
     </div>
     """
     
@@ -2202,24 +2759,308 @@ def create_basic_analysis_pages(ticker, hist, info, current_price, prev_price, p
     </div>
     """
     
-    # Page 4: Performance
+    # Calculate enhanced performance metrics
+    returns_data = hist['Close'].pct_change().dropna()
+    
+    # Calculate additional performance periods
+    performance_periods = {
+        '1d': 1, '3d': 3, '1w': 5, '2w': 10, '1m': 22, '3m': 66, '6m': 132, 'ytd': None, '1y': 252
+    }
+    
+    enhanced_performance = {}
+    for period, days in performance_periods.items():
+        if period == 'ytd':
+            # YTD calculation (from performance_metrics)
+            enhanced_performance[period] = performance_metrics.get('ytd')
+        elif days and len(hist) > days:
+            start_price = hist['Close'].iloc[-days-1]
+            end_price = hist['Close'].iloc[-1]
+            enhanced_performance[period] = ((end_price - start_price) / start_price * 100)
+        else:
+            enhanced_performance[period] = None
+    
+    # Calculate volatility metrics
+    if len(returns_data) > 0:
+        daily_volatility = returns_data.std()
+        annualized_volatility = daily_volatility * (252 ** 0.5) * 100  # Annualized volatility
+        
+        # Sharpe ratio approximation (assuming risk-free rate of 2%)
+        risk_free_rate = 0.02
+        if len(returns_data) >= 252:
+            annual_return = ((hist['Close'].iloc[-1] / hist['Close'].iloc[-252]) - 1) * 100
+            sharpe_ratio = (annual_return - risk_free_rate * 100) / annualized_volatility if annualized_volatility > 0 else 0
+        else:
+            sharpe_ratio = None
+        
+        # Maximum drawdown calculation
+        cumulative_returns = (1 + returns_data).cumprod()
+        rolling_max = cumulative_returns.expanding().max()
+        drawdown = (cumulative_returns - rolling_max) / rolling_max
+        max_drawdown = drawdown.min() * 100
+        
+        # Win rate (percentage of positive days)
+        positive_days = len(returns_data[returns_data > 0])
+        win_rate = (positive_days / len(returns_data)) * 100
+        
+        # Average gain vs average loss
+        gains = returns_data[returns_data > 0]
+        losses = returns_data[returns_data < 0]
+        avg_gain = gains.mean() * 100 if len(gains) > 0 else 0
+        avg_loss = abs(losses.mean()) * 100 if len(losses) > 0 else 0
+        gain_loss_ratio = avg_gain / avg_loss if avg_loss > 0 else 0
+        
+        # Consecutive performance streaks
+        consecutive_gains = 0
+        consecutive_losses = 0
+        current_gain_streak = 0
+        current_loss_streak = 0
+        max_gain_streak = 0
+        max_loss_streak = 0
+        
+        for ret in returns_data:
+            if ret > 0:
+                current_gain_streak += 1
+                current_loss_streak = 0
+                max_gain_streak = max(max_gain_streak, current_gain_streak)
+            elif ret < 0:
+                current_loss_streak += 1
+                current_gain_streak = 0
+                max_loss_streak = max(max_loss_streak, current_loss_streak)
+            else:
+                current_gain_streak = 0
+                current_loss_streak = 0
+    else:
+        annualized_volatility = 0
+        sharpe_ratio = None
+        max_drawdown = 0
+        win_rate = 0
+        avg_gain = 0
+        avg_loss = 0
+        gain_loss_ratio = 0
+        max_gain_streak = 0
+        max_loss_streak = 0
+    
+    # Performance assessment
+    def get_performance_assessment(perf):
+        if perf is None:
+            return "No Data", "text-gray-500", "❓"
+        elif perf >= 20:
+            return "Excellent", "text-green-600", "🚀"
+        elif perf >= 10:
+            return "Strong", "text-green-500", "📈"
+        elif perf >= 5:
+            return "Good", "text-green-400", "✅"
+        elif perf >= 0:
+            return "Positive", "text-blue-500", "➕"
+        elif perf >= -5:
+            return "Slight Loss", "text-yellow-600", "⚠️"
+        elif perf >= -10:
+            return "Moderate Loss", "text-orange-600", "📉"
+        else:
+            return "Poor", "text-red-600", "❌"
+    
+    # Risk assessment
+    if annualized_volatility > 40:
+        risk_level = "Very High"
+        risk_color = "text-red-600"
+        risk_icon = "🔥"
+    elif annualized_volatility > 25:
+        risk_level = "High"
+        risk_color = "text-orange-600"
+        risk_icon = "⚡"
+    elif annualized_volatility > 15:
+        risk_level = "Moderate"
+        risk_color = "text-yellow-600"
+        risk_icon = "⚖️"
+    else:
+        risk_level = "Low"
+        risk_color = "text-green-600"
+        risk_icon = "🛡️"
+    
+    # Page 4: Enhanced Performance Analysis
     pages['performance'] = f"""
-    <div id="performance" class="page-content">
-        <!-- Performance Metrics -->
-        <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl mb-4'>
-            <h4 class='font-semibold text-gray-900 dark:text-white mb-3'>Performance</h4>
-            <div class='grid grid-cols-2 md:grid-cols-3 gap-4'>
-                <div class='text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg'>
-                    <p class='text-sm text-gray-500 dark:text-gray-400'>1 Week</p>
-                    {f"<p class='font-medium {('text-green-600' if performance_metrics['1w'] >= 0 else 'text-red-600')}'>{performance_metrics['1w']:+.2f}%</p>" if performance_metrics['1w'] is not None else "<p class='text-sm text-gray-400'>N/A</p>"}
+    <div id="performance" class="page-content space-y-6">
+        <!-- Performance Overview -->
+        <div class='bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border border-green-200 dark:border-green-700 rounded-xl p-6'>
+            <div class='flex items-center justify-between mb-4'>
+                <div class='flex items-center'>
+                    <div class='p-2 bg-green-100 dark:bg-green-900/30 rounded-lg mr-4'>
+                        <svg class='w-6 h-6 text-green-600 dark:text-green-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Performance Analysis</h3>
+                        <p class='text-sm text-gray-600 dark:text-gray-400'>Returns, risk metrics, and performance statistics</p>
+                    </div>
                 </div>
-                <div class='text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg'>
-                    <p class='text-sm text-gray-500 dark:text-gray-400'>1 Month</p>
-                    {f"<p class='font-medium {('text-green-600' if performance_metrics['1m'] >= 0 else 'text-red-600')}'>{performance_metrics['1m']:+.2f}%</p>" if performance_metrics['1m'] is not None else "<p class='text-sm text-gray-400'>N/A</p>"}
+                <div class='text-right'>
+                    <div class='text-2xl font-bold {("text-green-600" if enhanced_performance.get("ytd", 0) and enhanced_performance["ytd"] >= 0 else "text-red-600")}'>{enhanced_performance.get("ytd", 0):+.1f}%</div>
+                    <div class='text-xs text-gray-500 dark:text-gray-400'>YTD Return</div>
                 </div>
-                <div class='text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg'>
-                    <p class='text-sm text-gray-500 dark:text-gray-400'>YTD</p>
-                    {f"<p class='font-medium {('text-green-600' if performance_metrics['ytd'] >= 0 else 'text-red-600')}'>{performance_metrics['ytd']:+.2f}%</p>" if performance_metrics['ytd'] is not None else "<p class='text-sm text-gray-400'>N/A</p>"}
+            </div>
+            
+            <!-- Performance Periods Grid -->
+            <div class='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3'>
+                <!-- 1 Day -->
+                <div class='bg-white/70 dark:bg-gray-800/70 rounded-lg p-3 text-center'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>1 Day</div>
+                    {f'<div class="text-lg font-bold {("text-green-600" if enhanced_performance["1d"] and enhanced_performance["1d"] >= 0 else "text-red-600")}">{enhanced_performance["1d"]:+.2f}%</div>' if enhanced_performance["1d"] is not None else '<div class="text-sm text-gray-400">N/A</div>'}
+                    {f'<div class="text-xs {get_performance_assessment(enhanced_performance["1d"])[1]}">{get_performance_assessment(enhanced_performance["1d"])[2]}</div>' if enhanced_performance["1d"] is not None else ''}
+                </div>
+                
+                <!-- 1 Week -->
+                <div class='bg-white/70 dark:bg-gray-800/70 rounded-lg p-3 text-center'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>1 Week</div>
+                    {f'<div class="text-lg font-bold {("text-green-600" if enhanced_performance["1w"] and enhanced_performance["1w"] >= 0 else "text-red-600")}">{enhanced_performance["1w"]:+.2f}%</div>' if enhanced_performance["1w"] is not None else '<div class="text-sm text-gray-400">N/A</div>'}
+                    {f'<div class="text-xs {get_performance_assessment(enhanced_performance["1w"])[1]}">{get_performance_assessment(enhanced_performance["1w"])[2]}</div>' if enhanced_performance["1w"] is not None else ''}
+                </div>
+                
+                <!-- 1 Month -->
+                <div class='bg-white/70 dark:bg-gray-800/70 rounded-lg p-3 text-center'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>1 Month</div>
+                    {f'<div class="text-lg font-bold {("text-green-600" if enhanced_performance["1m"] and enhanced_performance["1m"] >= 0 else "text-red-600")}">{enhanced_performance["1m"]:+.2f}%</div>' if enhanced_performance["1m"] is not None else '<div class="text-sm text-gray-400">N/A</div>'}
+                    {f'<div class="text-xs {get_performance_assessment(enhanced_performance["1m"])[1]}">{get_performance_assessment(enhanced_performance["1m"])[2]}</div>' if enhanced_performance["1m"] is not None else ''}
+                </div>
+                
+                <!-- 3 Months -->
+                <div class='bg-white/70 dark:bg-gray-800/70 rounded-lg p-3 text-center'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>3 Months</div>
+                    {f'<div class="text-lg font-bold {("text-green-600" if enhanced_performance["3m"] and enhanced_performance["3m"] >= 0 else "text-red-600")}">{enhanced_performance["3m"]:+.2f}%</div>' if enhanced_performance["3m"] is not None else '<div class="text-sm text-gray-400">N/A</div>'}
+                    {f'<div class="text-xs {get_performance_assessment(enhanced_performance["3m"])[1]}">{get_performance_assessment(enhanced_performance["3m"])[2]}</div>' if enhanced_performance["3m"] is not None else ''}
+                </div>
+                
+                <!-- 1 Year -->
+                <div class='bg-white/70 dark:bg-gray-800/70 rounded-lg p-3 text-center'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>1 Year</div>
+                    {f'<div class="text-lg font-bold {("text-green-600" if enhanced_performance["1y"] and enhanced_performance["1y"] >= 0 else "text-red-600")}">{enhanced_performance["1y"]:+.2f}%</div>' if enhanced_performance["1y"] is not None else '<div class="text-sm text-gray-400">N/A</div>'}
+                    {f'<div class="text-xs {get_performance_assessment(enhanced_performance["1y"])[1]}">{get_performance_assessment(enhanced_performance["1y"])[2]}</div>' if enhanced_performance["1y"] is not None else ''}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Risk & Return Analysis -->
+        <div class='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+            <!-- Risk Metrics -->
+            <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-6'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-2 bg-red-100 dark:bg-red-900/30 rounded-lg mr-3'>
+                        <svg class='w-5 h-5 text-red-600 dark:text-red-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' />
+                        </svg>
+                    </div>
+                    <h4 class='font-semibold text-gray-900 dark:text-white'>Risk Analysis</h4>
+                </div>
+                <div class='space-y-4'>
+                    <!-- Volatility -->
+                    <div class='p-3 bg-red-50 dark:bg-red-900/20 rounded-lg'>
+                        <div class='flex items-center justify-between mb-2'>
+                            <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Annualized Volatility</span>
+                            <div class='flex items-center space-x-1'>
+                                <span class='text-sm'>{risk_icon}</span>
+                                <span class='text-xs font-medium {risk_color}'>{risk_level}</span>
+                            </div>
+                        </div>
+                        <div class='text-2xl font-bold text-gray-900 dark:text-white'>{annualized_volatility:.1f}%</div>
+                        <div class='text-xs text-gray-500 dark:text-gray-400'>Standard deviation of returns</div>
+                    </div>
+                    
+                    <!-- Maximum Drawdown -->
+                    <div class='p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg'>
+                        <div class='flex items-center justify-between mb-2'>
+                            <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Maximum Drawdown</span>
+                            <span class='text-sm'>📉</span>
+                        </div>
+                        <div class='text-2xl font-bold text-red-600'>{max_drawdown:.1f}%</div>
+                        <div class='text-xs text-gray-500 dark:text-gray-400'>Largest peak-to-trough decline</div>
+                    </div>
+                    
+                    <!-- Sharpe Ratio -->
+                    <div class='p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg'>
+                        <div class='flex items-center justify-between mb-2'>
+                            <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Sharpe Ratio</span>
+                            <span class='text-sm'>⚖️</span>
+                        </div>
+                        {f'<div class="text-2xl font-bold {("text-green-600" if sharpe_ratio and sharpe_ratio > 1 else "text-yellow-600" if sharpe_ratio and sharpe_ratio > 0 else "text-red-600")}">{sharpe_ratio:.2f}</div>' if sharpe_ratio is not None else '<div class="text-lg text-gray-400">N/A</div>'}
+                        <div class='text-xs text-gray-500 dark:text-gray-400'>Risk-adjusted return measure</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Trading Statistics -->
+            <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-6'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg mr-3'>
+                        <svg class='w-5 h-5 text-purple-600 dark:text-purple-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' />
+                        </svg>
+                    </div>
+                    <h4 class='font-semibold text-gray-900 dark:text-white'>Trading Statistics</h4>
+                </div>
+                <div class='space-y-4'>
+                    <!-- Win Rate -->
+                    <div class='p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg'>
+                        <div class='flex items-center justify-between mb-2'>
+                            <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Win Rate</span>
+                            <span class='text-sm'>🎯</span>
+                        </div>
+                        <div class='text-2xl font-bold {("text-green-600" if win_rate > 55 else "text-yellow-600" if win_rate > 45 else "text-red-600")}'>{win_rate:.1f}%</div>
+                        <div class='text-xs text-gray-500 dark:text-gray-400'>Percentage of positive days</div>
+                    </div>
+                    
+                    <!-- Average Gain vs Loss -->
+                    <div class='p-3 bg-green-50 dark:bg-green-900/20 rounded-lg'>
+                        <div class='flex items-center justify-between mb-2'>
+                            <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Gain/Loss Ratio</span>
+                            <span class='text-sm'>⚖️</span>
+                        </div>
+                        <div class='text-2xl font-bold {("text-green-600" if gain_loss_ratio > 1.2 else "text-yellow-600" if gain_loss_ratio > 0.8 else "text-red-600")}'>{gain_loss_ratio:.2f}</div>
+                        <div class='text-xs text-gray-500 dark:text-gray-400'>Avg gain: {avg_gain:.2f}% | Avg loss: {avg_loss:.2f}%</div>
+                    </div>
+                    
+                    <!-- Streak Analysis -->
+                    <div class='p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg'>
+                        <div class='flex items-center justify-between mb-2'>
+                            <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Streak Analysis</span>
+                            <span class='text-sm'>🔥</span>
+                        </div>
+                        <div class='grid grid-cols-2 gap-2 text-sm'>
+                            <div>
+                                <div class='text-green-600 font-bold'>+{max_gain_streak}</div>
+                                <div class='text-xs text-gray-500'>Max gains</div>
+                            </div>
+                            <div>
+                                <div class='text-red-600 font-bold'>-{max_loss_streak}</div>
+                                <div class='text-xs text-gray-500'>Max losses</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Performance Insights -->
+        <div class='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-5'>
+            <div class='flex items-center mb-3'>
+                <div class='p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3'>
+                    <svg class='w-4 h-4 text-blue-600 dark:text-blue-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' />
+                    </svg>
+                </div>
+                <h4 class='font-semibold text-blue-800 dark:text-blue-200'>Performance Insights</h4>
+            </div>
+            <div class='grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-700 dark:text-blue-300'>
+                <div class='space-y-1'>
+                    <p>• <strong>Risk Level:</strong> {risk_level.lower()} volatility ({annualized_volatility:.1f}%)</p>
+                    <p>• <strong>Consistency:</strong> {win_rate:.0f}% positive trading days</p>
+                    {"<p>• <strong>Risk-Adjusted Return:</strong> " + ("Excellent" if sharpe_ratio and sharpe_ratio > 2 else "Good" if sharpe_ratio and sharpe_ratio > 1 else "Fair" if sharpe_ratio and sharpe_ratio > 0 else "Poor") + " Sharpe ratio</p>" if sharpe_ratio is not None else "<p>• <strong>Risk-Adjusted Return:</strong> Insufficient data for Sharpe ratio</p>"}
+                    <p>• <strong>Drawdown Risk:</strong> {abs(max_drawdown):.1f}% maximum decline</p>
+                </div>
+                <div class='space-y-1'>
+                    <p>• <strong>Trading Profile:</strong> {("Conservative" if annualized_volatility < 20 else "Moderate" if annualized_volatility < 35 else "Aggressive")} risk profile</p>
+                    <p>• <strong>Return Pattern:</strong> {("Consistent gains" if win_rate > 60 else "Balanced" if win_rate > 40 else "Volatile returns")}</p>
+                    <p>• <strong>Best Period:</strong> {max([(k, v) for k, v in enhanced_performance.items() if v is not None], key=lambda x: x[1], default=("N/A", 0))[0].upper()}</p>
+                    <p>• <strong>Streak Tendency:</strong> {("Momentum-driven" if max_gain_streak > max_loss_streak else "Mean-reverting" if max_loss_streak > max_gain_streak else "Balanced")}</p>
                 </div>
             </div>
         </div>
