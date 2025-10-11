@@ -1007,78 +1007,175 @@ def create_prediction_analysis_pages(ticker, prediction_results, current_price, 
     """Create paginated content for prediction analysis."""
     pages = {}
     
-    # Overview Page
+    # Calculate prediction confidence and sentiment
+    prediction_confidence = 75  # Base confidence
+    if volatility > 50:
+        prediction_confidence -= 15
+    if rsi > 80 or rsi < 20:
+        prediction_confidence -= 10
+    prediction_confidence = max(30, min(95, prediction_confidence))
+    
+    # Calculate average prediction change
+    avg_prediction_change = 0
+    if predictions:
+        changes = []
+        for days, price in predictions.items():
+            if current_price > 0:
+                change_pct = (price / current_price - 1) * 100
+                changes.append(change_pct)
+        if changes:
+            avg_prediction_change = sum(changes) / len(changes)
+    
+    # Determine prediction trend
+    if avg_prediction_change > 5:
+        trend_direction = "Strong Upward"
+        trend_color = "text-green-600"
+        trend_bg = "bg-green-50 dark:bg-green-900/20"
+        trend_icon = "🚀"
+    elif avg_prediction_change > 2:
+        trend_direction = "Upward"
+        trend_color = "text-green-500"
+        trend_bg = "bg-green-50 dark:bg-green-900/20"
+        trend_icon = "📈"
+    elif avg_prediction_change < -5:
+        trend_direction = "Strong Downward"
+        trend_color = "text-red-600"
+        trend_bg = "bg-red-50 dark:bg-red-900/20"
+        trend_icon = "📉"
+    elif avg_prediction_change < -2:
+        trend_direction = "Downward"
+        trend_color = "text-red-500"
+        trend_bg = "bg-red-50 dark:bg-red-900/20"
+        trend_icon = "📉"
+    else:
+        trend_direction = "Sideways"
+        trend_color = "text-gray-600"
+        trend_bg = "bg-gray-50 dark:bg-gray-800/50"
+        trend_icon = "➡️"
+
+    # Overview Page - Enhanced AI Prediction Dashboard
     pages['overview'] = f"""
-    <div id='overview' class='page-content'>
-        <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-6 shadow-sm'>
+    <div id="overview" class="page-content space-y-6">
+        <!-- AI Prediction Dashboard -->
+        <div class='bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-6 rounded-xl border border-purple-100 dark:border-purple-800/50 shadow-sm'>
             <div class='flex items-center mb-6'>
-                <div class='p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-4'>
-                    <svg class='w-6 h-6 text-blue-600 dark:text-blue-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' />
+                <div class='p-2 bg-purple-100 dark:bg-purple-800/50 rounded-lg mr-3'>
+                    <svg class='w-6 h-6 text-purple-600 dark:text-purple-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z'></path>
                     </svg>
                 </div>
-                <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Prediction Overview</h3>
-            </div>
-            
-            <div class='border-b border-gray-200 dark:border-gray-700 pb-4 mb-6'>
-                <div class='flex items-center space-x-2'>
-                    <span class='text-xl font-semibold text-gray-800 dark:text-gray-200'>{ticker}</span>
-                    <span class='px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full'>
-                        {sentiment_icon} {sentiment_text}
-                    </span>
+                <div>
+                    <h3 class='text-xl font-bold text-gray-900 dark:text-white'>AI Prediction Overview</h3>
+                    <p class='text-sm text-gray-600 dark:text-gray-400'>Machine learning-powered price forecasting</p>
                 </div>
             </div>
             
-            <!-- Current Market Data -->
-            <div class='grid grid-cols-1 md:grid-cols-3 gap-5 mb-6'>
-                <!-- Current Price -->
-                <div class='bg-white/80 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 p-5 rounded-xl shadow-sm'>
-                    <div class='flex items-center mb-3'>
-                        <div class='p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3'>
-                            <svg class='w-5 h-5 text-blue-600 dark:text-blue-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                                <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' />
-                            </svg>
-                        </div>
-                        <h4 class='font-semibold text-gray-800 dark:text-white'>Current Price</h4>
-                    </div>
-                    <p class='text-2xl md:text-3xl font-bold text-gray-900 dark:text-white truncate'>${current_price:,.2f}</p>
-                    <p class='mt-1 text-sm text-gray-500 dark:text-gray-400'>Latest market price</p>
-                </div>
-                
-                <!-- RSI Indicator -->
-                <div class='bg-white/80 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 p-5 rounded-xl shadow-sm'>
-                    <div class='flex items-center justify-between mb-3'>
-                        <div class='flex items-center'>
-                            <div class='p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg mr-3'>
-                                <svg class='w-5 h-5 text-purple-600 dark:text-purple-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                                    <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' />
-                                </svg>
-                            </div>
-                            <h4 class='font-semibold text-gray-800 dark:text-white'>RSI (14)</h4>
-                        </div>
-                    </div>
-                    <div class='flex flex-col space-y-1'>
-                        <p class='text-2xl md:text-3xl font-bold text-gray-900 dark:text-white'>{rsi:.1f}</p>
-                        <div class='w-full max-w-[200px] bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mt-1'>
-                            <div class='bg-purple-600 h-2.5 rounded-full' style='width: {min(max(rsi, 0), 100)}%'></div>
-                        </div>
+            <!-- Prediction Trend Analysis -->
+            <div class='mb-6'>
+                <div class='flex items-center justify-between mb-3'>
+                    <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Predicted Price Trend</span>
+                    <div class='flex items-center space-x-2'>
+                        <span class='text-lg'>{trend_icon}</span>
+                        <span class='font-bold {trend_color}'>{trend_direction}</span>
                     </div>
                 </div>
-                
-                <!-- Volatility -->
-                <div class='bg-white/80 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 p-5 rounded-xl shadow-sm'>
-                    <div class='flex items-center mb-3'>
-                        <div class='p-1.5 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg mr-3'>
-                            <svg class='w-5 h-5 text-yellow-600 dark:text-yellow-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                                <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 10V3L4 14h7v7l9-11h-7z' />
-                            </svg>
-                        </div>
-                        <h4 class='font-semibold text-gray-800 dark:text-white'>Volatility</h4>
+                <div class='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-2'>
+                    <div class='bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-3 rounded-full relative'>
+                        <div class='absolute top-0 bg-blue-600 h-3 w-1 rounded-full shadow-lg' style='left: {max(0, min(100, 50 + avg_prediction_change * 2)):.1f}%'></div>
                     </div>
-                    <div class='flex items-baseline space-x-2'>
-                        <p class='text-2xl md:text-3xl font-bold text-gray-900 dark:text-white'>{volatility:.1f}%</p>
-                        <div class='w-full max-w-xs bg-gray-200 dark:bg-gray-700 rounded-full h-2.5'>
-                            <div class='bg-yellow-500 h-2.5 rounded-full' style='width: {min(volatility, 100)}%'></div>
+                </div>
+                <div class='flex justify-between text-xs text-gray-500 dark:text-gray-400'>
+                    <span>Strong Bearish</span>
+                    <span class='font-medium text-blue-600 dark:text-blue-400'>Avg Change: {avg_prediction_change:+.1f}%</span>
+                    <span>Strong Bullish</span>
+                </div>
+            </div>
+            
+            <!-- Key Prediction Metrics -->
+            <div class='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Current Price</div>
+                    <div class='text-2xl font-bold text-gray-900 dark:text-white'>${current_price:,.2f}</div>
+                    <div class='text-sm {sentiment_color} font-medium'>{sentiment_icon} {sentiment_text}</div>
+                </div>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Prediction Confidence</div>
+                    <div class='text-2xl font-bold {"text-green-600" if prediction_confidence >= 70 else "text-yellow-600" if prediction_confidence >= 50 else "text-red-600"}'>{prediction_confidence:.0f}%</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>{"High" if prediction_confidence >= 70 else "Medium" if prediction_confidence >= 50 else "Low"} reliability</div>
+                </div>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Market Volatility</div>
+                    <div class='text-2xl font-bold {"text-red-600" if volatility > 50 else "text-yellow-600" if volatility > 30 else "text-green-600"}'>{volatility:.1f}%</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>{"High" if volatility > 50 else "Moderate" if volatility > 30 else "Low"} risk</div>
+                </div>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>RSI Signal</div>
+                    <div class='text-2xl font-bold {"text-red-600" if rsi > 70 else "text-green-600" if rsi < 30 else "text-gray-900 dark:text-white"}'>{rsi:.1f}</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>{"Overbought" if rsi > 70 else "Oversold" if rsi < 30 else "Neutral"}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Prediction Summary Cards -->
+        <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5 rounded-xl'>
+            <div class='flex items-center mb-4'>
+                <div class='p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg mr-3'>
+                    <svg class='w-5 h-5 text-green-600 dark:text-green-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 7h8m0 0v8m0-8l-8 8-4-4-6 6'></path>
+                    </svg>
+                </div>
+                <h3 class='text-lg font-semibold text-gray-800 dark:text-white'>Key Predictions Summary</h3>
+            </div>
+            
+            <div class='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+                {prediction_cards[:3] if len(prediction_cards) > 0 else "<div class='col-span-full text-center text-gray-500 dark:text-gray-400 py-8'>No predictions available</div>"}
+            </div>
+        </div>
+        
+        <!-- AI Model Insights -->
+        <div class='bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 p-6 rounded-xl border border-indigo-100 dark:border-indigo-800/50 shadow-sm'>
+            <div class='flex items-center mb-4'>
+                <div class='p-2 bg-indigo-100 dark:bg-indigo-800/50 rounded-lg mr-3'>
+                    <svg class='w-6 h-6 text-indigo-600 dark:text-indigo-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'></path>
+                    </svg>
+                </div>
+                <h3 class='text-xl font-bold text-gray-900 dark:text-white'>AI Model Insights</h3>
+            </div>
+            
+            <div class='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                <div>
+                    <h4 class='font-medium text-gray-700 dark:text-gray-300 mb-3'>Model Analysis</h4>
+                    <div class='space-y-2'>
+                        <div class='flex justify-between text-sm'>
+                            <span class='text-gray-500 dark:text-gray-400'>Prediction Horizon</span>
+                            <span class='font-medium text-gray-900 dark:text-white'>1-30 Days</span>
+                        </div>
+                        <div class='flex justify-between text-sm'>
+                            <span class='text-gray-500 dark:text-gray-400'>Technical Indicators</span>
+                            <span class='font-medium text-gray-900 dark:text-white'>RSI, MACD, MA</span>
+                        </div>
+                        <div class='flex justify-between text-sm'>
+                            <span class='text-gray-500 dark:text-gray-400'>Data Points</span>
+                            <span class='font-medium text-gray-900 dark:text-white'>Historical Prices</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class='font-medium text-gray-700 dark:text-gray-300 mb-3'>Risk Assessment</h4>
+                    <div class='space-y-2'>
+                        <div class='flex justify-between text-sm'>
+                            <span class='text-gray-500 dark:text-gray-400'>Market Conditions</span>
+                            <span class='font-medium {"text-red-600" if volatility > 50 else "text-yellow-600" if volatility > 30 else "text-green-600"}'>{"Volatile" if volatility > 50 else "Moderate" if volatility > 30 else "Stable"}</span>
+                        </div>
+                        <div class='flex justify-between text-sm'>
+                            <span class='text-gray-500 dark:text-gray-400'>Prediction Accuracy</span>
+                            <span class='font-medium {"text-green-600" if prediction_confidence >= 70 else "text-yellow-600" if prediction_confidence >= 50 else "text-red-600"}'>{"High" if prediction_confidence >= 70 else "Medium" if prediction_confidence >= 50 else "Low"}</span>
+                        </div>
+                        <div class='flex justify-between text-sm'>
+                            <span class='text-gray-500 dark:text-gray-400'>Trend Strength</span>
+                            <span class='font-medium {trend_color}'>{trend_direction}</span>
                         </div>
                     </div>
                 </div>
@@ -1107,27 +1204,208 @@ def create_prediction_analysis_pages(ticker, prediction_results, current_price, 
     </div>
     """
     
-    # Risk Assessment Page
+    # Calculate comprehensive risk metrics
+    overall_risk_score = 0
+    risk_factors = []
+    
+    # Volatility Risk (0-40 points)
+    volatility_risk = min(40, volatility)
+    overall_risk_score += volatility_risk
+    if volatility > 60:
+        risk_factors.append(("Extreme Volatility", f"{volatility:.1f}%", "text-red-600", "🔥", "Very high price swings expected"))
+    elif volatility > 40:
+        risk_factors.append(("High Volatility", f"{volatility:.1f}%", "text-orange-600", "⚡", "Significant price movements likely"))
+    elif volatility > 25:
+        risk_factors.append(("Moderate Volatility", f"{volatility:.1f}%", "text-yellow-600", "📊", "Normal market fluctuations"))
+    else:
+        risk_factors.append(("Low Volatility", f"{volatility:.1f}%", "text-green-600", "🟢", "Stable price movements"))
+    
+    # RSI Risk (0-30 points)
+    if rsi > 80:
+        rsi_risk = 30
+        risk_factors.append(("Extreme Overbought", f"RSI {rsi:.1f}", "text-red-600", "🚨", "Strong reversal risk"))
+    elif rsi > 70:
+        rsi_risk = 20
+        risk_factors.append(("Overbought Territory", f"RSI {rsi:.1f}", "text-orange-600", "⚠️", "Potential pullback ahead"))
+    elif rsi < 20:
+        rsi_risk = 25
+        risk_factors.append(("Extreme Oversold", f"RSI {rsi:.1f}", "text-red-600", "📉", "Potential bounce but risky"))
+    elif rsi < 30:
+        rsi_risk = 15
+        risk_factors.append(("Oversold Condition", f"RSI {rsi:.1f}", "text-yellow-600", "📈", "Possible reversal opportunity"))
+    else:
+        rsi_risk = 5
+        risk_factors.append(("Balanced RSI", f"RSI {rsi:.1f}", "text-green-600", "✅", "Healthy momentum levels"))
+    
+    overall_risk_score += rsi_risk
+    
+    # Prediction Confidence Risk (0-30 points)
+    confidence_risk = max(0, 30 - (prediction_confidence - 40) * 0.75)
+    overall_risk_score += confidence_risk
+    
+    if prediction_confidence < 50:
+        risk_factors.append(("Low Confidence", f"{prediction_confidence:.0f}%", "text-red-600", "❌", "Predictions may be unreliable"))
+    elif prediction_confidence < 70:
+        risk_factors.append(("Medium Confidence", f"{prediction_confidence:.0f}%", "text-yellow-600", "⚡", "Moderate prediction reliability"))
+    else:
+        risk_factors.append(("High Confidence", f"{prediction_confidence:.0f}%", "text-green-600", "✅", "Strong prediction reliability"))
+    
+    # Calculate overall risk level
+    overall_risk_score = min(100, overall_risk_score)
+    
+    if overall_risk_score >= 80:
+        risk_level = "Very High"
+        risk_color = "text-red-600"
+        risk_bg = "bg-red-50 dark:bg-red-900/20"
+        risk_border = "border-red-200 dark:border-red-800"
+        risk_icon = "🚨"
+    elif overall_risk_score >= 60:
+        risk_level = "High"
+        risk_color = "text-orange-600"
+        risk_bg = "bg-orange-50 dark:bg-orange-900/20"
+        risk_border = "border-orange-200 dark:border-orange-800"
+        risk_icon = "⚠️"
+    elif overall_risk_score >= 40:
+        risk_level = "Moderate"
+        risk_color = "text-yellow-600"
+        risk_bg = "bg-yellow-50 dark:bg-yellow-900/20"
+        risk_border = "border-yellow-200 dark:border-yellow-800"
+        risk_icon = "⚡"
+    elif overall_risk_score >= 20:
+        risk_level = "Low"
+        risk_color = "text-blue-600"
+        risk_bg = "bg-blue-50 dark:bg-blue-900/20"
+        risk_border = "border-blue-200 dark:border-blue-800"
+        risk_icon = "📊"
+    else:
+        risk_level = "Very Low"
+        risk_color = "text-green-600"
+        risk_bg = "bg-green-50 dark:bg-green-900/20"
+        risk_border = "border-green-200 dark:border-green-800"
+        risk_icon = "✅"
+
+    # Enhanced Risk Assessment Page
     pages['risk'] = f"""
-    <div id='risk' class='page-content hidden'>
-        <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-6 shadow-sm'>
+    <div id='risk' class='page-content hidden space-y-6'>
+        <!-- Risk Overview Dashboard -->
+        <div class='bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 p-6 rounded-xl border border-red-100 dark:border-red-800/50 shadow-sm'>
             <div class='flex items-center mb-6'>
-                <div class='p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg mr-4'>
-                    <svg class='w-6 h-6 text-orange-600 dark:text-orange-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' />
+                <div class='p-2 bg-red-100 dark:bg-red-800/50 rounded-lg mr-3'>
+                    <svg class='w-6 h-6 text-red-600 dark:text-red-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'></path>
                     </svg>
                 </div>
-                <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Risk Assessment</h3>
+                <div>
+                    <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Risk Assessment Dashboard</h3>
+                    <p class='text-sm text-gray-600 dark:text-gray-400'>Comprehensive risk analysis for prediction reliability</p>
+                </div>
             </div>
             
-            <div class='bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800/30 rounded-xl p-4'>
-                <div class='flex items-center mb-3'>
-                    <svg class='w-5 h-5 text-orange-500 dark:text-orange-400 mr-2' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' />
-                    </svg>
-                    <h4 class='font-semibold text-orange-800 dark:text-orange-200'>Market Indicators</h4>
+            <!-- Overall Risk Score -->
+            <div class='mb-6'>
+                <div class='flex items-center justify-between mb-3'>
+                    <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Overall Risk Level</span>
+                    <div class='flex items-center space-x-2'>
+                        <span class='text-lg'>{risk_icon}</span>
+                        <span class='font-bold {risk_color}'>{risk_level}</span>
+                    </div>
                 </div>
-                <div class='flex flex-wrap items-center'>{risk_badges}</div>
+                <div class='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-2'>
+                    <div class='bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 h-3 rounded-full relative'>
+                        <div class='absolute top-0 bg-gray-800 dark:bg-white h-3 w-1 rounded-full shadow-lg' style='left: {overall_risk_score:.1f}%'></div>
+                    </div>
+                </div>
+                <div class='flex justify-between text-xs text-gray-500 dark:text-gray-400'>
+                    <span>Very Low Risk</span>
+                    <span class='font-medium text-gray-700 dark:text-gray-300'>Risk Score: {overall_risk_score:.0f}/100</span>
+                    <span>Very High Risk</span>
+                </div>
+            </div>
+            
+            <!-- Risk Metrics Grid -->
+            <div class='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Volatility Risk</div>
+                    <div class='text-2xl font-bold {"text-red-600" if volatility > 50 else "text-yellow-600" if volatility > 30 else "text-green-600"}'>{volatility:.1f}%</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>{"High" if volatility > 50 else "Moderate" if volatility > 30 else "Low"} price swings</div>
+                </div>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Prediction Risk</div>
+                    <div class='text-2xl font-bold {"text-green-600" if prediction_confidence >= 70 else "text-yellow-600" if prediction_confidence >= 50 else "text-red-600"}'>{prediction_confidence:.0f}%</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>Model confidence</div>
+                </div>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Technical Risk</div>
+                    <div class='text-2xl font-bold {"text-red-600" if rsi > 70 or rsi < 30 else "text-green-600"}'>{rsi:.1f}</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>RSI momentum</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Risk Factors Analysis -->
+        <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5 rounded-xl'>
+            <div class='flex items-center mb-4'>
+                <div class='p-1.5 bg-orange-100 dark:bg-orange-900/30 rounded-lg mr-3'>
+                    <svg class='w-5 h-5 text-orange-600 dark:text-orange-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'></path>
+                    </svg>
+                </div>
+                <h3 class='text-lg font-semibold text-gray-800 dark:text-white'>Risk Factors Analysis</h3>
+            </div>
+            
+            <div class='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+                {''.join([f'''
+                <div class='p-4 rounded-lg border {factor[2].replace("text-", "border-").replace("-600", "-200")} bg-white dark:bg-gray-800/50'>
+                    <div class='flex items-center justify-between mb-2'>
+                        <span class='text-lg'>{factor[3]}</span>
+                        <span class='text-sm font-medium {factor[2]}'>{factor[1]}</span>
+                    </div>
+                    <h4 class='font-semibold text-gray-900 dark:text-white mb-1'>{factor[0]}</h4>
+                    <p class='text-xs text-gray-600 dark:text-gray-400'>{factor[4]}</p>
+                </div>
+                ''' for factor in risk_factors])}
+            </div>
+        </div>
+        
+        <!-- Risk Management Recommendations -->
+        <div class='bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 p-6 rounded-xl border border-amber-100 dark:border-amber-800/50 shadow-sm'>
+            <div class='flex items-center mb-4'>
+                <div class='p-2 bg-amber-100 dark:bg-amber-800/50 rounded-lg mr-3'>
+                    <svg class='w-6 h-6 text-amber-600 dark:text-amber-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z'></path>
+                    </svg>
+                </div>
+                <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Risk Management Recommendations</h3>
+            </div>
+            
+            <div class='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                <div>
+                    <h4 class='font-medium text-gray-700 dark:text-gray-300 mb-3'>Position Sizing</h4>
+                    <div class='space-y-2'>
+                        <div class='flex justify-between text-sm'>
+                            <span class='text-gray-500 dark:text-gray-400'>Recommended Position</span>
+                            <span class='font-medium {risk_color}'>{"1-2%" if overall_risk_score >= 80 else "2-5%" if overall_risk_score >= 60 else "5-10%" if overall_risk_score >= 40 else "10-15%" if overall_risk_score >= 20 else "15-20%"}</span>
+                        </div>
+                        <div class='flex justify-between text-sm'>
+                            <span class='text-gray-500 dark:text-gray-400'>Stop Loss</span>
+                            <span class='font-medium text-gray-900 dark:text-white'>{"5-8%" if volatility > 50 else "3-5%" if volatility > 30 else "2-3%"}</span>
+                        </div>
+                        <div class='flex justify-between text-sm'>
+                            <span class='text-gray-500 dark:text-gray-400'>Time Horizon</span>
+                            <span class='font-medium text-gray-900 dark:text-white'>{"Short-term" if overall_risk_score >= 60 else "Medium-term" if overall_risk_score >= 40 else "Long-term"}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class='font-medium text-gray-700 dark:text-gray-300 mb-3'>Key Warnings</h4>
+                    <div class='space-y-2'>
+                        {f'<div class="flex items-start space-x-2"><span class="text-red-500 mt-0.5">⚠️</span><span class="text-sm text-gray-700 dark:text-gray-300">High volatility - expect large price swings</span></div>' if volatility > 50 else ''}
+                        {f'<div class="flex items-start space-x-2"><span class="text-orange-500 mt-0.5">🚨</span><span class="text-sm text-gray-700 dark:text-gray-300">RSI extreme levels - reversal risk</span></div>' if rsi > 70 or rsi < 30 else ''}
+                        {f'<div class="flex items-start space-x-2"><span class="text-yellow-500 mt-0.5">⚡</span><span class="text-sm text-gray-700 dark:text-gray-300">Low prediction confidence - use caution</span></div>' if prediction_confidence < 60 else ''}
+                        <div class="flex items-start space-x-2"><span class="text-blue-500 mt-0.5">ℹ️</span><span class="text-sm text-gray-700 dark:text-gray-300">Always use proper risk management</span></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1185,72 +1463,224 @@ def create_technical_analysis_pages(ticker, hist, info, current_price, company_n
     """Create paginated content for technical analysis."""
     pages = {}
     
-    # Overview Page
+    # Enhanced Technical Analysis Overview Page
+    
+    # Calculate technical sentiment score
+    tech_signals = []
+    tech_scores = []
+    
+    # RSI Analysis
+    if technical_data["current_rsi"] > 70:
+        tech_signals.append(("RSI", "Overbought", "text-red-600", "⚠️"))
+        tech_scores.append(-2)
+    elif technical_data["current_rsi"] < 30:
+        tech_signals.append(("RSI", "Oversold", "text-green-600", "📈"))
+        tech_scores.append(2)
+    else:
+        tech_signals.append(("RSI", "Neutral", "text-gray-600", "➡️"))
+        tech_scores.append(0)
+    
+    # MACD Analysis
+    if technical_data["current_macd"] > technical_data["current_macd_signal"]:
+        tech_signals.append(("MACD", "Bullish", "text-green-600", "🚀"))
+        tech_scores.append(1)
+    else:
+        tech_signals.append(("MACD", "Bearish", "text-red-600", "📉"))
+        tech_scores.append(-1)
+    
+    # Moving Average Analysis
+    ma_score = 0
+    if current_price > technical_data["ma_20"]:
+        ma_score += 1
+    if technical_data["ma_50"] and current_price > technical_data["ma_50"]:
+        ma_score += 1
+    
+    if ma_score == 2:
+        tech_signals.append(("MA Trend", "Strong Bullish", "text-green-600", "🚀"))
+        tech_scores.append(2)
+    elif ma_score == 1:
+        tech_signals.append(("MA Trend", "Bullish", "text-green-500", "📈"))
+        tech_scores.append(1)
+    else:
+        tech_signals.append(("MA Trend", "Bearish", "text-red-600", "📉"))
+        tech_scores.append(-1)
+    
+    # Calculate overall technical score
+    total_tech_score = sum(tech_scores)
+    max_tech_score = 5
+    min_tech_score = -5
+    
+    # Normalize to 0-100 scale
+    if total_tech_score >= 0:
+        tech_percentage = 50 + (total_tech_score / max_tech_score) * 50
+    else:
+        tech_percentage = 50 + (total_tech_score / abs(min_tech_score)) * 50
+    
+    tech_percentage = max(0, min(100, tech_percentage))
+    
+    # Determine overall technical sentiment
+    if tech_percentage >= 75:
+        overall_tech = "Strong Bullish"
+        tech_color = "text-green-600"
+        tech_bg = "bg-green-50 dark:bg-green-900/20"
+        tech_icon = "🚀"
+    elif tech_percentage >= 60:
+        overall_tech = "Bullish"
+        tech_color = "text-green-500"
+        tech_bg = "bg-green-50 dark:bg-green-900/20"
+        tech_icon = "📈"
+    elif tech_percentage >= 40:
+        overall_tech = "Neutral"
+        tech_color = "text-gray-600"
+        tech_bg = "bg-gray-50 dark:bg-gray-800/50"
+        tech_icon = "➡️"
+    elif tech_percentage >= 25:
+        overall_tech = "Bearish"
+        tech_color = "text-red-500"
+        tech_bg = "bg-red-50 dark:bg-red-900/20"
+        tech_icon = "📉"
+    else:
+        overall_tech = "Strong Bearish"
+        tech_color = "text-red-600"
+        tech_bg = "bg-red-50 dark:bg-red-900/20"
+        tech_icon = "⚠️"
+    
     pages['overview'] = f"""
-    <div id='overview' class='page-content'>
-        <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200'>
+    <div id='overview' class='page-content space-y-6'>
+        <!-- Technical Analysis Dashboard -->
+        <div class='bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-xl border border-blue-100 dark:border-blue-800/50 shadow-sm'>
             <div class='flex items-center mb-6'>
-                <div class='p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-4'>
+                <div class='p-2 bg-blue-100 dark:bg-blue-800/50 rounded-lg mr-3'>
                     <svg class='w-6 h-6 text-blue-600 dark:text-blue-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' />
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'></path>
                     </svg>
                 </div>
-                <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Technical Overview</h3>
-            </div>
-            
-            <!-- Current Price Section -->
-            <div class='bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg mb-6'>
-                <h4 class='font-semibold mb-3 text-blue-800 dark:text-blue-200'>Current Price Information</h4>
-                <div class='grid grid-cols-1 md:grid-cols-3 gap-4'>
-                    <div>
-                        <p class='text-sm text-gray-600 dark:text-gray-400'>Current Price</p>
-                        <p class='text-2xl font-bold text-gray-900 dark:text-white'>${current_price:.2f}</p>
-                    </div>
-                    <div>
-                        <p class='text-sm text-gray-600 dark:text-gray-400'>20-Day MA</p>
-                        <p class='text-lg font-semibold text-gray-900 dark:text-white'>${technical_data['ma_20']:.2f}</p>
-                    </div>
-                    <div>
-                        <p class='text-sm text-gray-600 dark:text-gray-400'>50-Day MA</p>
-                        <p class='text-lg font-semibold text-gray-900 dark:text-white'>{"$" + f"{technical_data['ma_50']:.2f}" if technical_data['ma_50'] else "Insufficient data"}</p>
-                    </div>
+                <div>
+                    <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Technical Analysis Overview</h3>
+                    <p class='text-sm text-gray-600 dark:text-gray-400'>Comprehensive technical indicator dashboard</p>
                 </div>
             </div>
             
-            <!-- Key Indicators Summary -->
+            <!-- Technical Score -->
+            <div class='mb-6'>
+                <div class='flex items-center justify-between mb-3'>
+                    <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Overall Technical Signal</span>
+                    <div class='flex items-center space-x-2'>
+                        <span class='text-lg'>{tech_icon}</span>
+                        <span class='font-bold {tech_color}'>{overall_tech}</span>
+                    </div>
+                </div>
+                <div class='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-2'>
+                    <div class='bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-3 rounded-full relative'>
+                        <div class='absolute top-0 bg-blue-600 h-3 w-1 rounded-full shadow-lg' style='left: {tech_percentage:.1f}%'></div>
+                    </div>
+                </div>
+                <div class='flex justify-between text-xs text-gray-500 dark:text-gray-400'>
+                    <span>Strong Bearish</span>
+                    <span class='font-medium text-blue-600 dark:text-blue-400'>Score: {tech_percentage:.0f}/100</span>
+                    <span>Strong Bullish</span>
+                </div>
+            </div>
+            
+            <!-- Price and Moving Averages -->
+            <div class='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Current Price</div>
+                    <div class='text-2xl font-bold text-gray-900 dark:text-white'>${current_price:.2f}</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>Live market price</div>
+                </div>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>20-Day MA</div>
+                    <div class='text-2xl font-bold {"text-green-600" if current_price > technical_data["ma_20"] else "text-red-600"}'>${technical_data["ma_20"]:.2f}</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>{"Above" if current_price > technical_data["ma_20"] else "Below"} current price</div>
+                </div>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>50-Day MA</div>
+                    <div class='text-2xl font-bold {"text-green-600" if technical_data["ma_50"] and current_price > technical_data["ma_50"] else "text-red-600" if technical_data["ma_50"] else "text-gray-600"}'>
+                        {"$" + f"{technical_data['ma_50']:.2f}" if technical_data['ma_50'] else "N/A"}
+                    </div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>
+                        {("Above" if current_price > technical_data["ma_50"] else "Below") + " current price" if technical_data["ma_50"] else "Insufficient data"}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Indicators Grid -->
+        <div class='grid grid-cols-1 md:grid-cols-3 gap-4'>
+            {''.join([f'''
+            <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-4 shadow-sm'>
+                <div class='flex items-center justify-between mb-3'>
+                    <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>{signal[0]}</span>
+                    <span class='text-lg'>{signal[3]}</span>
+                </div>
+                <div class='text-lg font-bold {signal[2]} mb-2'>{signal[1]}</div>
+                <div class='text-xs text-gray-500 dark:text-gray-400'>
+                    {f"Value: {technical_data['current_rsi']:.1f}" if signal[0] == "RSI" else f"Signal: {technical_data['macd_signal_text']}" if signal[0] == "MACD" else f"Trend: {signal[1]}" if signal[0] == "MA Trend" else ""}
+                </div>
+            </div>
+            ''' for signal in tech_signals])}
+        </div>
+
+        <!-- Detailed Technical Metrics -->
+        <div class='bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 p-6 rounded-xl border border-emerald-100 dark:border-emerald-800/50 shadow-sm'>
+            <div class='flex items-center mb-4'>
+                <div class='p-2 bg-emerald-100 dark:bg-emerald-800/50 rounded-lg mr-3'>
+                    <svg class='w-6 h-6 text-emerald-600 dark:text-emerald-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'></path>
+                    </svg>
+                </div>
+                <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Detailed Technical Metrics</h3>
+            </div>
+            
             <div class='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                <div class='bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg'>
-                    <h4 class='font-semibold mb-3 text-gray-800 dark:text-white'>Momentum Indicators</h4>
-                    <div class='space-y-2'>
-                        <div class='flex justify-between'>
+                <!-- Momentum Indicators -->
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <h4 class='font-semibold mb-3 text-gray-800 dark:text-white flex items-center'>
+                        <span class='w-2 h-2 bg-purple-500 rounded-full mr-2'></span>
+                        Momentum Indicators
+                    </h4>
+                    <div class='space-y-3'>
+                        <div class='flex justify-between items-center'>
                             <span class='text-sm text-gray-600 dark:text-gray-400'>RSI (14)</span>
-                            <span class='font-medium {technical_data["rsi_color"]}'>{technical_data["current_rsi"]:.1f} ({technical_data["rsi_signal"]})</span>
+                            <span class='font-medium {technical_data["rsi_color"]}'>{technical_data["current_rsi"]:.1f}</span>
                         </div>
-                        <div class='flex justify-between'>
+                        <div class='flex justify-between items-center'>
                             <span class='text-sm text-gray-600 dark:text-gray-400'>MACD</span>
-                            <span class='font-medium {technical_data["macd_color"]}'>{technical_data["macd_signal_text"]}</span>
+                            <span class='font-medium {technical_data["macd_color"]}'>{technical_data["current_macd"]:.4f}</span>
                         </div>
-                        <div class='flex justify-between'>
-                            <span class='text-sm text-gray-600 dark:text-gray-400'>Stochastic</span>
-                            <span class='font-medium {technical_data["stoch_color"]}'>{technical_data["stoch_signal"]}</span>
+                        <div class='flex justify-between items-center'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Stochastic %K</span>
+                            <span class='font-medium {technical_data["stoch_color"]}'>{technical_data["current_k"]:.1f}</span>
+                        </div>
+                        <div class='flex justify-between items-center'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>MFI</span>
+                            <span class='font-medium {technical_data["mfi_color"]}'>{technical_data["current_mfi"]:.1f}</span>
                         </div>
                     </div>
                 </div>
                 
-                <div class='bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg'>
-                    <h4 class='font-semibold mb-3 text-gray-800 dark:text-white'>Volatility & Volume</h4>
-                    <div class='space-y-2'>
-                        <div class='flex justify-between'>
-                            <span class='text-sm text-gray-600 dark:text-gray-400'>ATR</span>
+                <!-- Volatility & Bands -->
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <h4 class='font-semibold mb-3 text-gray-800 dark:text-white flex items-center'>
+                        <span class='w-2 h-2 bg-yellow-500 rounded-full mr-2'></span>
+                        Volatility & Bands
+                    </h4>
+                    <div class='space-y-3'>
+                        <div class='flex justify-between items-center'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>ATR (14)</span>
                             <span class='font-medium text-gray-900 dark:text-white'>{technical_data["current_atr"]:.2f}</span>
                         </div>
-                        <div class='flex justify-between'>
-                            <span class='text-sm text-gray-600 dark:text-gray-400'>Bollinger Position</span>
-                            <span class='font-medium {technical_data["bb_color"]}'>{technical_data["bb_position"]}</span>
+                        <div class='flex justify-between items-center'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>BB Upper</span>
+                            <span class='font-medium text-gray-900 dark:text-white'>${technical_data["current_bb_upper"]:.2f}</span>
                         </div>
-                        <div class='flex justify-between'>
-                            <span class='text-sm text-gray-600 dark:text-gray-400'>MFI</span>
-                            <span class='font-medium {technical_data["mfi_color"]}'>{technical_data["mfi_signal"]}</span>
+                        <div class='flex justify-between items-center'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>BB Lower</span>
+                            <span class='font-medium text-gray-900 dark:text-white'>${technical_data["current_bb_lower"]:.2f}</span>
+                        </div>
+                        <div class='p-2 {technical_data["bb_color"].replace("text-", "bg-").replace("-600", "-50").replace("-500", "-50")} dark:bg-gray-800/50 rounded text-center'>
+                            <span class='{technical_data["bb_color"]} font-semibold text-sm'>{technical_data["bb_position"]}</span>
                         </div>
                     </div>
                 </div>
@@ -1372,60 +1802,252 @@ def create_technical_analysis_pages(ticker, hist, info, current_price, company_n
     </div>
     """
     
-    # Volatility & Bands Page
+    # Enhanced Volatility Analysis Page
+    
+    # Calculate comprehensive volatility metrics
+    returns = hist['Close'].pct_change().dropna()
+    
+    # Historical volatility calculations
+    if len(returns) > 0:
+        # Daily volatility
+        daily_vol = returns.std()
+        # Annualized volatility (252 trading days)
+        annualized_vol = daily_vol * (252 ** 0.5) * 100
+        
+        # Rolling volatilities for different periods
+        vol_10d = returns.rolling(10).std().iloc[-1] * (252 ** 0.5) * 100 if len(returns) >= 10 else annualized_vol
+        vol_30d = returns.rolling(30).std().iloc[-1] * (252 ** 0.5) * 100 if len(returns) >= 30 else annualized_vol
+        vol_60d = returns.rolling(60).std().iloc[-1] * (252 ** 0.5) * 100 if len(returns) >= 60 else annualized_vol
+        
+        # Volatility trend (comparing recent vs historical)
+        recent_vol = vol_10d
+        historical_vol = vol_60d
+        vol_trend = ((recent_vol - historical_vol) / historical_vol * 100) if historical_vol > 0 else 0
+        
+        # Volatility percentile (current vs historical range)
+        vol_series = returns.rolling(30).std() * (252 ** 0.5) * 100
+        vol_series = vol_series.dropna()
+        if len(vol_series) > 0:
+            current_vol_percentile = (vol_series <= vol_30d).sum() / len(vol_series) * 100
+        else:
+            current_vol_percentile = 50
+            
+        # Risk assessment based on volatility
+        if annualized_vol > 60:
+            vol_risk = "Extreme"
+            vol_risk_color = "text-red-600"
+            vol_risk_bg = "bg-red-50 dark:bg-red-900/20"
+            vol_risk_icon = "🔥"
+        elif annualized_vol > 40:
+            vol_risk = "High"
+            vol_risk_color = "text-orange-600"
+            vol_risk_bg = "bg-orange-50 dark:bg-orange-900/20"
+            vol_risk_icon = "⚡"
+        elif annualized_vol > 25:
+            vol_risk = "Moderate"
+            vol_risk_color = "text-yellow-600"
+            vol_risk_bg = "bg-yellow-50 dark:bg-yellow-900/20"
+            vol_risk_icon = "⚖️"
+        elif annualized_vol > 15:
+            vol_risk = "Low"
+            vol_risk_color = "text-green-600"
+            vol_risk_bg = "bg-green-50 dark:bg-green-900/20"
+            vol_risk_icon = "🟢"
+        else:
+            vol_risk = "Very Low"
+            vol_risk_color = "text-blue-600"
+            vol_risk_bg = "bg-blue-50 dark:bg-blue-900/20"
+            vol_risk_icon = "🔵"
+    else:
+        annualized_vol = vol_10d = vol_30d = vol_60d = 0
+        vol_trend = 0
+        current_vol_percentile = 50
+        vol_risk = "Unknown"
+        vol_risk_color = "text-gray-600"
+        vol_risk_bg = "bg-gray-50 dark:bg-gray-800/50"
+        vol_risk_icon = "❓"
+    
+    # ATR-based volatility
+    atr_percentage = (technical_data["current_atr"] / current_price * 100) if current_price > 0 else 0
+    
+    # Bollinger Band width (volatility indicator)
+    bb_width = ((technical_data["current_bb_upper"] - technical_data["current_bb_lower"]) / current_price * 100) if current_price > 0 else 0
+    
     pages['volatility'] = f"""
-    <div id='volatility' class='page-content hidden'>
-        <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-6 shadow-sm'>
+    <div id='volatility' class='page-content space-y-6'>
+        <!-- Volatility Overview Dashboard -->
+        <div class='bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 p-6 rounded-xl border border-yellow-100 dark:border-yellow-800/50 shadow-sm'>
             <div class='flex items-center mb-6'>
-                <div class='p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg mr-4'>
+                <div class='p-2 bg-yellow-100 dark:bg-yellow-800/50 rounded-lg mr-3'>
                     <svg class='w-6 h-6 text-yellow-600 dark:text-yellow-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 10V3L4 14h7v7l9-11h-7z' />
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 10V3L4 14h7v7l9-11h-7z'></path>
                     </svg>
                 </div>
-                <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Volatility & Bands</h3>
+                <div>
+                    <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Comprehensive Volatility Analysis</h3>
+                    <p class='text-sm text-gray-600 dark:text-gray-400'>Risk assessment and volatility metrics</p>
+                </div>
+            </div>
+            
+            <!-- Volatility Risk Assessment -->
+            <div class='mb-6'>
+                <div class='flex items-center justify-between mb-3'>
+                    <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Volatility Risk Level</span>
+                    <div class='flex items-center space-x-2'>
+                        <span class='text-lg'>{vol_risk_icon}</span>
+                        <span class='font-bold {vol_risk_color}'>{vol_risk} Risk</span>
+                    </div>
+                </div>
+                <div class='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-2'>
+                    <div class='bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 h-3 rounded-full relative'>
+                        <div class='absolute top-0 bg-blue-600 h-3 w-1 rounded-full shadow-lg' style='left: {min(annualized_vol / 80 * 100, 100):.1f}%'></div>
+                    </div>
+                </div>
+                <div class='flex justify-between text-xs text-gray-500 dark:text-gray-400'>
+                    <span>Very Low (0-15%)</span>
+                    <span class='font-medium text-blue-600 dark:text-blue-400'>Current: {annualized_vol:.1f}%</span>
+                    <span>Extreme (60%+)</span>
+                </div>
+            </div>
+            
+            <!-- Key Volatility Metrics -->
+            <div class='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Annualized Volatility</div>
+                    <div class='text-2xl font-bold {vol_risk_color}'>{annualized_vol:.1f}%</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>Historical measure</div>
+                </div>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>ATR (14-day)</div>
+                    <div class='text-2xl font-bold text-gray-900 dark:text-white'>{atr_percentage:.2f}%</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>Daily range</div>
+                </div>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Volatility Percentile</div>
+                    <div class='text-2xl font-bold text-gray-900 dark:text-white'>{current_vol_percentile:.0f}%</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>vs History</div>
+                </div>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Bollinger Width</div>
+                    <div class='text-2xl font-bold text-gray-900 dark:text-white'>{bb_width:.2f}%</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>Band spread</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historical Volatility Analysis -->
+        <div class='bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-6 rounded-xl border border-purple-100 dark:border-purple-800/50 shadow-sm'>
+            <div class='flex items-center mb-4'>
+                <div class='p-2 bg-purple-100 dark:bg-purple-800/50 rounded-lg mr-3'>
+                    <svg class='w-6 h-6 text-purple-600 dark:text-purple-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'></path>
+                    </svg>
+                </div>
+                <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Historical Volatility Breakdown</h3>
+            </div>
+            
+            <div class='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <h4 class='font-semibold text-gray-900 dark:text-white mb-3 flex items-center'>
+                        <span class='w-2 h-2 bg-green-500 rounded-full mr-2'></span>
+                        10-Day Volatility
+                    </h4>
+                    <div class='text-2xl font-bold text-gray-900 dark:text-white mb-2'>{vol_10d:.1f}%</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>Short-term volatility</div>
+                </div>
+                
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <h4 class='font-semibold text-gray-900 dark:text-white mb-3 flex items-center'>
+                        <span class='w-2 h-2 bg-blue-500 rounded-full mr-2'></span>
+                        30-Day Volatility
+                    </h4>
+                    <div class='text-2xl font-bold text-gray-900 dark:text-white mb-2'>{vol_30d:.1f}%</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>Medium-term volatility</div>
+                </div>
+                
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <h4 class='font-semibold text-gray-900 dark:text-white mb-3 flex items-center'>
+                        <span class='w-2 h-2 bg-purple-500 rounded-full mr-2'></span>
+                        60-Day Volatility
+                    </h4>
+                    <div class='text-2xl font-bold text-gray-900 dark:text-white mb-2'>{vol_60d:.1f}%</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>Long-term volatility</div>
+                </div>
+            </div>
+            
+            <!-- Volatility Trend Analysis -->
+            <div class='mt-6 p-4 {vol_risk_bg} rounded-lg border border-gray-100 dark:border-gray-700'>
+                <h4 class='font-semibold text-gray-900 dark:text-white mb-2'>Volatility Trend Analysis</h4>
+                <div class='flex items-center justify-between'>
+                    <span class='text-sm text-gray-600 dark:text-gray-400'>Recent vs Historical Trend</span>
+                    <span class='font-bold {vol_risk_color}'>
+                        {f"+{vol_trend:.1f}%" if vol_trend > 0 else f"{vol_trend:.1f}%"} 
+                        {"📈" if vol_trend > 5 else "📉" if vol_trend < -5 else "➡️"}
+                    </span>
+                </div>
+                <div class='text-sm text-gray-600 dark:text-gray-400 mt-2'>
+                    {"Volatility is increasing - expect larger price swings" if vol_trend > 5 else "Volatility is decreasing - price movements becoming more stable" if vol_trend < -5 else "Volatility is relatively stable"}
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Volatility Indicators -->
+        <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-6 shadow-sm'>
+            <div class='flex items-center mb-4'>
+                <div class='p-2 bg-gray-100 dark:bg-gray-700 rounded-lg mr-3'>
+                    <svg class='w-6 h-6 text-gray-600 dark:text-gray-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'></path>
+                    </svg>
+                </div>
+                <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Technical Volatility Indicators</h3>
             </div>
             
             <div class='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                <!-- ATR Card -->
-                <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4'>
-                    <h4 class='font-semibold mb-2 text-gray-800 dark:text-white'>ATR (14)</h4>
-                    <div class='space-y-2'>
-                        <div>
-                            <p class='text-sm text-gray-600 dark:text-gray-400'>ATR Value</p>
-                            <p class='text-2xl font-bold text-gray-800 dark:text-white'>{technical_data["current_atr"]:.2f}</p>
+                <!-- ATR Analysis -->
+                <div class='p-4 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-lg border border-amber-100 dark:border-amber-800/50'>
+                    <h4 class='font-semibold mb-3 text-gray-800 dark:text-white flex items-center'>
+                        <span class='text-amber-600 mr-2'>📊</span>
+                        Average True Range (ATR)
+                    </h4>
+                    <div class='space-y-3'>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>ATR Value</span>
+                            <span class='font-bold text-gray-900 dark:text-white'>${technical_data["current_atr"]:.2f}</span>
                         </div>
-                        <div>
-                            <p class='text-sm text-gray-600 dark:text-gray-400'>% of Price</p>
-                            <p class='font-semibold text-gray-900 dark:text-white'>{(technical_data["current_atr"] / current_price * 100):.2f}%</p>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>% of Price</span>
+                            <span class='font-bold text-amber-600'>{atr_percentage:.2f}%</span>
                         </div>
-                    </div>
-                    <div class='mt-3'>
                         <div class='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2'>
-                            <div class='bg-amber-500 h-2 rounded-full' style='width: {min((technical_data["current_atr"] / current_price * 100) * 2, 100)}%'></div>
+                            <div class='bg-amber-500 h-2 rounded-full' style='width: {min(atr_percentage * 4, 100):.1f}%'></div>
                         </div>
-                        <div class='flex justify-between text-xs text-gray-500 mt-1'>
-                            <span>0%</span>
-                            <span>2.5%</span>
-                            <span>5%</span>
+                        <div class='text-xs text-gray-500 dark:text-gray-400'>
+                            Expected daily range: ${current_price - technical_data["current_atr"]:.2f} - ${current_price + technical_data["current_atr"]:.2f}
                         </div>
                     </div>
                 </div>
                 
-                <!-- Bollinger Bands Card -->
-                <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4'>
-                    <h4 class='font-semibold mb-2 text-gray-800 dark:text-white'>Bollinger Bands</h4>
-                    <div class='space-y-2'>
-                        <div>
-                            <p class='text-sm text-gray-600 dark:text-gray-400'>Upper Band</p>
-                            <p class='font-semibold text-gray-900 dark:text-white'>${technical_data["current_bb_upper"]:.2f}</p>
+                <!-- Bollinger Bands Analysis -->
+                <div class='p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-100 dark:border-blue-800/50'>
+                    <h4 class='font-semibold mb-3 text-gray-800 dark:text-white flex items-center'>
+                        <span class='text-blue-600 mr-2'>📈</span>
+                        Bollinger Bands
+                    </h4>
+                    <div class='space-y-3'>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Upper Band</span>
+                            <span class='font-bold text-gray-900 dark:text-white'>${technical_data["current_bb_upper"]:.2f}</span>
                         </div>
-                        <div>
-                            <p class='text-sm text-gray-600 dark:text-gray-400'>Lower Band</p>
-                            <p class='font-semibold text-gray-900 dark:text-white'>${technical_data["current_bb_lower"]:.2f}</p>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Lower Band</span>
+                            <span class='font-bold text-gray-900 dark:text-white'>${technical_data["current_bb_lower"]:.2f}</span>
                         </div>
-                        <div>
-                            <p class='text-sm text-gray-600 dark:text-gray-400'>Position</p>
-                            <p class='{technical_data["bb_color"]} font-semibold text-sm'>{technical_data["bb_position"]}</p>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Band Width</span>
+                            <span class='font-bold text-blue-600'>{bb_width:.2f}%</span>
+                        </div>
+                        <div class='p-2 {technical_data["bb_color"].replace("text-", "bg-").replace("-600", "-50").replace("-500", "-50")} dark:bg-gray-800/50 rounded text-center'>
+                            <span class='{technical_data["bb_color"]} font-semibold text-sm'>{technical_data["bb_position"]}</span>
                         </div>
                     </div>
                 </div>
@@ -2121,85 +2743,137 @@ def create_basic_analysis_pages(ticker, hist, info, current_price, prev_price, p
     macd_signal_str = f"{macd_signal:.4f}" if macd_signal is not None else "N/A"
     macd_histogram_str = f"{macd_histogram:.4f}" if macd_histogram is not None else "N/A"
     
-    # Page 1: Enhanced Overview with Technical Analysis
+    # Page 1: Basic Analysis Overview - Focus on Fundamentals
+    
+    # Calculate basic business health indicators
+    business_health = []
+    health_score = 0
+    
+    # Market Cap Assessment
+    if market_cap >= 200e9:
+        business_health.append(("Size", "Mega Cap", "text-blue-600", "🏢"))
+        health_score += 2
+    elif market_cap >= 10e9:
+        business_health.append(("Size", "Large Cap", "text-green-600", "🏬"))
+        health_score += 1
+    elif market_cap >= 2e9:
+        business_health.append(("Size", "Mid Cap", "text-yellow-600", "🏪"))
+        health_score += 0
+    else:
+        business_health.append(("Size", "Small Cap", "text-orange-600", "🏠"))
+        health_score -= 1
+    
+    # P/E Ratio Assessment
+    if pe_ratio != 'N/A' and isinstance(pe_ratio, (int, float)):
+        if pe_ratio < 15:
+            business_health.append(("Valuation", "Undervalued", "text-green-600", "💰"))
+            health_score += 1
+        elif pe_ratio < 25:
+            business_health.append(("Valuation", "Fair Value", "text-blue-600", "⚖️"))
+            health_score += 0
+        else:
+            business_health.append(("Valuation", "Expensive", "text-red-600", "💸"))
+            health_score -= 1
+    else:
+        business_health.append(("Valuation", "No P/E Data", "text-gray-600", "❓"))
+    
+    # Volume Activity Assessment
+    if volume_ratio > 1.5:
+        business_health.append(("Activity", "High Interest", "text-green-600", "📈"))
+        health_score += 1
+    elif volume_ratio > 0.8:
+        business_health.append(("Activity", "Normal", "text-blue-600", "➡️"))
+        health_score += 0
+    else:
+        business_health.append(("Activity", "Low Interest", "text-red-600", "📉"))
+        health_score -= 1
+    
+    # Calculate overall business health
+    max_health_score = 4
+    min_health_score = -3
+    
+    if health_score >= 3:
+        overall_health = "Excellent"
+        health_color = "text-green-600"
+        health_bg = "bg-green-50 dark:bg-green-900/20"
+        health_icon = "🚀"
+    elif health_score >= 1:
+        overall_health = "Good"
+        health_color = "text-blue-600"
+        health_bg = "bg-blue-50 dark:bg-blue-900/20"
+        health_icon = "👍"
+    elif health_score >= -1:
+        overall_health = "Fair"
+        health_color = "text-yellow-600"
+        health_bg = "bg-yellow-50 dark:bg-yellow-900/20"
+        health_icon = "⚖️"
+    else:
+        overall_health = "Poor"
+        health_color = "text-red-600"
+        health_bg = "bg-red-50 dark:bg-red-900/20"
+        health_icon = "⚠️"
+    
+    # Normalize health score to percentage
+    health_percentage = ((health_score - min_health_score) / (max_health_score - min_health_score)) * 100
+    
     pages['overview'] = f"""
-    <div id="overview" class="page-content space-y-4">
-        <!-- Top Row: Price and Quick Analysis -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <!-- Price and Change -->
-            <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl'>
-                <div class='flex items-center mb-3'>
-                    <div class='p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3'>
-                        <svg class='w-5 h-5 text-blue-600 dark:text-blue-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' />
-                        </svg>
-                    </div>
-                    <h3 class='font-semibold text-gray-800 dark:text-white'>Current Price</h3>
+    <div id="overview" class="page-content space-y-6">
+        <!-- Business Health Dashboard -->
+        <div class='bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-xl border border-blue-100 dark:border-blue-800/50 shadow-sm'>
+            <div class='flex items-center mb-6'>
+                <div class='p-2 bg-blue-100 dark:bg-blue-800/50 rounded-lg mr-3'>
+                    <svg class='w-6 h-6 text-blue-600 dark:text-blue-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'></path>
+                    </svg>
                 </div>
-                <div class='flex items-baseline space-x-2 mb-1'>
-                    <span class='text-3xl font-bold text-gray-900 dark:text-white'>${current_price:,.2f}</span>
-                    <span class='{change_color} text-sm font-medium'>{change_symbol}{price_change:.2f} ({change_symbol}{price_change_pct:.2f}%)</span>
-                </div>
-                <p class='text-sm text-gray-500 dark:text-gray-400'>Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M')}</p>
-            </div>
-            
-            <!-- Market Info -->
-            <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl'>
-                <div class='flex items-center mb-3'>
-                    <div class='p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg mr-3'>
-                        <svg class='w-5 h-5 text-purple-600 dark:text-purple-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' />
-                        </svg>
-                    </div>
-                    <h3 class='font-semibold text-gray-800 dark:text-white'>Market Data</h3>
-                </div>
-                <div class='space-y-2'>
-                    <div class='flex justify-between text-sm'>
-                        <span class='text-gray-500 dark:text-gray-400'>Market Cap</span>
-                        <span class='font-medium'>{market_cap_str}</span>
-                    </div>
-                    <div class='flex justify-between text-sm'>
-                        <span class='text-gray-500 dark:text-gray-400'>P/E Ratio</span>
-                        <span class='font-medium'>{pe_ratio if pe_ratio != 'N/A' else 'N/A'}</span>
-                    </div>
-                    <div class='flex justify-between text-sm'>
-                        <span class='text-gray-500 dark:text-gray-400'>Volume Ratio</span>
-                        <span class='font-medium {volume_color}'>{volume_ratio:.1f}x</span>
-                    </div>
-                    <div class='flex justify-between text-sm'>
-                        <span class='text-gray-500 dark:text-gray-400'>Beta</span>
-                        <span class='font-medium'>{info.get('beta', 'N/A')}</span>
-                    </div>
+                <div>
+                    <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Business Health Overview</h3>
+                    <p class='text-sm text-gray-600 dark:text-gray-400'>Fundamental analysis and company assessment</p>
                 </div>
             </div>
             
-            <!-- Quick Technical Summary -->
-            <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl'>
-                <div class='flex items-center mb-3'>
-                    <div class='p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg mr-3'>
-                        <svg class='w-5 h-5 text-green-600 dark:text-green-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' />
-                        </svg>
+            <!-- Overall Business Health Score -->
+            <div class='mb-6'>
+                <div class='flex items-center justify-between mb-3'>
+                    <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Overall Business Health</span>
+                    <div class='flex items-center space-x-2'>
+                        <span class='text-lg'>{health_icon}</span>
+                        <span class='font-bold {health_color}'>{overall_health}</span>
                     </div>
-                    <h3 class='font-semibold text-gray-800 dark:text-white'>Technical Summary</h3>
                 </div>
-                <div class='space-y-2'>
-                    <div class='flex justify-between text-sm'>
-                        <span class='text-gray-500 dark:text-gray-400'>Trend</span>
-                        <span class='font-medium {trend_color}'>{trend_status}</span>
+                <div class='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-2'>
+                    <div class='bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-3 rounded-full relative'>
+                        <div class='absolute top-0 bg-blue-600 h-3 w-1 rounded-full shadow-lg' style='left: {health_percentage:.1f}%'></div>
                     </div>
-                    <div class='flex justify-between text-sm'>
-                        <span class='text-gray-500 dark:text-gray-400'>RSI</span>
-                        <span class='font-medium {rsi_color}'>{rsi_value} ({rsi_status})</span>
-                    </div>
-                    <div class='flex justify-between text-sm'>
-                        <span class='text-gray-500 dark:text-gray-400'>MACD</span>
-                        <span class='font-medium {macd_color}'>{macd_status}</span>
-                    </div>
-                    <div class='flex justify-between text-sm'>
-                        <span class='text-gray-500 dark:text-gray-400'>52W Position</span>
-                        <span class='font-medium'>{current_52w_range:.1f}%</span>
-                    </div>
+                </div>
+                <div class='flex justify-between text-xs text-gray-500 dark:text-gray-400'>
+                    <span>Poor</span>
+                    <span class='font-medium text-blue-600 dark:text-blue-400'>Health: {overall_health}</span>
+                    <span>Excellent</span>
+                </div>
+            </div>
+            
+            <!-- Price and Key Metrics Grid -->
+            <div class='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Current Price</div>
+                    <div class='text-2xl font-bold text-gray-900 dark:text-white'>${current_price:,.2f}</div>
+                    <div class='text-sm {change_color} font-medium'>{change_symbol}{price_change:.2f} ({change_symbol}{price_change_pct:.2f}%)</div>
+                </div>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Market Cap</div>
+                    <div class='text-2xl font-bold text-gray-900 dark:text-white'>{market_cap_str}</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>P/E: {pe_ratio if pe_ratio != 'N/A' else 'N/A'}</div>
+                </div>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Volume Activity</div>
+                    <div class='text-2xl font-bold {volume_color}'>{volume_ratio:.1f}x</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>vs Avg Volume</div>
+                </div>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>52W Position</div>
+                    <div class='text-2xl font-bold text-gray-900 dark:text-white'>{current_52w_range:.0f}%</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>Beta: {info.get('beta', 'N/A')}</div>
                 </div>
             </div>
         </div>
@@ -2258,30 +2932,123 @@ def create_basic_analysis_pages(ticker, hist, info, current_price, prev_price, p
             </div>
         </div>
         
-        <!-- 52-Week Range with Enhanced Visual -->
-        <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5 rounded-xl'>
+        <!-- Business Health Indicators -->
+        <div class='bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 p-6 rounded-xl border border-emerald-100 dark:border-emerald-800/50 shadow-sm'>
             <div class='flex items-center mb-4'>
-                <div class='p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg mr-3'>
-                    <svg class='w-5 h-5 text-indigo-600 dark:text-indigo-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' />
+                <div class='p-2 bg-emerald-100 dark:bg-emerald-800/50 rounded-lg mr-3'>
+                    <svg class='w-6 h-6 text-emerald-600 dark:text-emerald-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'></path>
                     </svg>
                 </div>
-                <h3 class='text-lg font-semibold text-gray-800 dark:text-white'>52-Week Performance</h3>
+                <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Business Health Indicators</h3>
             </div>
             
-            <div class='space-y-3'>
-                <div class='flex justify-between text-sm text-gray-500 dark:text-gray-400'>
-                    <span>52-Week Range</span>
-                    <span>${low_52w:,.2f} - ${high_52w:,.2f}</span>
+            <div class='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                {''.join([f'''
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='flex items-center justify-between mb-2'>
+                        <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>{indicator[0]}</span>
+                        <span class='text-lg'>{indicator[3]}</span>
+                    </div>
+                    <div class='text-lg font-bold {indicator[2]} mb-1'>{indicator[1]}</div>
+                    <div class='text-xs text-gray-500 dark:text-gray-400'>
+                        {f"Market Cap: {market_cap_str}" if indicator[0] == "Size" else f"P/E Ratio: {pe_ratio}" if indicator[0] == "Valuation" and pe_ratio != "N/A" else f"Volume: {volume_ratio:.1f}x avg" if indicator[0] == "Activity" else "Assessment based on fundamentals"}
+                    </div>
                 </div>
-                <div class='relative w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3'>
-                    <div class='bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-3 rounded-full' style='width: 100%'></div>
-                    <div class='absolute top-0 bg-blue-600 h-3 w-1 rounded-full' style='left: {current_52w_range:.2f}%'></div>
+                ''' for indicator in business_health])}
+            </div>
+        </div>
+
+        <!-- Company Information & Performance -->
+        <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-6 shadow-sm'>
+            <div class='flex items-center mb-4'>
+                <div class='p-2 bg-orange-100 dark:bg-orange-800/50 rounded-lg mr-3'>
+                    <svg class='w-6 h-6 text-orange-600 dark:text-orange-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'></path>
+                    </svg>
+                </div>
+                <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Company Information & Performance</h3>
+            </div>
+            
+            <div class='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                <!-- Company Details -->
+                <div>
+                    <h4 class='font-medium text-gray-700 dark:text-gray-300 mb-3'>Company Details</h4>
+                    <div class='space-y-3'>
+                        <div class='flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800/30'>
+                            <div class='flex items-center'>
+                                <span class='text-blue-600 dark:text-blue-400 mr-2'>🏢</span>
+                                <span class='text-sm font-medium text-blue-700 dark:text-blue-300'>Market Cap Class</span>
+                            </div>
+                            <span class='font-bold text-blue-800 dark:text-blue-200'>{market_cap_class}</span>
+                        </div>
+                        <div class='flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-100 dark:border-green-800/30'>
+                            <div class='flex items-center'>
+                                <span class='text-green-600 dark:text-green-400 mr-2'>🏭</span>
+                                <span class='text-sm font-medium text-green-700 dark:text-green-300'>Sector</span>
+                            </div>
+                            <span class='font-bold text-green-800 dark:text-green-200'>{info.get('sector', 'N/A')}</span>
+                        </div>
+                        <div class='flex justify-between items-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-100 dark:border-purple-800/30'>
+                            <div class='flex items-center'>
+                                <span class='text-purple-600 dark:text-purple-400 mr-2'>🔧</span>
+                                <span class='text-sm font-medium text-purple-700 dark:text-purple-300'>Industry</span>
+                            </div>
+                            <span class='font-bold text-purple-800 dark:text-purple-200'>{info.get('industry', 'N/A')}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Performance -->
+                <div>
+                    <h4 class='font-medium text-gray-700 dark:text-gray-300 mb-3'>Recent Performance</h4>
+                    <div class='space-y-2'>
+                        <div class='flex justify-between text-sm'>
+                            <span class='text-gray-500 dark:text-gray-400'>1 Week</span>
+                            <span class='font-medium {"text-green-600" if performance_metrics.get("1w") and performance_metrics["1w"] > 0 else "text-red-600" if performance_metrics.get("1w") else "text-gray-600"}'>{f"{performance_metrics['1w']:.1f}%" if performance_metrics.get("1w") else "N/A"}</span>
+                        </div>
+                        <div class='flex justify-between text-sm'>
+                            <span class='text-gray-500 dark:text-gray-400'>1 Month</span>
+                            <span class='font-medium {"text-green-600" if performance_metrics.get("1m") and performance_metrics["1m"] > 0 else "text-red-600" if performance_metrics.get("1m") else "text-gray-600"}'>{f"{performance_metrics['1m']:.1f}%" if performance_metrics.get("1m") else "N/A"}</span>
+                        </div>
+                        <div class='flex justify-between text-sm'>
+                            <span class='text-gray-500 dark:text-gray-400'>Year to Date</span>
+                            <span class='font-medium {"text-green-600" if performance_metrics.get("ytd") and performance_metrics["ytd"] > 0 else "text-red-600" if performance_metrics.get("ytd") else "text-gray-600"}'>{f"{performance_metrics['ytd']:.1f}%" if performance_metrics.get("ytd") else "N/A"}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 52-Week Performance Range -->
+        <div class='bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-6 rounded-xl border border-indigo-100 dark:border-indigo-800/50 shadow-sm'>
+            <div class='flex items-center mb-4'>
+                <div class='p-2 bg-indigo-100 dark:bg-indigo-800/50 rounded-lg mr-3'>
+                    <svg class='w-6 h-6 text-indigo-600 dark:text-indigo-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 7h8m0 0v8m0-8l-8 8-4-4-6 6'></path>
+                    </svg>
+                </div>
+                <h3 class='text-xl font-bold text-gray-900 dark:text-white'>52-Week Performance Range</h3>
+            </div>
+            
+            <div class='space-y-4'>
+                <div class='flex justify-between text-sm text-gray-600 dark:text-gray-400'>
+                    <span>52-Week Range</span>
+                    <span class='font-medium'>${low_52w:,.2f} - ${high_52w:,.2f}</span>
+                </div>
+                <div class='relative w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4'>
+                    <div class='bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-4 rounded-full' style='width: 100%'></div>
+                    <div class='absolute top-0 bg-blue-600 h-4 w-2 rounded-full shadow-lg' style='left: {current_52w_range:.2f}%'></div>
                 </div>
                 <div class='flex justify-between text-xs text-gray-500 dark:text-gray-400'>
                     <span>Low: ${low_52w:,.2f}</span>
                     <span class='font-medium text-blue-600 dark:text-blue-400'>Current: ${current_price:,.2f} ({current_52w_range:.1f}%)</span>
                     <span>High: ${high_52w:,.2f}</span>
+                </div>
+                <div class='text-center'>
+                    <span class='inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {health_bg} {health_color}'>
+                        📊 Position: {"Near High" if current_52w_range > 80 else "Upper Range" if current_52w_range > 60 else "Mid Range" if current_52w_range > 40 else "Lower Range" if current_52w_range > 20 else "Near Low"}
+                    </span>
                 </div>
             </div>
         </div>
@@ -3067,28 +3834,187 @@ def create_basic_analysis_pages(ticker, hist, info, current_price, prev_price, p
     </div>
     """
     
-    # Page 4: Company Info
+    # Page 4: Enhanced Company Analysis
+    
+    # Calculate financial metrics
+    market_cap = info.get('marketCap', 0)
+    market_cap_formatted = f"${market_cap / 1e9:.2f}B" if market_cap and market_cap > 1e9 else f"${market_cap / 1e6:.2f}M" if market_cap and market_cap > 1e6 else "N/A"
+    
+    # Key financial ratios
+    pe_ratio = info.get('trailingPE', 'N/A')
+    pb_ratio = info.get('priceToBook', 'N/A')
+    roe = info.get('returnOnEquity', 'N/A')
+    debt_to_equity = info.get('debtToEquity', 'N/A')
+    profit_margin = info.get('profitMargins', 'N/A')
+    operating_margin = info.get('operatingMargins', 'N/A')
+    
+    # Revenue and growth
+    revenue = info.get('totalRevenue', 0)
+    revenue_formatted = f"${revenue / 1e9:.2f}B" if revenue and revenue > 1e9 else f"${revenue / 1e6:.2f}M" if revenue and revenue > 1e6 else "N/A"
+    revenue_growth = info.get('revenueGrowth', 'N/A')
+    
+    # Business description
+    business_summary = info.get('longBusinessSummary', 'No business summary available.')
+    if len(business_summary) > 300:
+        business_summary = business_summary[:300] + "..."
+    
     pages['company'] = f"""
-    <div id="company" class="page-content">
-        <!-- Company Information -->
-        <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl mb-4'>
-            <h4 class='font-semibold text-gray-900 dark:text-white mb-3'>Company Information</h4>
-            <div class='space-y-3'>
-                <div class='flex justify-between py-2 border-b border-gray-100 dark:border-gray-700'>
-                    <span class='text-sm text-gray-500 dark:text-gray-400'>Sector</span>
-                    <span class='text-sm font-medium text-gray-900 dark:text-white'>{info.get('sector', 'N/A')}</span>
+    <div id="company" class="page-content space-y-6">
+        <!-- Company Header -->
+        <div class='bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-6 rounded-xl border border-purple-100 dark:border-purple-800/50 shadow-sm'>
+            <div class='flex items-center mb-4'>
+                <div class='p-2 bg-purple-100 dark:bg-purple-800/50 rounded-lg mr-3'>
+                    <svg class='w-6 h-6 text-purple-600 dark:text-purple-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'></path>
+                    </svg>
                 </div>
-                <div class='flex justify-between py-2 border-b border-gray-100 dark:border-gray-700'>
-                    <span class='text-sm text-gray-500 dark:text-gray-400'>Industry</span>
-                    <span class='text-sm font-medium text-gray-900 dark:text-white'>{info.get('industry', 'N/A')}</span>
+                <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Company Overview</h3>
+            </div>
+            
+            <div class='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6'>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Market Cap</div>
+                    <div class='text-lg font-bold text-gray-900 dark:text-white'>{market_cap_formatted}</div>
                 </div>
-                <div class='flex justify-between py-2 border-b border-gray-100 dark:border-gray-700'>
-                    <span class='text-sm text-gray-500 dark:text-gray-400'>Employees</span>
-                    <span class='text-sm font-medium text-gray-900 dark:text-white'>{info.get('fullTimeEmployees', 'N/A'):,}</span>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Revenue (TTM)</div>
+                    <div class='text-lg font-bold text-gray-900 dark:text-white'>{revenue_formatted}</div>
                 </div>
-                <div class='flex justify-between py-2'>
-                    <span class='text-sm text-gray-500 dark:text-gray-400'>Website</span>
-                    <a href='{info.get('website', '#')}' target='_blank' class='text-sm font-medium text-blue-600 hover:underline dark:text-blue-400'>{info.get('website', 'N/A')}</a>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Employees</div>
+                    <div class='text-lg font-bold text-gray-900 dark:text-white'>{info.get('fullTimeEmployees', 'N/A'):,}</div>
+                </div>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Sector</div>
+                    <div class='text-lg font-bold text-gray-900 dark:text-white'>{info.get('sector', 'N/A')}</div>
+                </div>
+            </div>
+            
+            <div class='bg-white/50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                <h4 class='font-semibold text-gray-900 dark:text-white mb-2'>Business Description</h4>
+                <p class='text-sm text-gray-600 dark:text-gray-300 leading-relaxed'>{business_summary}</p>
+            </div>
+        </div>
+
+        <!-- Financial Health Dashboard -->
+        <div class='bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-6 rounded-xl border border-green-100 dark:border-green-800/50 shadow-sm'>
+            <div class='flex items-center mb-4'>
+                <div class='p-2 bg-green-100 dark:bg-green-800/50 rounded-lg mr-3'>
+                    <svg class='w-6 h-6 text-green-600 dark:text-green-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'></path>
+                    </svg>
+                </div>
+                <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Financial Health</h3>
+            </div>
+            
+            <div class='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+                <!-- Valuation Metrics -->
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <h4 class='font-semibold text-gray-900 dark:text-white mb-3 flex items-center'>
+                        <span class='w-2 h-2 bg-blue-500 rounded-full mr-2'></span>
+                        Valuation
+                    </h4>
+                    <div class='space-y-2'>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>P/E Ratio</span>
+                            <span class='text-sm font-medium text-gray-900 dark:text-white'>{pe_ratio if pe_ratio != 'N/A' else 'N/A'}</span>
+                        </div>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>P/B Ratio</span>
+                            <span class='text-sm font-medium text-gray-900 dark:text-white'>{pb_ratio if pb_ratio != 'N/A' else 'N/A'}</span>
+                        </div>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Revenue Growth</span>
+                            <span class='text-sm font-medium {"text-green-600" if revenue_growth != "N/A" and revenue_growth and revenue_growth > 0 else "text-red-600" if revenue_growth != "N/A" and revenue_growth and revenue_growth < 0 else "text-gray-900 dark:text-white"}'>{f"{revenue_growth:.1%}" if revenue_growth != "N/A" and revenue_growth else "N/A"}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Profitability -->
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <h4 class='font-semibold text-gray-900 dark:text-white mb-3 flex items-center'>
+                        <span class='w-2 h-2 bg-green-500 rounded-full mr-2'></span>
+                        Profitability
+                    </h4>
+                    <div class='space-y-2'>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Profit Margin</span>
+                            <span class='text-sm font-medium text-gray-900 dark:text-white'>{f"{profit_margin:.1%}" if profit_margin != "N/A" and profit_margin else "N/A"}</span>
+                        </div>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Operating Margin</span>
+                            <span class='text-sm font-medium text-gray-900 dark:text-white'>{f"{operating_margin:.1%}" if operating_margin != "N/A" and operating_margin else "N/A"}</span>
+                        </div>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>ROE</span>
+                            <span class='text-sm font-medium text-gray-900 dark:text-white'>{f"{roe:.1%}" if roe != "N/A" and roe else "N/A"}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Financial Strength -->
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <h4 class='font-semibold text-gray-900 dark:text-white mb-3 flex items-center'>
+                        <span class='w-2 h-2 bg-purple-500 rounded-full mr-2'></span>
+                        Financial Strength
+                    </h4>
+                    <div class='space-y-2'>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Debt/Equity</span>
+                            <span class='text-sm font-medium text-gray-900 dark:text-white'>{f"{debt_to_equity:.2f}" if debt_to_equity != "N/A" and debt_to_equity else "N/A"}</span>
+                        </div>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Current Ratio</span>
+                            <span class='text-sm font-medium text-gray-900 dark:text-white'>{f"{info.get('currentRatio', 'N/A'):.2f}" if info.get('currentRatio') != None else "N/A"}</span>
+                        </div>
+                        <div class='flex justify-between'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Quick Ratio</span>
+                            <span class='text-sm font-medium text-gray-900 dark:text-white'>{f"{info.get('quickRatio', 'N/A'):.2f}" if info.get('quickRatio') != None else "N/A"}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Company Details -->
+        <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-6 shadow-sm'>
+            <div class='flex items-center mb-4'>
+                <div class='p-2 bg-gray-100 dark:bg-gray-700 rounded-lg mr-3'>
+                    <svg class='w-6 h-6 text-gray-600 dark:text-gray-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'></path>
+                    </svg>
+                </div>
+                <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Company Details</h3>
+            </div>
+            
+            <div class='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                <div class='space-y-3'>
+                    <div class='flex justify-between py-2 border-b border-gray-100 dark:border-gray-700'>
+                        <span class='text-sm text-gray-500 dark:text-gray-400'>Industry</span>
+                        <span class='text-sm font-medium text-gray-900 dark:text-white'>{info.get('industry', 'N/A')}</span>
+                    </div>
+                    <div class='flex justify-between py-2 border-b border-gray-100 dark:border-gray-700'>
+                        <span class='text-sm text-gray-500 dark:text-gray-400'>Country</span>
+                        <span class='text-sm font-medium text-gray-900 dark:text-white'>{info.get('country', 'N/A')}</span>
+                    </div>
+                    <div class='flex justify-between py-2 border-b border-gray-100 dark:border-gray-700'>
+                        <span class='text-sm text-gray-500 dark:text-gray-400'>Exchange</span>
+                        <span class='text-sm font-medium text-gray-900 dark:text-white'>{info.get('exchange', 'N/A')}</span>
+                    </div>
+                </div>
+                <div class='space-y-3'>
+                    <div class='flex justify-between py-2 border-b border-gray-100 dark:border-gray-700'>
+                        <span class='text-sm text-gray-500 dark:text-gray-400'>Website</span>
+                        <a href='{info.get('website', '#')}' target='_blank' class='text-sm font-medium text-blue-600 hover:underline dark:text-blue-400'>{info.get('website', 'N/A')}</a>
+                    </div>
+                    <div class='flex justify-between py-2 border-b border-gray-100 dark:border-gray-700'>
+                        <span class='text-sm text-gray-500 dark:text-gray-400'>Phone</span>
+                        <span class='text-sm font-medium text-gray-900 dark:text-white'>{info.get('phone', 'N/A')}</span>
+                    </div>
+                    <div class='flex justify-between py-2 border-b border-gray-100 dark:border-gray-700'>
+                        <span class='text-sm text-gray-500 dark:text-gray-400'>City</span>
+                        <span class='text-sm font-medium text-gray-900 dark:text-white'>{info.get('city', 'N/A')}</span>
+                    </div>
                 </div>
             </div>
         </div>
