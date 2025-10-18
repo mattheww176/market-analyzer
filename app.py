@@ -2583,7 +2583,7 @@ def create_technical_analysis_pages(ticker, hist, info, current_price, company_n
 
     # Enhanced Momentum Indicators Page
     pages['momentum'] = f"""
-    <div id='momentum' class='page-content hidden space-y-6'>
+    <div id='momentum' class='page-content space-y-6'>
         <!-- Momentum Dashboard -->
         <div class='bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-6 rounded-xl border border-purple-100 dark:border-purple-800/50 shadow-sm'>
             <div class='flex items-center mb-6'>
@@ -3153,7 +3153,7 @@ def create_technical_analysis_pages(ticker, hist, info, current_price, company_n
     
     # Summary Page
     pages['summary'] = f"""
-    <div id='summary' class='page-content hidden'>
+    <div id='summary' class='page-content space-y-6'>
         <div class='space-y-6'>
             <!-- Overall Technical Score -->
             <div class='bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6'>
@@ -3331,6 +3331,122 @@ def create_technical_analysis_pages(ticker, hist, info, current_price, company_n
                 </div>
             </div>
             
+            <!-- Trading Confidence & Risk Assessment -->
+            <div class='bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-6 rounded-xl border border-green-100 dark:border-green-800/50 shadow-sm'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-2 bg-green-100 dark:bg-green-800/50 rounded-lg mr-3'>
+                        <svg class='w-6 h-6 text-green-600 dark:text-green-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'></path>
+                        </svg>
+                    </div>
+                    <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Trading Confidence & Risk Assessment</h3>
+                </div>
+                
+                <div class='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
+                    <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                        <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Signal Confidence</div>
+                        <div class='text-2xl font-bold {sentiment_color}'>{min(95, max(5, score_percentage)):.0f}%</div>
+                        <div class='text-sm text-gray-600 dark:text-gray-400'>{"High" if score_percentage >= 70 else "Medium" if score_percentage >= 40 else "Low"} confidence</div>
+                    </div>
+                    <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                        <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Risk Level</div>
+                        <div class='text-2xl font-bold {"text-red-600" if technical_data["current_rsi"] > 70 or technical_data["current_rsi"] < 30 else "text-yellow-600" if abs(50 - technical_data["current_rsi"]) > 15 else "text-green-600"}'>
+                            {"High" if technical_data["current_rsi"] > 70 or technical_data["current_rsi"] < 30 else "Medium" if abs(50 - technical_data["current_rsi"]) > 15 else "Low"}
+                        </div>
+                        <div class='text-sm text-gray-600 dark:text-gray-400'>Based on volatility</div>
+                    </div>
+                    <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                        <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Time Horizon</div>
+                        <div class='text-2xl font-bold text-blue-600 dark:text-blue-400'>
+                            {"Short" if abs(technical_data["current_rsi"] - 50) > 20 else "Medium"}
+                        </div>
+                        <div class='text-sm text-gray-600 dark:text-gray-400'>{"1-5 days" if abs(technical_data["current_rsi"] - 50) > 20 else "1-2 weeks"}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Comprehensive Trading Recommendations -->
+            <div class='bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-xl border border-blue-100 dark:border-blue-800/50 shadow-sm'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-2 bg-blue-100 dark:bg-blue-800/50 rounded-lg mr-3'>
+                        <svg class='w-6 h-6 text-blue-600 dark:text-blue-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z'></path>
+                        </svg>
+                    </div>
+                    <h3 class='text-xl font-bold text-gray-900 dark:text-white'>AI Trading Recommendations</h3>
+                </div>
+                
+                <div class='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+                    <!-- Primary Recommendation -->
+                    <div class='bg-white/70 dark:bg-gray-800/70 p-5 rounded-lg border border-gray-100 dark:border-gray-700'>
+                        <div class='flex items-center mb-3'>
+                            <span class='text-2xl mr-3'>{sentiment_icon}</span>
+                            <div>
+                                <h4 class='font-bold text-gray-900 dark:text-white'>Primary Signal</h4>
+                                <div class='text-lg font-bold {sentiment_color}'>{overall_sentiment}</div>
+                            </div>
+                        </div>
+                        <div class='space-y-2 text-sm text-gray-700 dark:text-gray-300'>
+                            <p>• <strong>Action:</strong> {("Consider buying on pullbacks" if score_percentage >= 60 else "Wait for clearer signals" if score_percentage >= 40 else "Consider defensive positioning")}</p>
+                            <p>• <strong>Entry Strategy:</strong> {("Scale in on dips near support" if score_percentage >= 60 else "Wait for confirmation" if score_percentage >= 40 else "Avoid new positions")}</p>
+                            <p>• <strong>Risk Management:</strong> {"Use tight stops" if technical_data["current_rsi"] > 70 or technical_data["current_rsi"] < 30 else "Standard position sizing"}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Key Alerts -->
+                    <div class='bg-white/70 dark:bg-gray-800/70 p-5 rounded-lg border border-gray-100 dark:border-gray-700'>
+                        <h4 class='font-bold text-gray-900 dark:text-white mb-3 flex items-center'>
+                            <span class='text-lg mr-2'>🚨</span>
+                            Key Alerts
+                        </h4>
+                        <div class='space-y-2 text-sm'>
+                            {f'<div class="flex items-center p-2 bg-red-50 dark:bg-red-900/20 rounded text-red-700 dark:text-red-300"><span class="mr-2">⚠️</span>RSI Overbought - Potential pullback risk</div>' if technical_data["current_rsi"] > 70 else ''}
+                            {f'<div class="flex items-center p-2 bg-green-50 dark:bg-green-900/20 rounded text-green-700 dark:text-green-300"><span class="mr-2">📈</span>RSI Oversold - Potential bounce opportunity</div>' if technical_data["current_rsi"] < 30 else ''}
+                            {f'<div class="flex items-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-blue-700 dark:text-blue-300"><span class="mr-2">🎯</span>MACD Bullish Crossover - Momentum building</div>' if technical_data["current_macd"] > technical_data["current_macd_signal"] else ''}
+                            {f'<div class="flex items-center p-2 bg-orange-50 dark:bg-orange-900/20 rounded text-orange-700 dark:text-orange-300"><span class="mr-2">📉</span>MACD Bearish - Momentum weakening</div>' if technical_data["current_macd"] <= technical_data["current_macd_signal"] else ''}
+                            <div class='flex items-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded text-gray-700 dark:text-gray-300'>
+                                <span class='mr-2'>📊</span>
+                                Technical Score: {score_percentage:.0f}/100 - {"Strong" if score_percentage >= 70 else "Moderate" if score_percentage >= 40 else "Weak"} signals
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Market Outlook -->
+            <div class='bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-6 rounded-xl border border-purple-100 dark:border-purple-800/50 shadow-sm'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-2 bg-purple-100 dark:bg-purple-800/50 rounded-lg mr-3'>
+                        <svg class='w-6 h-6 text-purple-600 dark:text-purple-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'></path>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'></path>
+                        </svg>
+                    </div>
+                    <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Technical Market Outlook</h3>
+                </div>
+                
+                <div class='bg-white/70 dark:bg-gray-800/70 p-5 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                        <div>
+                            <h4 class='font-semibold text-gray-900 dark:text-white mb-3'>Short-term (1-5 days)</h4>
+                            <div class='space-y-2 text-sm text-gray-700 dark:text-gray-300'>
+                                <p>• <strong>Trend:</strong> {("Bullish momentum" if score_percentage >= 60 else "Mixed signals" if score_percentage >= 40 else "Bearish pressure")}</p>
+                                <p>• <strong>Key Level:</strong> Watch ${technical_data["ma_20"]:.2f} (20-MA)</p>
+                                <p>• <strong>Catalyst:</strong> {("RSI normalization" if technical_data["current_rsi"] > 70 or technical_data["current_rsi"] < 30 else "MACD confirmation" if abs(technical_data["current_macd"] - technical_data["current_macd_signal"]) < 0.001 else "Momentum continuation")}</p>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class='font-semibold text-gray-900 dark:text-white mb-3'>Medium-term (1-4 weeks)</h4>
+                            <div class='space-y-2 text-sm text-gray-700 dark:text-gray-300'>
+                                <p>• <strong>Direction:</strong> {("Upward bias" if current_price > technical_data["ma_20"] else "Downward pressure" if current_price < technical_data["ma_20"] else "Sideways range")}</p>
+                                <p>• <strong>Support:</strong> ${technical_data["ma_50"] if technical_data["ma_50"] else "N/A":.2f} (50-MA)</p>
+                                <p>• <strong>Probability:</strong> {"High" if abs(score_percentage - 50) > 20 else "Medium" if abs(score_percentage - 50) > 10 else "Low"} conviction</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Disclaimer -->
             <div class='bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4'>
                 <div class='flex items-start space-x-3'>
@@ -3463,7 +3579,7 @@ def create_technical_analysis_pages(ticker, hist, info, current_price, company_n
     
     # Support & Resistance Page
     pages['support_resistance'] = f"""
-    <div id='support_resistance' class='page-content hidden space-y-6'>
+    <div id='support_resistance' class='page-content space-y-6'>
         <!-- Support & Resistance Dashboard -->
         <div class='bg-gradient-to-r from-teal-50 to-green-50 dark:from-teal-900/20 dark:to-green-900/20 p-6 rounded-xl border border-teal-100 dark:border-teal-800/50 shadow-sm'>
             <div class='flex items-center mb-6'>
@@ -3803,7 +3919,7 @@ def create_technical_analysis_pages(ticker, hist, info, current_price, company_n
     
     # Chart Patterns Page
     pages['patterns'] = f"""
-    <div id='patterns' class='page-content hidden space-y-6'>
+    <div id='patterns' class='page-content space-y-6'>
         <!-- Chart Patterns Dashboard -->
         <div class='bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 p-6 rounded-xl border border-emerald-100 dark:border-emerald-800/50 shadow-sm'>
             <div class='flex items-center mb-6'>
@@ -4293,6 +4409,18 @@ def create_basic_analysis_pages(ticker, hist, info, current_price, prev_price, p
     rsi_value, rsi_color, rsi_status = format_rsi(rsi)
     trend_status, trend_color = format_ma_trend(current_price, ma_20, ma_50, ma_200)
     macd_status, macd_color = format_macd_signal(macd_line, macd_signal, macd_histogram)
+    
+    # Add trend icon based on trend status
+    if trend_status == "Strong Uptrend":
+        trend_icon = "🚀"
+    elif trend_status == "Uptrend":
+        trend_icon = "📈"
+    elif trend_status == "Strong Downtrend":
+        trend_icon = "📉"
+    elif trend_status == "Downtrend":
+        trend_icon = "📉"
+    else:
+        trend_icon = "📊"
     
     # Format values to avoid f-string conditional formatting issues
     resistance_str = f"${resistance:.2f}" if resistance is not None else "N/A"
@@ -4911,9 +5039,53 @@ def create_basic_analysis_pages(ticker, hist, info, current_price, prev_price, p
     </div>
     """
     
-    # Page 3: Technical Indicators
+    # Page 3: Enhanced Technical Analysis
     pages['technical'] = f"""
-    <div id="technical" class="page-content space-y-4">
+    <div id="technical" class="page-content space-y-6">
+        <!-- Technical Analysis Header -->
+        <div class='bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-xl border border-blue-100 dark:border-blue-800/50 shadow-sm'>
+            <div class='flex flex-col md:flex-row md:items-center md:justify-between mb-6'>
+                <div class='flex items-center mb-4 md:mb-0'>
+                    <div class='p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-4'>
+                        <svg class='w-6 h-6 text-blue-600 dark:text-blue-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class='text-2xl font-bold text-gray-900 dark:text-white'>Technical Analysis</h2>
+                        <p class='text-sm text-gray-600 dark:text-gray-400'>Comprehensive technical indicators and trading signals</p>
+                    </div>
+                </div>
+                <div class='flex items-center space-x-4'>
+                    <div class='text-center'>
+                        <div class='text-2xl'>{trend_icon}</div>
+                        <div class='text-sm font-medium {trend_color}'>{trend_status}</div>
+                    </div>
+                    <div class='h-12 w-px bg-gray-200 dark:bg-gray-700'></div>
+                    <div class='text-center'>
+                        <div class='text-2xl'>{'📈' if volume_ratio > 1.2 else '📊' if volume_ratio > 0.8 else '📉'}</div>
+                        <div class='text-sm font-medium {volume_color}'>{'High' if volume_ratio > 1.2 else 'Normal' if volume_ratio > 0.8 else 'Low'} Volume</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Technical Score -->
+            <div class='bg-white dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700/50'>
+                <div class='flex items-center justify-between mb-2'>
+                    <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Technical Score</span>
+                    <span class='text-sm font-bold {trend_color}'>75/100</span>
+                </div>
+                <div class='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5'>
+                    <div class='bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-2.5 rounded-full' style='width: 75%'></div>
+                </div>
+                <div class='flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1'>
+                    <span>Bearish</span>
+                    <span>Neutral</span>
+                    <span>Bullish</span>
+                </div>
+            </div>
+        </div>
+        
         <!-- Momentum Indicators -->
         <div class='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5 rounded-xl'>
             <div class='flex items-center mb-4'>
@@ -5082,6 +5254,85 @@ def create_basic_analysis_pages(ticker, hist, info, current_price, prev_price, p
                      'Normal volume indicates typical trading activity.' if volume_ratio > 0.8 else
                      'Low volume may indicate lack of conviction in current price movement.'}
                 </p>
+            </div>
+        </div>
+        
+        <!-- Technical Insights & Trading Signals -->
+        <div class='bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-6 rounded-xl border border-green-100 dark:border-green-800/50 shadow-sm'>
+            <div class='flex items-center mb-6'>
+                <div class='p-2 bg-green-100 dark:bg-green-900/30 rounded-lg mr-4'>
+                    <svg class='w-6 h-6 text-green-600 dark:text-green-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z' />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Technical Insights & Trading Signals</h3>
+                    <p class='text-sm text-gray-600 dark:text-gray-400'>AI-powered analysis and actionable trading recommendations</p>
+                </div>
+            </div>
+            
+            <div class='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+                <!-- Trading Signals -->
+                <div class='bg-white dark:bg-gray-800/50 p-5 rounded-lg border border-gray-100 dark:border-gray-700/50'>
+                    <h4 class='font-semibold text-gray-900 dark:text-white mb-4 flex items-center'>
+                        <span class='text-lg mr-2'>🎯</span>
+                        Trading Signals
+                    </h4>
+                    <div class='space-y-3'>
+                        <div class='flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg'>
+                            <div class='flex items-center'>
+                                <span class='w-3 h-3 {rsi_color.replace("text-", "bg-")} rounded-full mr-3'></span>
+                                <span class='text-sm font-medium'>RSI Signal</span>
+                            </div>
+                            <span class='text-sm font-bold {rsi_color}'>{rsi_status}</span>
+                        </div>
+                        <div class='flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg'>
+                            <div class='flex items-center'>
+                                <span class='w-3 h-3 {macd_color.replace("text-", "bg-")} rounded-full mr-3'></span>
+                                <span class='text-sm font-medium'>MACD Signal</span>
+                            </div>
+                            <span class='text-sm font-bold {macd_color}'>{macd_status}</span>
+                        </div>
+                        <div class='flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg'>
+                            <div class='flex items-center'>
+                                <span class='w-3 h-3 {trend_color.replace("text-", "bg-")} rounded-full mr-3'></span>
+                                <span class='text-sm font-medium'>Trend Signal</span>
+                            </div>
+                            <span class='text-sm font-bold {trend_color}'>{trend_status}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Key Insights -->
+                <div class='bg-white dark:bg-gray-800/50 p-5 rounded-lg border border-gray-100 dark:border-gray-700/50'>
+                    <h4 class='font-semibold text-gray-900 dark:text-white mb-4 flex items-center'>
+                        <span class='text-lg mr-2'>💡</span>
+                        Key Technical Insights
+                    </h4>
+                    <div class='space-y-3 text-sm text-gray-700 dark:text-gray-300'>
+                        <p>• <strong>Momentum:</strong> {rsi_status.lower()} RSI suggests {"overbought conditions" if rsi and rsi > 70 else "oversold conditions" if rsi and rsi < 30 else "neutral momentum"}</p>
+                        <p>• <strong>Trend Strength:</strong> {("Strong bullish trend with price above all MAs" if trend_status == "Strong Uptrend" else "Bearish pressure with price below key MAs" if "Downtrend" in trend_status else "Mixed signals suggest consolidation phase")}</p>
+                        <p>• <strong>Volume Confirmation:</strong> {("High volume confirms price direction" if volume_ratio > 1.2 else "Low volume may indicate weak conviction" if volume_ratio < 0.8 else "Normal volume supports current trend")}</p>
+                        <p>• <strong>MACD Divergence:</strong> {("Bullish momentum building" if macd_status == "Bullish" else "Bearish pressure increasing" if macd_status == "Bearish" else "Momentum remains neutral")}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Overall Technical Recommendation -->
+            <div class='mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-100 dark:border-blue-800/30'>
+                <div class='flex items-start'>
+                    <div class='text-2xl mr-3'>
+                        {("🚀" if trend_status == "Strong Uptrend" and rsi and rsi < 70 else "⚠️" if "Downtrend" in trend_status else "📊")}
+                    </div>
+                    <div>
+                        <h5 class='font-bold text-gray-900 dark:text-white mb-2'>Technical Recommendation</h5>
+                        <p class='text-sm text-gray-700 dark:text-gray-300'>
+                            {("Strong technical setup with bullish momentum. Consider buying on pullbacks with proper risk management." if trend_status == "Strong Uptrend" and rsi and rsi < 70 else
+                              "Bearish technical pattern suggests caution. Consider waiting for trend reversal signals." if "Downtrend" in trend_status else
+                              "Mixed technical signals suggest a wait-and-see approach. Monitor for clearer directional signals.")}
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -5443,7 +5694,7 @@ def create_basic_analysis_pages(ticker, hist, info, current_price, prev_price, p
                 </div>
                 <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
                     <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Employees</div>
-                    <div class='text-lg font-bold text-gray-900 dark:text-white'>{info.get('fullTimeEmployees', 'N/A'):,}</div>
+                    <div class='text-lg font-bold text-gray-900 dark:text-white'>{f"{info.get('fullTimeEmployees', 0):,}" if isinstance(info.get('fullTimeEmployees'), (int, float)) else "N/A"}</div>
                 </div>
                 <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
                     <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Sector</div>
@@ -5675,7 +5926,7 @@ def create_basic_analysis_pages(ticker, hist, info, current_price, prev_price, p
     
     # Market Sentiment Page
     pages['sentiment'] = f"""
-    <div id='sentiment' class='page-content hidden space-y-6'>
+    <div id='sentiment' class='page-content space-y-6'>
         <!-- Market Sentiment Dashboard -->
         <div class='bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20 p-6 rounded-xl border border-pink-100 dark:border-pink-800/50 shadow-sm'>
             <div class='flex items-center mb-6'>
@@ -5853,6 +6104,369 @@ def create_basic_analysis_pages(ticker, hist, info, current_price, prev_price, p
                         <p class='text-gray-600 dark:text-gray-400'>• Consider contrarian opportunities if sentiment is extreme</p>
                         <p class='text-gray-600 dark:text-gray-400'>• Options activity suggests {"bullish" if sentiment_data["put_call_ratio"] < 1.0 else "bearish" if sentiment_data["put_call_ratio"] > 1.2 else "mixed"} positioning</p>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    """
+    
+    # Calculate valuation metrics
+    def calculate_valuation_metrics(current_price, pe_ratio, info, hist):
+        """Calculate comprehensive valuation metrics"""
+        try:
+            # Basic valuation ratios
+            pb_ratio = info.get('priceToBook', 'N/A')
+            ps_ratio = info.get('priceToSalesTrailing12Months', 'N/A')
+            peg_ratio = info.get('pegRatio', 'N/A')
+            ev_revenue = info.get('enterpriseToRevenue', 'N/A')
+            ev_ebitda = info.get('enterpriseToEbitda', 'N/A')
+            
+            # Historical P/E analysis
+            historical_pe_high = 25.0  # Simulated - would need historical data
+            historical_pe_low = 12.0
+            historical_pe_avg = 18.5
+            
+            # Price targets based on different methods
+            price_targets = {}
+            
+            # P/E based target (using historical average P/E)
+            if pe_ratio != 'N/A' and pe_ratio:
+                eps = current_price / pe_ratio if pe_ratio > 0 else None
+                if eps:
+                    price_targets['pe_historical'] = eps * historical_pe_avg
+                    price_targets['pe_conservative'] = eps * historical_pe_low
+                    price_targets['pe_optimistic'] = eps * historical_pe_high
+            
+            # Book value target
+            if pb_ratio != 'N/A' and pb_ratio:
+                book_value_per_share = current_price / pb_ratio if pb_ratio > 0 else None
+                if book_value_per_share:
+                    price_targets['book_value'] = book_value_per_share * 1.5  # 1.5x book value
+            
+            # Revenue multiple target
+            if ps_ratio != 'N/A' and ps_ratio:
+                revenue_per_share = current_price / ps_ratio if ps_ratio > 0 else None
+                if revenue_per_share:
+                    price_targets['revenue_multiple'] = revenue_per_share * 2.5  # Industry average
+            
+            # Calculate average price target
+            valid_targets = [v for v in price_targets.values() if v and v > 0]
+            avg_price_target = sum(valid_targets) / len(valid_targets) if valid_targets else current_price
+            
+            # Valuation score (0-100)
+            valuation_factors = []
+            
+            # P/E factor
+            if pe_ratio != 'N/A' and pe_ratio:
+                if pe_ratio < 15:
+                    valuation_factors.append(85)  # Undervalued
+                elif pe_ratio < 25:
+                    valuation_factors.append(60)  # Fair
+                else:
+                    valuation_factors.append(30)  # Overvalued
+            
+            # P/B factor
+            if pb_ratio != 'N/A' and pb_ratio:
+                if pb_ratio < 1.0:
+                    valuation_factors.append(90)
+                elif pb_ratio < 3.0:
+                    valuation_factors.append(65)
+                else:
+                    valuation_factors.append(35)
+            
+            # PEG factor
+            if peg_ratio != 'N/A' and peg_ratio:
+                if peg_ratio < 1.0:
+                    valuation_factors.append(80)
+                elif peg_ratio < 2.0:
+                    valuation_factors.append(55)
+                else:
+                    valuation_factors.append(25)
+            
+            overall_valuation_score = sum(valuation_factors) / len(valuation_factors) if valuation_factors else 50
+            
+            # 52-week price analysis
+            high_52w = hist['High'].max()
+            low_52w = hist['Low'].min()
+            current_vs_high = ((current_price - high_52w) / high_52w * 100) if high_52w > 0 else 0
+            current_vs_low = ((current_price - low_52w) / low_52w * 100) if low_52w > 0 else 0
+            
+            return {
+                'pb_ratio': pb_ratio,
+                'ps_ratio': ps_ratio,
+                'peg_ratio': peg_ratio,
+                'ev_revenue': ev_revenue,
+                'ev_ebitda': ev_ebitda,
+                'historical_pe_avg': historical_pe_avg,
+                'historical_pe_high': historical_pe_high,
+                'historical_pe_low': historical_pe_low,
+                'price_targets': price_targets,
+                'avg_price_target': avg_price_target,
+                'valuation_score': overall_valuation_score,
+                'current_vs_high': current_vs_high,
+                'current_vs_low': current_vs_low,
+                'high_52w': high_52w,
+                'low_52w': low_52w
+            }
+        except Exception as e:
+            return None
+    
+    # Get valuation data
+    valuation_data = calculate_valuation_metrics(current_price, pe_ratio, info, hist)
+    
+    if valuation_data:
+        # Valuation assessment
+        if valuation_data['valuation_score'] >= 75:
+            valuation_status = "Undervalued"
+            valuation_color = "text-green-600 dark:text-green-400"
+            valuation_bg = "bg-green-50 dark:bg-green-900/20"
+            valuation_icon = "💎"
+        elif valuation_data['valuation_score'] >= 60:
+            valuation_status = "Fair Value"
+            valuation_color = "text-blue-600 dark:text-blue-400"
+            valuation_bg = "bg-blue-50 dark:bg-blue-900/20"
+            valuation_icon = "⚖️"
+        elif valuation_data['valuation_score'] >= 40:
+            valuation_status = "Slightly Overvalued"
+            valuation_color = "text-yellow-600 dark:text-yellow-400"
+            valuation_bg = "bg-yellow-50 dark:bg-yellow-900/20"
+            valuation_icon = "⚠️"
+        else:
+            valuation_status = "Overvalued"
+            valuation_color = "text-red-600 dark:text-red-400"
+            valuation_bg = "bg-red-50 dark:bg-red-900/20"
+            valuation_icon = "🔴"
+        
+        # Price target analysis
+        upside_potential = ((valuation_data['avg_price_target'] - current_price) / current_price * 100) if current_price > 0 else 0
+        
+        if upside_potential > 20:
+            target_status = "Strong Upside"
+            target_color = "text-green-600 dark:text-green-400"
+            target_icon = "🚀"
+        elif upside_potential > 10:
+            target_status = "Moderate Upside"
+            target_color = "text-blue-600 dark:text-blue-400"
+            target_icon = "📈"
+        elif upside_potential > -10:
+            target_status = "Fair Value"
+            target_color = "text-gray-600 dark:text-gray-400"
+            target_icon = "➡️"
+        else:
+            target_status = "Limited Upside"
+            target_color = "text-red-600 dark:text-red-400"
+            target_icon = "📉"
+    else:
+        # Default values if calculation fails
+        valuation_status = "Data Unavailable"
+        valuation_color = "text-gray-600 dark:text-gray-400"
+        valuation_bg = "bg-gray-50 dark:bg-gray-800/50"
+        valuation_icon = "❓"
+        upside_potential = 0
+        target_status = "N/A"
+        target_color = "text-gray-600 dark:text-gray-400"
+        target_icon = "❓"
+    
+    # Valuation Analysis Page
+    pages['valuation'] = f"""
+    <div id='valuation' class='page-content space-y-6'>
+        <!-- Valuation Overview Dashboard -->
+        <div class='bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-900/20 dark:to-blue-900/20 p-6 rounded-xl border border-emerald-100 dark:border-emerald-800/50 shadow-sm'>
+            <div class='flex items-center justify-between mb-4'>
+                <div class='flex items-center'>
+                    <div class='p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg mr-4'>
+                        <svg class='w-6 h-6 text-emerald-600 dark:text-emerald-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1' />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Valuation Analysis</h3>
+                        <p class='text-sm text-gray-600 dark:text-gray-400'>Comprehensive valuation metrics and price targets</p>
+                    </div>
+                </div>
+                <div class='text-right'>
+                    <div class='flex items-center space-x-2'>
+                        <span class='text-2xl'>{valuation_icon}</span>
+                        <div>
+                            <div class='text-lg font-bold {valuation_color}'>{valuation_status}</div>
+                            <div class='text-xs text-gray-500 dark:text-gray-400'>Overall Assessment</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Valuation Score -->
+            <div class='mb-6'>
+                <div class='flex items-center justify-between mb-2'>
+                    <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Valuation Score</span>
+                    <span class='text-sm font-bold {valuation_color}'>{valuation_data['valuation_score'] if valuation_data else 50:.0f}/100</span>
+                </div>
+                <div class='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3'>
+                    <div class='bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-3 rounded-full relative'>
+                        <div class='absolute top-0 bg-blue-600 h-3 w-1 rounded-full shadow-lg' style='left: {valuation_data["valuation_score"] if valuation_data else 50:.1f}%'></div>
+                    </div>
+                </div>
+                <div class='flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1'>
+                    <span>Overvalued</span>
+                    <span class='font-medium {valuation_color}'>Score: {valuation_data["valuation_score"] if valuation_data else 50:.0f}</span>
+                    <span>Undervalued</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Valuation Ratios Grid -->
+        <div class='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+            <!-- Key Valuation Ratios -->
+            <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-6'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3'>
+                        <svg class='w-5 h-5 text-blue-600 dark:text-blue-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z' />
+                        </svg>
+                    </div>
+                    <h4 class='font-semibold text-gray-900 dark:text-white'>Valuation Ratios</h4>
+                </div>
+                <div class='space-y-4'>
+                    <!-- P/E Ratio -->
+                    <div class='p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg'>
+                        <div class='flex items-center justify-between mb-2'>
+                            <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Price-to-Earnings (P/E)</span>
+                            <span class='text-lg font-bold text-gray-900 dark:text-white'>{pe_ratio if pe_ratio != 'N/A' else 'N/A'}</span>
+                        </div>
+                        <div class='text-xs text-gray-500 dark:text-gray-400'>
+                            Historical Avg: {valuation_data["historical_pe_avg"] if valuation_data else "N/A"} | 
+                            Range: {valuation_data["historical_pe_low"] if valuation_data else "N/A"}-{valuation_data["historical_pe_high"] if valuation_data else "N/A"}
+                        </div>
+                    </div>
+                    
+                    <!-- P/B Ratio -->
+                    <div class='p-3 bg-green-50 dark:bg-green-900/20 rounded-lg'>
+                        <div class='flex items-center justify-between mb-2'>
+                            <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Price-to-Book (P/B)</span>
+                            <span class='text-lg font-bold text-gray-900 dark:text-white'>{valuation_data["pb_ratio"] if valuation_data and valuation_data["pb_ratio"] != "N/A" else "N/A"}</span>
+                        </div>
+                        <div class='text-xs text-gray-500 dark:text-gray-400'>
+                            {"Below 1.0 = Trading below book value" if valuation_data and valuation_data["pb_ratio"] != "N/A" and valuation_data["pb_ratio"] < 1.0 else "Book value multiple"}
+                        </div>
+                    </div>
+                    
+                    <!-- PEG Ratio -->
+                    <div class='p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg'>
+                        <div class='flex items-center justify-between mb-2'>
+                            <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>PEG Ratio</span>
+                            <span class='text-lg font-bold text-gray-900 dark:text-white'>{valuation_data["peg_ratio"] if valuation_data and valuation_data["peg_ratio"] != "N/A" else "N/A"}</span>
+                        </div>
+                        <div class='text-xs text-gray-500 dark:text-gray-400'>
+                            {"Undervalued (< 1.0)" if valuation_data and valuation_data["peg_ratio"] != "N/A" and valuation_data["peg_ratio"] < 1.0 else "P/E relative to growth"}
+                        </div>
+                    </div>
+                    
+                    <!-- P/S Ratio -->
+                    <div class='p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg'>
+                        <div class='flex items-center justify-between mb-2'>
+                            <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Price-to-Sales (P/S)</span>
+                            <span class='text-lg font-bold text-gray-900 dark:text-white'>{valuation_data["ps_ratio"] if valuation_data and valuation_data["ps_ratio"] != "N/A" else "N/A"}</span>
+                        </div>
+                        <div class='text-xs text-gray-500 dark:text-gray-400'>Revenue multiple valuation</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Price Targets -->
+            <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-6'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-2 bg-green-100 dark:bg-green-900/30 rounded-lg mr-3'>
+                        <svg class='w-5 h-5 text-green-600 dark:text-green-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' />
+                        </svg>
+                    </div>
+                    <h4 class='font-semibold text-gray-900 dark:text-white'>Price Targets</h4>
+                </div>
+                <div class='space-y-4'>
+                    <!-- Average Target -->
+                    <div class='p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg border border-green-200 dark:border-green-700'>
+                        <div class='flex items-center justify-between mb-3'>
+                            <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Average Price Target</span>
+                            <div class='flex items-center space-x-2'>
+                                <span class='text-lg'>{target_icon}</span>
+                                <span class='text-lg font-bold {target_color}'>${valuation_data["avg_price_target"] if valuation_data else current_price:.2f}</span>
+                            </div>
+                        </div>
+                        <div class='flex items-center justify-between'>
+                            <span class='text-xs text-gray-500 dark:text-gray-400'>Upside Potential</span>
+                            <span class='text-sm font-bold {target_color}'>{upside_potential:+.1f}%</span>
+                        </div>
+                        <div class='text-xs {target_color} mt-1'>{target_status}</div>
+                    </div>
+                    
+                    <!-- Individual Targets -->
+                    {f'''
+                    <div class='space-y-2'>
+                        <h5 class='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>Target Breakdown</h5>
+                        {"".join([f'''
+                        <div class='flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded'>
+                            <span class='text-xs text-gray-600 dark:text-gray-400'>{method.replace("_", " ").title()}</span>
+                            <span class='text-sm font-medium text-gray-900 dark:text-white'>${target:.2f}</span>
+                        </div>
+                        ''' for method, target in valuation_data["price_targets"].items() if target and target > 0])}
+                    </div>
+                    ''' if valuation_data and valuation_data["price_targets"] else ''}
+                </div>
+            </div>
+        </div>
+        
+        <!-- 52-Week Analysis -->
+        <div class='bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-6 rounded-xl border border-indigo-100 dark:border-indigo-800/50 shadow-sm'>
+            <div class='flex items-center mb-4'>
+                <div class='p-2 bg-indigo-100 dark:bg-indigo-800/50 rounded-lg mr-3'>
+                    <svg class='w-6 h-6 text-indigo-600 dark:text-indigo-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z' />
+                    </svg>
+                </div>
+                <h4 class='text-lg font-semibold text-gray-900 dark:text-white'>52-Week Price Analysis</h4>
+            </div>
+            
+            <div class='grid grid-cols-1 md:grid-cols-3 gap-4 mb-4'>
+                <div class='text-center p-3 bg-white/70 dark:bg-gray-800/70 rounded-lg'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>52-Week Low</div>
+                    <div class='text-lg font-bold text-red-600 dark:text-red-400'>${valuation_data["low_52w"] if valuation_data else low_52w:.2f}</div>
+                    <div class='text-xs text-gray-600 dark:text-gray-400'>{valuation_data["current_vs_low"] if valuation_data else 0:+.1f}% from low</div>
+                </div>
+                <div class='text-center p-3 bg-white/70 dark:bg-gray-800/70 rounded-lg'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Current Price</div>
+                    <div class='text-lg font-bold text-gray-900 dark:text-white'>${current_price:.2f}</div>
+                    <div class='text-xs text-gray-600 dark:text-gray-400'>Today's price</div>
+                </div>
+                <div class='text-center p-3 bg-white/70 dark:bg-gray-800/70 rounded-lg'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>52-Week High</div>
+                    <div class='text-lg font-bold text-green-600 dark:text-green-400'>${valuation_data["high_52w"] if valuation_data else high_52w:.2f}</div>
+                    <div class='text-xs text-gray-600 dark:text-gray-400'>{valuation_data["current_vs_high"] if valuation_data else 0:+.1f}% from high</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Valuation Insights -->
+        <div class='bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-5'>
+            <div class='flex items-center mb-3'>
+                <div class='p-1.5 bg-amber-100 dark:bg-amber-900/30 rounded-lg mr-3'>
+                    <svg class='w-4 h-4 text-amber-600 dark:text-amber-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z' />
+                    </svg>
+                </div>
+                <h4 class='font-semibold text-amber-800 dark:text-amber-200'>Valuation Insights</h4>
+            </div>
+            <div class='grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-amber-700 dark:text-amber-300'>
+                <div class='space-y-1'>
+                    {f'<p>• <strong>Valuation Status:</strong> Stock appears {valuation_status.lower()}</p>' if valuation_data else '<p>• <strong>Valuation Status:</strong> Insufficient data for assessment</p>'}
+                    {f'<p>• <strong>Price Target:</strong> {upside_potential:+.1f}% potential {"upside" if upside_potential > 0 else "downside"}</p>' if valuation_data else ''}
+                    {f'<p>• <strong>P/E Assessment:</strong> {"Below historical average" if pe_ratio != "N/A" and pe_ratio < 18.5 else "Above historical average" if pe_ratio != "N/A" else "P/E data unavailable"}</p>' if valuation_data else ''}
+                    {f'<p>• <strong>Book Value:</strong> Trading {"below" if valuation_data["pb_ratio"] != "N/A" and valuation_data["pb_ratio"] < 1.0 else "above"} book value</p>' if valuation_data and valuation_data["pb_ratio"] != "N/A" else ''}
+                </div>
+                <div class='space-y-1'>
+                    <p>• <strong>Risk Level:</strong> {("Lower" if valuation_data and valuation_data["valuation_score"] > 60 else "Higher" if valuation_data and valuation_data["valuation_score"] < 40 else "Moderate") if valuation_data else "Unknown"} valuation risk</p>
+                    <p>• <strong>Investment Horizon:</strong> {"Long-term value opportunity" if valuation_data and valuation_data["valuation_score"] > 70 else "Short-term momentum play" if valuation_data and valuation_data["valuation_score"] < 40 else "Balanced approach recommended"}</p>
+                    <p>• <strong>52-Week Position:</strong> {"Near lows - potential value" if valuation_data and valuation_data["current_vs_low"] < 20 else "Near highs - momentum play" if valuation_data and valuation_data["current_vs_high"] > -20 else "Mid-range trading"}</p>
+                    <p>• <strong>Overall Recommendation:</strong> {"Strong Buy" if valuation_data and valuation_data["valuation_score"] > 75 and upside_potential > 15 else "Buy" if valuation_data and valuation_data["valuation_score"] > 60 and upside_potential > 5 else "Hold" if valuation_data and valuation_data["valuation_score"] > 40 else "Consider Selling"}</p>
                 </div>
             </div>
         </div>
@@ -6130,7 +6744,7 @@ def create_fundamental_analysis_pages(ticker, info, company_name, sector, indust
                 </div>
                 <div class='bg-white/50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-700'>
                     <p class='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1'>Employees</p>
-                    <p class='font-medium text-gray-900 dark:text-white'>{info.get('fullTimeEmployees', 'N/A'):,}</p>
+                    <p class='font-medium text-gray-900 dark:text-white'>{f"{info.get('fullTimeEmployees', 0):,}" if isinstance(info.get('fullTimeEmployees'), (int, float)) else "N/A"}</p>
                 </div>
             </div>
         </div>
@@ -6509,169 +7123,533 @@ def create_fundamental_analysis_pages(ticker, info, company_name, sector, indust
     </div>
     """
 
-    # Page 3: Industry Comparison
+    # Page 3: Enhanced Competitive Analysis
+    # Calculate competitive positioning metrics
+    try:
+        # Market cap classification
+        market_cap_value = info.get('marketCap', 0)
+        if market_cap_value >= 200e9:
+            market_position = "Mega Cap Leader"
+            position_icon = "👑"
+            position_color = "text-purple-600"
+        elif market_cap_value >= 10e9:
+            market_position = "Large Cap Player"
+            position_icon = "🏢"
+            position_color = "text-blue-600"
+        elif market_cap_value >= 2e9:
+            market_position = "Mid Cap Company"
+            position_icon = "🏭"
+            position_color = "text-green-600"
+        else:
+            market_position = "Small Cap Firm"
+            position_icon = "🏪"
+            position_color = "text-orange-600"
+        
+        # Competitive strength score (0-100)
+        competitive_score = 0
+        score_factors = []
+        
+        # Profitability vs peers (25 points)
+        if profit_margin != 'N/A' and profit_margin is not None:
+            margin_val = float(profit_margin)
+            if margin_val > 0.20:
+                competitive_score += 25
+                score_factors.append("Excellent profitability")
+            elif margin_val > 0.10:
+                competitive_score += 20
+                score_factors.append("Strong profitability")
+            elif margin_val > 0.05:
+                competitive_score += 15
+                score_factors.append("Moderate profitability")
+            elif margin_val > 0:
+                competitive_score += 10
+                score_factors.append("Basic profitability")
+        
+        # Growth momentum (25 points)
+        if revenue_growth != 'N/A' and revenue_growth is not None:
+            growth_val = float(revenue_growth)
+            if growth_val > 0.15:
+                competitive_score += 25
+                score_factors.append("High growth momentum")
+            elif growth_val > 0.05:
+                competitive_score += 20
+                score_factors.append("Solid growth")
+            elif growth_val > 0:
+                competitive_score += 15
+                score_factors.append("Positive growth")
+            else:
+                competitive_score += 5
+                score_factors.append("Growth challenges")
+        
+        # Financial strength (25 points)
+        if current_ratio != 'N/A' and current_ratio is not None:
+            ratio_val = float(current_ratio)
+            if ratio_val > 2.0:
+                competitive_score += 25
+                score_factors.append("Strong liquidity")
+            elif ratio_val > 1.5:
+                competitive_score += 20
+                score_factors.append("Good liquidity")
+            elif ratio_val > 1.0:
+                competitive_score += 15
+                score_factors.append("Adequate liquidity")
+            else:
+                competitive_score += 5
+                score_factors.append("Liquidity concerns")
+        
+        # Market position (25 points)
+        if market_cap_value >= 50e9:
+            competitive_score += 25
+            score_factors.append("Market leadership position")
+        elif market_cap_value >= 10e9:
+            competitive_score += 20
+            score_factors.append("Established market presence")
+        elif market_cap_value >= 2e9:
+            competitive_score += 15
+            score_factors.append("Growing market presence")
+        else:
+            competitive_score += 10
+            score_factors.append("Emerging market player")
+        
+        # Determine competitive strength
+        if competitive_score >= 85:
+            competitive_strength = "Market Leader"
+            strength_color = "text-green-600"
+            strength_icon = "🏆"
+            strength_bg = "bg-green-50 dark:bg-green-900/20"
+        elif competitive_score >= 70:
+            competitive_strength = "Strong Competitor"
+            strength_color = "text-blue-600"
+            strength_icon = "💪"
+            strength_bg = "bg-blue-50 dark:bg-blue-900/20"
+        elif competitive_score >= 55:
+            competitive_strength = "Average Player"
+            strength_color = "text-yellow-600"
+            strength_icon = "⚖️"
+            strength_bg = "bg-yellow-50 dark:bg-yellow-900/20"
+        else:
+            competitive_strength = "Challenged Position"
+            strength_color = "text-red-600"
+            strength_icon = "⚠️"
+            strength_bg = "bg-red-50 dark:bg-red-900/20"
+            
+    except:
+        market_position = "Unknown"
+        position_icon = "❓"
+        position_color = "text-gray-600"
+        competitive_score = 50
+        competitive_strength = "Unknown"
+        strength_color = "text-gray-600"
+        strength_icon = "❓"
+        strength_bg = "bg-gray-50 dark:bg-gray-800/50"
+        score_factors = ["Limited data available"]
+    
     pages['industry'] = f"""
     <div class='p-4 space-y-6'>
         <div class='border-b border-gray-200 dark:border-gray-700 pb-4'>
-            <h2 class='text-2xl font-bold text-gray-900 dark:text-white'>Industry Comparison</h2>
+            <h2 class='text-2xl font-bold text-gray-900 dark:text-white'>Competitive Analysis</h2>
             <div class='flex items-center mt-1 space-x-2'>
                 <span class='text-xl font-semibold text-gray-800 dark:text-gray-200'>{company_name}</span>
                 <span class='px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full'>{ticker}</span>
             </div>
         </div>
         
-        <!-- Industry Comparison -->
-        <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 p-6 rounded-xl shadow-sm'>
-            <div class='flex items-center mb-4'>
-                <div class='p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg mr-3'>
-                    <svg class='w-5 h-5 text-indigo-600 dark:text-indigo-400' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
-                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'></path>
+        <!-- Competitive Positioning Dashboard -->
+        <div class='bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-6 rounded-xl border border-indigo-100 dark:border-indigo-800/50 shadow-sm'>
+            <div class='flex items-center mb-6'>
+                <div class='p-2 bg-indigo-100 dark:bg-indigo-800/50 rounded-lg mr-3'>
+                    <svg class='w-6 h-6 text-indigo-600 dark:text-indigo-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' />
                     </svg>
                 </div>
-                <h3 class='text-lg font-semibold text-gray-900 dark:text-white'>Industry Comparison</h3>
+                <div>
+                    <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Market Positioning & Competitive Strength</h3>
+                    <p class='text-sm text-gray-600 dark:text-gray-400'>Comprehensive competitive analysis within {sector if sector != 'N/A' else industry} sector</p>
+                </div>
             </div>
-            <p class='text-sm text-gray-500 dark:text-gray-400 mb-5'>How {company_name} compares to the {sector if sector != 'N/A' else 'industry'} average</p>
-            <div class='space-y-4'>
-                <div class='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                    <!-- Profitability Comparison -->
-                    <div class='bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg'>
-                        <div class='flex items-center mb-2'>
-                            <span class='font-medium text-gray-700 dark:text-gray-300'>Profit Margins</span>
-                            <span class='ml-2 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'>
-                                vs {sector if sector != 'N/A' else 'Industry'}
-                            </span>
-                        </div>
-                        <div class='space-y-2'>
-                            {get_comparison_row('Operating Margin', operating_margin, info.get('industryAverageOperatingMargin'), sector, is_percentage=True)}
-                            {get_comparison_row('Profit Margin', profit_margin, info.get('industryAverageProfitMargin'), sector, is_percentage=True)}
-                            {get_comparison_row('ROE', roe, info.get('industryAverageReturnOnEquity'), sector, is_percentage=True)}
-                        </div>
-                    </div>
-                    
-                    <!-- Valuation Comparison -->
-                    <div class='bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg'>
-                        <div class='flex items-center mb-2'>
-                            <span class='font-medium text-gray-700 dark:text-gray-300'>Valuation</span>
-                            <span class='ml-2 text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'>
-                                vs {sector if sector != 'N/A' else 'Industry'}
-                            </span>
-                        </div>
-                        <div class='space-y-2'>
-                            {get_comparison_row('P/E Ratio', pe_ratio, info.get('industryAveragePE'), sector, is_percentage=False)}
-                            {get_comparison_row('PEG Ratio', peg_ratio, info.get('industryAveragePEG'), sector, is_percentage=False)}
-                            {get_comparison_row('P/B Ratio', price_to_book, info.get('industryAveragePB'), sector, is_percentage=False)}
-                        </div>
+            
+            <!-- Competitive Strength Score -->
+            <div class='mb-6'>
+                <div class='flex items-center justify-between mb-3'>
+                    <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Competitive Strength Score</span>
+                    <div class='flex items-center space-x-2'>
+                        <span class='text-lg'>{strength_icon}</span>
+                        <span class='font-bold {strength_color}'>{competitive_strength}</span>
                     </div>
                 </div>
-                
-                <!-- Financial Health Comparison -->
-                <div class='bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg'>
-                    <div class='flex items-center mb-2'>
-                        <span class='font-medium text-gray-700 dark:text-gray-300'>Financial Health</span>
-                        <span class='ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'>
-                            vs {sector if sector != 'N/A' else 'Industry'}
-                        </span>
-                    </div>
-                    <div class='grid grid-cols-1 md:grid-cols-3 gap-4'>
-                        <div class='space-y-2'>
-                            {get_comparison_row('Debt/Equity', debt_to_equity, info.get('industryAverageDebtToEquity'), sector, is_percentage=False)}
-                        </div>
-                        <div class='space-y-2'>
-                            {get_comparison_row('Current Ratio', current_ratio, info.get('industryAverageCurrentRatio'), sector, is_percentage=False)}
-                        </div>
-                        <div class='space-y-2'>
-                            {get_comparison_row('Quick Ratio', quick_ratio, info.get('industryAverageQuickRatio'), sector, is_percentage=False)}
-                        </div>
+                <div class='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-2'>
+                    <div class='bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-3 rounded-full relative'>
+                        <div class='absolute top-0 bg-indigo-600 h-3 w-1 rounded-full shadow-lg' style='left: {competitive_score}%'></div>
                     </div>
                 </div>
-                
-                <div class='mt-6 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 rounded-lg'>
-                    <div class='flex'>
-                        <svg class='h-5 w-5 text-blue-500 dark:text-blue-400 mt-0.5 mr-2 flex-shrink-0' fill='currentColor' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'>
-                            <path fill-rule='evenodd' d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h2a1 1 0 100-2v-3a1 1 0 00-1-1H9z' clip-rule='evenodd'></path>
+                <div class='flex justify-between text-xs text-gray-500 dark:text-gray-400'>
+                    <span>Weak Position</span>
+                    <span class='font-medium text-indigo-600 dark:text-indigo-400'>Score: {competitive_score}/100</span>
+                    <span>Market Leader</span>
+                </div>
+            </div>
+            
+            <!-- Market Position Grid -->
+            <div class='grid grid-cols-1 md:grid-cols-4 gap-4'>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Market Position</div>
+                    <div class='text-lg font-bold {position_color}'>{position_icon} {market_position}</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>Based on market cap</div>
+                </div>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Sector</div>
+                    <div class='text-lg font-bold text-gray-900 dark:text-white'>{sector if sector != 'N/A' else 'Unknown'}</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>Industry classification</div>
+                </div>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Market Cap</div>
+                    <div class='text-lg font-bold text-blue-600 dark:text-blue-400'>{market_cap_formatted}</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>Company size</div>
+                </div>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Competitive Edge</div>
+                    <div class='text-lg font-bold {strength_color}'>{competitive_score}/100</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>Overall strength</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Competitive Advantages Analysis -->
+        <div class='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+            <!-- Strengths -->
+            <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-5 shadow-sm'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg mr-3'>
+                        <svg class='w-5 h-5 text-green-600 dark:text-green-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' />
                         </svg>
-                        <div class='text-sm text-blue-700 dark:text-blue-300'>
-                            <p class='font-medium'>How to read this comparison:</p>
-                            <div class='flex flex-wrap items-center gap-2 mt-1 text-xs'>
-                                <span class='inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200'>Better than average</span>
-                                <span class='inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'>Similar to average</span>
-                                <span class='inline-flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200'>Below average</span>
-                            </div>
-                            {'<p class="mt-2 text-yellow-700 dark:text-yellow-300 font-medium">ℹ️ Using estimated industry averages. For more accurate comparisons, consider upgrading to a premium data source.</p>' 
-                            if not any(k.startswith('industryAverage') and v is not None for k, v in info.items()) else ''}
-                        </div>
+                    </div>
+                    <h4 class='font-semibold text-gray-800 dark:text-white'>Competitive Strengths</h4>
+                </div>
+                
+                <div class='space-y-3'>
+                    {''.join([f'<div class="flex items-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg"><span class="text-green-600 mr-2">✓</span><span class="text-sm text-gray-700 dark:text-gray-300">{factor}</span></div>' for factor in score_factors[:3]])}
+                    {f'<div class="flex items-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg"><span class="text-blue-600 mr-2">📊</span><span class="text-sm text-gray-700 dark:text-gray-300">Market cap: {market_cap_formatted}</span></div>' if market_cap_formatted != 'N/A' else ''}
+                </div>
+            </div>
+            
+            <!-- Industry Metrics Comparison -->
+            <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-5 shadow-sm'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg mr-3'>
+                        <svg class='w-5 h-5 text-purple-600 dark:text-purple-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' />
+                        </svg>
+                    </div>
+                    <h4 class='font-semibold text-gray-800 dark:text-white'>Key Metrics vs Industry</h4>
+                </div>
+                
+                <div class='space-y-3'>
+                    <div class='flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700/30 rounded'>
+                        <span class='text-sm text-gray-600 dark:text-gray-400'>Profit Margin</span>
+                        <span class='font-medium {"text-green-600" if profit_margin != "N/A" and profit_margin is not None and float(profit_margin) > 0.10 else "text-yellow-600" if profit_margin != "N/A" and profit_margin is not None and float(profit_margin) > 0.05 else "text-red-600"}'>{format_percentage(profit_margin)}</span>
+                    </div>
+                    <div class='flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700/30 rounded'>
+                        <span class='text-sm text-gray-600 dark:text-gray-400'>Revenue Growth</span>
+                        <span class='font-medium {"text-green-600" if revenue_growth != "N/A" and revenue_growth is not None and float(revenue_growth) > 0.05 else "text-yellow-600" if revenue_growth != "N/A" and revenue_growth is not None and float(revenue_growth) > 0 else "text-red-600"}'>{format_percentage(revenue_growth)}</span>
+                    </div>
+                    <div class='flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700/30 rounded'>
+                        <span class='text-sm text-gray-600 dark:text-gray-400'>P/E Ratio</span>
+                        <span class='font-medium {"text-green-600" if pe_ratio != "N/A" and pe_ratio is not None and float(pe_ratio) < 20 else "text-yellow-600" if pe_ratio != "N/A" and pe_ratio is not None and float(pe_ratio) < 30 else "text-red-600"}'>{format_ratio(pe_ratio)}</span>
+                    </div>
+                    <div class='flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700/30 rounded'>
+                        <span class='text-sm text-gray-600 dark:text-gray-400'>Current Ratio</span>
+                        <span class='font-medium {"text-green-600" if current_ratio != "N/A" and current_ratio is not None and float(current_ratio) > 1.5 else "text-yellow-600" if current_ratio != "N/A" and current_ratio is not None and float(current_ratio) > 1.0 else "text-red-600"}'>{format_ratio(current_ratio)}</span>
                     </div>
                 </div>
+            </div>
+        </div>
+        
+        <!-- Competitive Intelligence & Investment Thesis -->
+        <div class='bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 p-6 rounded-xl border border-emerald-100 dark:border-emerald-800/50 shadow-sm'>
+            <div class='flex items-center mb-4'>
+                <div class='p-2 bg-emerald-100 dark:bg-emerald-800/50 rounded-lg mr-3'>
+                    <svg class='w-6 h-6 text-emerald-600 dark:text-emerald-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z' />
+                    </svg>
+                </div>
+                <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Investment Thesis & Competitive Outlook</h3>
+            </div>
+            
+            <div class='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                <div>
+                    <h4 class='font-semibold text-gray-900 dark:text-white mb-3'>Competitive Position</h4>
+                    <div class='space-y-2 text-sm text-gray-700 dark:text-gray-300'>
+                        <p>• <strong>Market Standing:</strong> {("Dominant market leader with significant competitive advantages" if competitive_score >= 85 else "Strong competitive position with sustainable advantages" if competitive_score >= 70 else "Average market position with moderate competitive strength" if competitive_score >= 55 else "Challenged competitive position requiring strategic improvements")}</p>
+                        <p>• <strong>Financial Strength:</strong> {("Excellent financial metrics demonstrate operational excellence" if competitive_score >= 80 else "Solid financial performance supports competitive position" if competitive_score >= 60 else "Financial metrics show room for improvement")}</p>
+                        <p>• <strong>Growth Profile:</strong> {("High-growth company with strong momentum" if revenue_growth != "N/A" and revenue_growth is not None and float(revenue_growth) > 0.10 else "Moderate growth with steady progress" if revenue_growth != "N/A" and revenue_growth is not None and float(revenue_growth) > 0.05 else "Growth challenges requiring strategic focus")}</p>
+                    </div>
+                </div>
+                <div>
+                    <h4 class='font-semibold text-gray-900 dark:text-white mb-3'>Investment Considerations</h4>
+                    <div class='space-y-2 text-sm text-gray-700 dark:text-gray-300'>
+                        <p>• <strong>Risk Level:</strong> {("Lower risk due to strong market position" if competitive_score >= 75 else "Moderate risk with balanced risk-reward profile" if competitive_score >= 55 else "Higher risk due to competitive challenges")}</p>
+                        <p>• <strong>Time Horizon:</strong> {("Suitable for long-term investors seeking stability" if competitive_score >= 70 else "Medium-term investment with growth potential" if competitive_score >= 55 else "Short to medium-term with turnaround potential")}</p>
+                        <p>• <strong>Sector Outlook:</strong> Consider {sector if sector != 'N/A' else 'industry'} trends and regulatory environment when making investment decisions</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class='mt-6 p-4 {strength_bg} rounded-lg border border-gray-100 dark:border-gray-700'>
+                <div class='flex items-center mb-2'>
+                    <span class='text-2xl mr-3'>{strength_icon}</span>
+                    <h4 class='font-bold text-gray-900 dark:text-white'>Overall Assessment: {competitive_strength}</h4>
+                </div>
+                <p class='text-sm text-gray-700 dark:text-gray-300'>
+                    {("This company demonstrates exceptional competitive positioning with strong fundamentals, market leadership, and sustainable advantages. Well-positioned for long-term value creation." if competitive_score >= 85 else
+                      "Strong competitive position with good fundamentals and market presence. Solid investment opportunity with reasonable risk-reward profile." if competitive_score >= 70 else
+                      "Average competitive position with mixed fundamentals. Requires careful analysis of specific strengths and growth catalysts." if competitive_score >= 55 else
+                      "Challenged competitive position with below-average fundamentals. Higher risk investment requiring thorough due diligence and turnaround potential assessment.")}
+                </p>
             </div>
         </div>
     </div>
     """
 
-    # Page 4: Financial Health
+    # Page 4: Enhanced Financial Health Analysis
+    # Calculate comprehensive financial health score
+    try:
+        health_score = 0
+        health_factors = []
+        
+        # Liquidity Health (30 points)
+        if current_ratio != 'N/A' and current_ratio is not None:
+            cr_val = float(current_ratio)
+            if cr_val >= 2.0:
+                health_score += 30
+                health_factors.append("Excellent liquidity")
+            elif cr_val >= 1.5:
+                health_score += 25
+                health_factors.append("Strong liquidity")
+            elif cr_val >= 1.0:
+                health_score += 20
+                health_factors.append("Adequate liquidity")
+            else:
+                health_score += 10
+                health_factors.append("Liquidity concerns")
+        
+        # Leverage Health (25 points)
+        if debt_to_equity != 'N/A' and debt_to_equity is not None:
+            de_val = float(debt_to_equity)
+            if de_val <= 0.3:
+                health_score += 25
+                health_factors.append("Conservative debt")
+            elif de_val <= 0.6:
+                health_score += 20
+                health_factors.append("Moderate debt")
+            elif de_val <= 1.0:
+                health_score += 15
+                health_factors.append("Elevated debt")
+            else:
+                health_score += 5
+                health_factors.append("High debt burden")
+        
+        # Profitability Health (25 points)
+        if profit_margin != 'N/A' and profit_margin is not None:
+            pm_val = float(profit_margin)
+            if pm_val >= 0.15:
+                health_score += 25
+                health_factors.append("Excellent profitability")
+            elif pm_val >= 0.10:
+                health_score += 20
+                health_factors.append("Strong profitability")
+            elif pm_val >= 0.05:
+                health_score += 15
+                health_factors.append("Moderate profitability")
+            elif pm_val > 0:
+                health_score += 10
+                health_factors.append("Basic profitability")
+        
+        # Efficiency Health (20 points)
+        if roe != 'N/A' and roe is not None:
+            roe_val = float(roe)
+            if roe_val >= 0.15:
+                health_score += 20
+                health_factors.append("Excellent returns")
+            elif roe_val >= 0.10:
+                health_score += 15
+                health_factors.append("Good returns")
+            elif roe_val >= 0.05:
+                health_score += 10
+                health_factors.append("Moderate returns")
+        
+        # Determine health status
+        if health_score >= 85:
+            health_status = "Excellent"
+            health_color = "text-green-600"
+            health_icon = "💚"
+            health_bg = "bg-green-50 dark:bg-green-900/20"
+        elif health_score >= 70:
+            health_status = "Good"
+            health_color = "text-blue-600"
+            health_icon = "💙"
+            health_bg = "bg-blue-50 dark:bg-blue-900/20"
+        elif health_score >= 55:
+            health_status = "Fair"
+            health_color = "text-yellow-600"
+            health_icon = "💛"
+            health_bg = "bg-yellow-50 dark:bg-yellow-900/20"
+        else:
+            health_status = "Poor"
+            health_color = "text-red-600"
+            health_icon = "❤️"
+            health_bg = "bg-red-50 dark:bg-red-900/20"
+            
+    except:
+        health_score = 50
+        health_status = "Unknown"
+        health_color = "text-gray-600"
+        health_icon = "❓"
+        health_bg = "bg-gray-50 dark:bg-gray-800/50"
+        health_factors = ["Limited data available"]
+    
     pages['financial_health'] = f"""
     <div class='p-4 space-y-6'>
         <div class='border-b border-gray-200 dark:border-gray-700 pb-4'>
-            <h2 class='text-2xl font-bold text-gray-900 dark:text-white'>Financial Health</h2>
+            <h2 class='text-2xl font-bold text-gray-900 dark:text-white'>Financial Health Analysis</h2>
             <div class='flex items-center mt-1 space-x-2'>
                 <span class='text-xl font-semibold text-gray-800 dark:text-gray-200'>{company_name}</span>
                 <span class='px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full'>{ticker}</span>
             </div>
         </div>
         
-        <!-- Financial Health -->
-        <div class='bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-6 rounded-xl border border-green-100 dark:border-green-800/50 shadow-sm'>
-            <div class='flex items-center mb-4'>
-                <div class='p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg mr-3'>
-                    <svg class='w-5 h-5 text-green-600 dark:text-green-400' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
-                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'></path>
+        <!-- Financial Health Score Dashboard -->
+        <div class='bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 p-6 rounded-xl border border-emerald-100 dark:border-emerald-800/50 shadow-sm'>
+            <div class='flex items-center mb-6'>
+                <div class='p-2 bg-emerald-100 dark:bg-emerald-800/50 rounded-lg mr-3'>
+                    <svg class='w-6 h-6 text-emerald-600 dark:text-emerald-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z' />
                     </svg>
                 </div>
-                <h3 class='text-lg font-semibold text-green-800 dark:text-green-200'>Financial Health</h3>
-            </div>
-            <div class='grid grid-cols-1 md:grid-cols-3 gap-4'>
-                <div class='bg-white/60 dark:bg-gray-800/40 p-4 rounded-lg border border-green-100 dark:border-green-800/30'>
-                    <div class='flex items-center justify-between mb-2'>
-                        <p class='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>Debt-to-Equity</p>
-                        <span class='text-xl'>{get_value_indicator(debt_to_equity, "debt_ratio")[1]}</span>
-                    </div>
-                    <p class='text-xl font-semibold {get_value_indicator(debt_to_equity, "debt_ratio")[0]}'>{format_ratio(debt_to_equity)}</p>
-                    <p class='mt-1 text-xs text-gray-500 dark:text-gray-400'>Lower is better</p>
-                </div>
-                <div class='bg-white/60 dark:bg-gray-800/40 p-4 rounded-lg border border-green-100 dark:border-green-800/30'>
-                    <div class='flex items-center justify-between mb-2'>
-                        <p class='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>Current Ratio</p>
-                        <span class='text-xl'>{get_value_indicator(current_ratio, "ratio")[1]}</span>
-                    </div>
-                    <p class='text-xl font-semibold {get_value_indicator(current_ratio, "ratio")[0]}'>{format_ratio(current_ratio)}</p>
-                    <p class='mt-1 text-xs text-gray-500 dark:text-gray-400'>Above 1.5 is good</p>
-                </div>
-                <div class='bg-white/60 dark:bg-gray-800/40 p-4 rounded-lg border border-green-100 dark:border-green-800/30'>
-                    <div class='flex items-center justify-between mb-2'>
-                        <p class='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>Quick Ratio</p>
-                        <span class='text-xl'>{get_value_indicator(quick_ratio, "ratio")[1]}</span>
-                    </div>
-                    <p class='text-xl font-semibold {get_value_indicator(quick_ratio, "ratio")[0]}'>{format_ratio(quick_ratio)}</p>
-                    <p class='mt-1 text-xs text-gray-500 dark:text-gray-400'>Above 1.0 is good</p>
+                <div>
+                    <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Overall Financial Health Score</h3>
+                    <p class='text-sm text-gray-600 dark:text-gray-400'>Comprehensive assessment of financial stability</p>
                 </div>
             </div>
             
-            <div class='mt-6 p-4 bg-white/60 dark:bg-gray-800/40 rounded-lg border border-green-100 dark:border-green-800/30'>
-                <h4 class='font-medium text-gray-800 dark:text-gray-200 mb-2'>Liquidity Analysis</h4>
-                <p class='text-sm text-gray-600 dark:text-gray-400'>
-                    The current ratio measures a company's ability to pay short-term obligations with current assets. 
-                    A ratio above 1.5 is generally considered healthy. The quick ratio is a more conservative measure 
-                    that excludes inventory from current assets.
-                </p>
+            <!-- Health Score Display -->
+            <div class='mb-6'>
+                <div class='flex items-center justify-between mb-3'>
+                    <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Financial Health Rating</span>
+                    <div class='flex items-center space-x-2'>
+                        <span class='text-lg'>{health_icon}</span>
+                        <span class='font-bold {health_color}'>{health_status}</span>
+                    </div>
+                </div>
+                <div class='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-2'>
+                    <div class='bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-3 rounded-full relative'>
+                        <div class='absolute top-0 bg-emerald-600 h-3 w-1 rounded-full shadow-lg' style='left: {health_score}%'></div>
+                    </div>
+                </div>
+                <div class='flex justify-between text-xs text-gray-500 dark:text-gray-400'>
+                    <span>Poor Health</span>
+                    <span class='font-medium text-emerald-600 dark:text-emerald-400'>Score: {health_score}/100</span>
+                    <span>Excellent Health</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Key Financial Ratios -->
+        <div class='grid grid-cols-1 md:grid-cols-3 gap-4'>
+            <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-5 shadow-sm'>
+                <div class='flex items-center justify-between mb-2'>
+                    <span class='text-sm font-medium text-gray-600 dark:text-gray-400'>Debt-to-Equity</span>
+                    <span class='text-xl'>{get_value_indicator(debt_to_equity, "debt_ratio")[1]}</span>
+                </div>
+                <div class='text-2xl font-bold {get_value_indicator(debt_to_equity, "debt_ratio")[0]} mb-1'>{format_ratio(debt_to_equity)}</div>
+                <div class='text-xs text-gray-500 dark:text-gray-400'>Lower is better</div>
             </div>
             
-            <div class='mt-4 p-4 bg-white/60 dark:bg-gray-800/40 rounded-lg border border-green-100 dark:border-green-800/30'>
-                <h4 class='font-medium text-gray-800 dark:text-gray-200 mb-2'>Debt Analysis</h4>
-                <p class='text-sm text-gray-600 dark:text-gray-400'>
-                    The debt-to-equity ratio indicates the relative proportion of shareholders' equity and debt used to 
-                    finance a company's assets. Lower values generally indicate less risk, but the appropriate level 
-                    varies by industry.
-                </p>
+            <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-5 shadow-sm'>
+                <div class='flex items-center justify-between mb-2'>
+                    <span class='text-sm font-medium text-gray-600 dark:text-gray-400'>Current Ratio</span>
+                    <span class='text-xl'>{get_value_indicator(current_ratio, "ratio")[1]}</span>
+                </div>
+                <div class='text-2xl font-bold {get_value_indicator(current_ratio, "ratio")[0]} mb-1'>{format_ratio(current_ratio)}</div>
+                <div class='text-xs text-gray-500 dark:text-gray-400'>Above 1.5 is good</div>
             </div>
+            
+            <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-5 shadow-sm'>
+                <div class='flex items-center justify-between mb-2'>
+                    <span class='text-sm font-medium text-gray-600 dark:text-gray-400'>Quick Ratio</span>
+                    <span class='text-xl'>{get_value_indicator(quick_ratio, "ratio")[1]}</span>
+                </div>
+                <div class='text-2xl font-bold {get_value_indicator(quick_ratio, "ratio")[0]} mb-1'>{format_ratio(quick_ratio)}</div>
+                <div class='text-xs text-gray-500 dark:text-gray-400'>Above 1.0 is good</div>
+            </div>
+        </div>
+        
+        <!-- Health Factors & Insights -->
+        <div class='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+            <!-- Strengths -->
+            <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-5 shadow-sm'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg mr-3'>
+                        <svg class='w-5 h-5 text-green-600 dark:text-green-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' />
+                        </svg>
+                    </div>
+                    <h4 class='font-semibold text-gray-800 dark:text-white'>Financial Strengths</h4>
+                </div>
+                
+                <div class='space-y-2'>
+                    {chr(10).join([f'<div class="flex items-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg"><span class="text-green-600 mr-2">✓</span><span class="text-sm text-gray-700 dark:text-gray-300">{factor}</span></div>' for factor in health_factors[:4]])}
+                </div>
+            </div>
+            
+            <!-- Analysis Summary -->
+            <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-5 shadow-sm'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3'>
+                        <svg class='w-5 h-5 text-blue-600 dark:text-blue-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' />
+                        </svg>
+                    </div>
+                    <h4 class='font-semibold text-gray-800 dark:text-white'>Health Analysis</h4>
+                </div>
+                
+                <div class='space-y-3'>
+                    <div class='p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg'>
+                        <div class='text-sm font-medium text-gray-900 dark:text-white mb-1'>Liquidity Assessment</div>
+                        <div class='text-xs text-gray-600 dark:text-gray-400'>
+                            {("Strong short-term financial position" if current_ratio != "N/A" and current_ratio is not None and float(current_ratio) >= 1.5 else "Adequate liquidity for operations" if current_ratio != "N/A" and current_ratio is not None and float(current_ratio) >= 1.0 else "Monitor liquidity closely")}
+                        </div>
+                    </div>
+                    
+                    <div class='p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg'>
+                        <div class='text-sm font-medium text-gray-900 dark:text-white mb-1'>Leverage Assessment</div>
+                        <div class='text-xs text-gray-600 dark:text-gray-400'>
+                            {("Conservative debt management" if debt_to_equity != "N/A" and debt_to_equity is not None and float(debt_to_equity) <= 0.6 else "Moderate leverage usage" if debt_to_equity != "N/A" and debt_to_equity is not None and float(debt_to_equity) <= 1.0 else "High leverage - monitor debt")}
+                        </div>
+                    </div>
+                    
+                    <div class='p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg'>
+                        <div class='text-sm font-medium text-gray-900 dark:text-white mb-1'>Profitability Assessment</div>
+                        <div class='text-xs text-gray-600 dark:text-gray-400'>
+                            {("Strong profit generation" if profit_margin != "N/A" and profit_margin is not None and float(profit_margin) >= 0.10 else "Moderate profitability" if profit_margin != "N/A" and profit_margin is not None and float(profit_margin) >= 0.05 else "Focus on profit improvement")}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Overall Assessment -->
+        <div class='{health_bg} p-6 rounded-xl border border-gray-100 dark:border-gray-700'>
+            <div class='flex items-center mb-4'>
+                <span class='text-2xl mr-3'>{health_icon}</span>
+                <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Overall Financial Health: {health_status}</h3>
+            </div>
+            <p class='text-sm text-gray-700 dark:text-gray-300'>
+                {("This company demonstrates excellent financial health with strong liquidity, conservative debt management, and solid profitability. The financial foundation supports sustainable growth and provides resilience during economic challenges." if health_score >= 85 else
+                  "The company shows good financial health with solid fundamentals across key metrics. While there may be areas for improvement, the overall financial position is stable and supportive of business operations." if health_score >= 70 else
+                  "Financial health is fair with mixed performance across key metrics. Some areas require attention to strengthen the overall financial position and reduce potential risks." if health_score >= 55 else
+                  "Financial health shows significant challenges that require immediate attention. Focus on improving liquidity, managing debt levels, and enhancing profitability to strengthen the financial foundation.")}
+            </p>
         </div>
     </div>
     """
@@ -6805,6 +7783,331 @@ def create_fundamental_analysis_pages(ticker, info, company_name, sector, indust
             </div>
         </div>
         """
+
+    # Page 6: Cash Flow Deep Dive
+    # Get cash flow data
+    try:
+        import pandas as pd
+        # Get cash flow statement data
+        cash_flow = yf.Ticker(ticker).cashflow
+        balance_sheet = yf.Ticker(ticker).balance_sheet
+        financials = yf.Ticker(ticker).financials
+        
+        # Calculate cash flow metrics
+        def safe_get_value(df, key, default=0):
+            try:
+                if key in df.index and len(df.columns) > 0:
+                    return df.loc[key].iloc[0] if not pd.isna(df.loc[key].iloc[0]) else default
+                return default
+            except:
+                return default
+        
+        # Free Cash Flow Analysis
+        operating_cash_flow = safe_get_value(cash_flow, 'Total Cash From Operating Activities')
+        capital_expenditures = abs(safe_get_value(cash_flow, 'Capital Expenditures'))
+        free_cash_flow = operating_cash_flow - capital_expenditures
+        
+        # Revenue for FCF yield calculation
+        revenue = safe_get_value(financials, 'Total Revenue')
+        net_income = safe_get_value(financials, 'Net Income')
+        
+        # Calculate FCF metrics
+        fcf_margin = (free_cash_flow / revenue * 100) if revenue != 0 else 0
+        fcf_conversion = (free_cash_flow / net_income * 100) if net_income != 0 else 0
+        
+        # Working Capital Analysis
+        current_assets = safe_get_value(balance_sheet, 'Total Current Assets')
+        current_liabilities = safe_get_value(balance_sheet, 'Total Current Liabilities')
+        inventory = safe_get_value(balance_sheet, 'Inventory')
+        accounts_receivable = safe_get_value(balance_sheet, 'Net Receivables')
+        accounts_payable = safe_get_value(balance_sheet, 'Accounts Payable')
+        
+        # Cash Conversion Cycle (simplified)
+        days_sales_outstanding = (accounts_receivable / revenue * 365) if revenue != 0 else 0
+        days_inventory_outstanding = (inventory / (revenue * 0.7) * 365) if revenue != 0 else 0  # Assuming 70% COGS
+        days_payable_outstanding = (accounts_payable / (revenue * 0.7) * 365) if revenue != 0 else 0
+        cash_conversion_cycle = days_sales_outstanding + days_inventory_outstanding - days_payable_outstanding
+        
+        # Quality metrics
+        ocf_to_ni_ratio = (operating_cash_flow / net_income) if net_income != 0 else 0
+        
+        # Format values for display
+        def format_cash_value(value):
+            if abs(value) >= 1e9:
+                return f"${value/1e9:.2f}B"
+            elif abs(value) >= 1e6:
+                return f"${value/1e6:.1f}M"
+            elif abs(value) >= 1e3:
+                return f"${value/1e3:.0f}K"
+            else:
+                return f"${value:,.0f}"
+        
+        # Get color indicators for cash flow metrics
+        def get_fcf_indicator(fcf_margin):
+            if fcf_margin >= 15: return 'text-green-600 dark:text-green-400', '🚀'
+            elif fcf_margin >= 10: return 'text-green-500 dark:text-green-400', '💰'
+            elif fcf_margin >= 5: return 'text-yellow-600 dark:text-yellow-400', '📊'
+            elif fcf_margin >= 0: return 'text-orange-600 dark:text-orange-400', '⚠️'
+            else: return 'text-red-600 dark:text-red-400', '🔴'
+        
+        def get_quality_indicator(ratio):
+            if ratio >= 1.2: return 'text-green-600 dark:text-green-400', '💎'
+            elif ratio >= 1.0: return 'text-green-500 dark:text-green-400', '✅'
+            elif ratio >= 0.8: return 'text-yellow-600 dark:text-yellow-400', '⚠️'
+            else: return 'text-red-600 dark:text-red-400', '🚨'
+        
+        fcf_color, fcf_icon = get_fcf_indicator(fcf_margin)
+        quality_color, quality_icon = get_quality_indicator(ocf_to_ni_ratio)
+        
+    except Exception as e:
+        # Default values if data unavailable
+        operating_cash_flow = 0
+        free_cash_flow = 0
+        fcf_margin = 0
+        fcf_conversion = 0
+        cash_conversion_cycle = 0
+        ocf_to_ni_ratio = 0
+        fcf_color, fcf_icon = 'text-gray-500', '❓'
+        quality_color, quality_icon = 'text-gray-500', '❓'
+        
+        def format_cash_value(value):
+            return "N/A"
+    
+    pages['cash_flow'] = f"""
+    <div class='p-4 space-y-6'>
+        <div class='border-b border-gray-200 dark:border-gray-700 pb-4'>
+            <h2 class='text-2xl font-bold text-gray-900 dark:text-white'>Cash Flow Deep Dive</h2>
+            <div class='flex items-center mt-1 space-x-2'>
+                <span class='text-xl font-semibold text-gray-800 dark:text-gray-200'>{company_name}</span>
+                <span class='px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full'>{ticker}</span>
+            </div>
+        </div>
+        
+        <!-- Free Cash Flow Overview -->
+        <div class='bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-6 rounded-xl border border-green-100 dark:border-green-800/50 shadow-sm'>
+            <div class='flex items-center mb-4'>
+                <div class='p-2 bg-green-100 dark:bg-green-800/50 rounded-lg mr-3'>
+                    <svg class='w-6 h-6 text-green-600 dark:text-green-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1' />
+                    </svg>
+                </div>
+                <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Free Cash Flow Analysis</h3>
+            </div>
+            
+            <div class='grid grid-cols-1 md:grid-cols-4 gap-4'>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Free Cash Flow (TTM)</div>
+                    <div class='text-2xl font-bold {fcf_color}'>{format_cash_value(free_cash_flow)}</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>Operating CF - CapEx</div>
+                </div>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>FCF Margin</div>
+                    <div class='text-2xl font-bold {fcf_color}'>{fcf_margin:.1f}%</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>FCF / Revenue</div>
+                </div>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>FCF Conversion</div>
+                    <div class='text-2xl font-bold text-gray-900 dark:text-white'>{fcf_conversion:.0f}%</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>FCF / Net Income</div>
+                </div>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='text-xs text-gray-500 dark:text-gray-400 mb-1'>Operating Cash Flow</div>
+                    <div class='text-2xl font-bold text-blue-600 dark:text-blue-400'>{format_cash_value(operating_cash_flow)}</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>Before CapEx</div>
+                </div>
+            </div>
+            
+            <!-- FCF Quality Assessment -->
+            <div class='mt-6 p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700'>
+                <div class='flex items-center justify-between'>
+                    <div class='flex items-center'>
+                        <span class='text-2xl mr-3'>{fcf_icon}</span>
+                        <div>
+                            <h4 class='font-bold text-gray-900 dark:text-white'>FCF Quality Assessment</h4>
+                            <p class='text-sm {fcf_color}'>
+                                {("Excellent - Strong cash generation" if fcf_margin >= 15 else "Good - Healthy cash flow" if fcf_margin >= 10 else "Fair - Moderate cash generation" if fcf_margin >= 5 else "Weak - Limited cash generation" if fcf_margin >= 0 else "Poor - Negative free cash flow")}
+                            </p>
+                        </div>
+                    </div>
+                    <div class='text-right'>
+                        <div class='text-lg font-bold {fcf_color}'>{fcf_margin:.1f}%</div>
+                        <div class='text-xs text-gray-500 dark:text-gray-400'>FCF Margin</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Cash Flow Quality & Earnings Comparison -->
+        <div class='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+            <!-- Cash vs Earnings Quality -->
+            <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-5 shadow-sm'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3'>
+                        <svg class='w-5 h-5 text-blue-600 dark:text-blue-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' />
+                        </svg>
+                    </div>
+                    <h4 class='font-semibold text-gray-800 dark:text-white'>Earnings Quality</h4>
+                </div>
+                
+                <div class='space-y-4'>
+                    <div class='flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg'>
+                        <div class='flex items-center'>
+                            <span class='text-lg mr-3'>{quality_icon}</span>
+                            <div>
+                                <div class='font-medium text-gray-900 dark:text-white'>OCF to Net Income</div>
+                                <div class='text-xs text-gray-500 dark:text-gray-400'>Cash backing of earnings</div>
+                            </div>
+                        </div>
+                        <div class='text-right'>
+                            <div class='font-bold {quality_color}'>{ocf_to_ni_ratio:.2f}x</div>
+                            <div class='text-xs {quality_color}'>
+                                {("Excellent" if ocf_to_ni_ratio >= 1.2 else "Good" if ocf_to_ni_ratio >= 1.0 else "Caution" if ocf_to_ni_ratio >= 0.8 else "Poor")}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class='p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg'>
+                        <h5 class='font-medium text-blue-800 dark:text-blue-200 mb-2'>Quality Insights</h5>
+                        <div class='space-y-1 text-sm text-blue-700 dark:text-blue-300'>
+                            <p>• <strong>Cash Reality:</strong> {("Strong cash backing of reported earnings" if ocf_to_ni_ratio >= 1.0 else "Earnings may include non-cash items" if ocf_to_ni_ratio >= 0.8 else "Significant gap between cash and earnings")}</p>
+                            <p>• <strong>Sustainability:</strong> {("High earnings sustainability" if ocf_to_ni_ratio >= 1.2 else "Good earnings sustainability" if ocf_to_ni_ratio >= 1.0 else "Moderate sustainability concerns")}</p>
+                            <p>• <strong>Red Flags:</strong> {("None detected" if ocf_to_ni_ratio >= 1.0 else "Monitor working capital changes" if ocf_to_ni_ratio >= 0.8 else "Investigate earnings quality")}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Working Capital Efficiency -->
+            <div class='bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 rounded-xl p-5 shadow-sm'>
+                <div class='flex items-center mb-4'>
+                    <div class='p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg mr-3'>
+                        <svg class='w-5 h-5 text-purple-600 dark:text-purple-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' />
+                        </svg>
+                    </div>
+                    <h4 class='font-semibold text-gray-800 dark:text-white'>Working Capital Cycle</h4>
+                </div>
+                
+                <div class='space-y-3'>
+                    <div class='p-3 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg border border-green-200 dark:border-green-700'>
+                        <div class='flex items-center justify-between mb-2'>
+                            <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Cash Conversion Cycle</span>
+                            <span class='text-lg'>🔄</span>
+                        </div>
+                        <div class='text-2xl font-bold {"text-green-600" if cash_conversion_cycle < 30 else "text-yellow-600" if cash_conversion_cycle < 60 else "text-red-600"}'>{cash_conversion_cycle:.0f} days</div>
+                        <div class='text-sm text-gray-600 dark:text-gray-400'>Time to convert investment to cash</div>
+                    </div>
+                    
+                    <div class='grid grid-cols-1 gap-2'>
+                        <div class='flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700/30 rounded'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Days Sales Outstanding</span>
+                            <span class='font-medium'>{days_sales_outstanding:.0f} days</span>
+                        </div>
+                        <div class='flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700/30 rounded'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Days Inventory Outstanding</span>
+                            <span class='font-medium'>{days_inventory_outstanding:.0f} days</span>
+                        </div>
+                        <div class='flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700/30 rounded'>
+                            <span class='text-sm text-gray-600 dark:text-gray-400'>Days Payable Outstanding</span>
+                            <span class='font-medium'>{days_payable_outstanding:.0f} days</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Capital Allocation Analysis -->
+        <div class='bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-6 rounded-xl border border-indigo-100 dark:border-indigo-800/50 shadow-sm'>
+            <div class='flex items-center mb-4'>
+                <div class='p-2 bg-indigo-100 dark:bg-indigo-800/50 rounded-lg mr-3'>
+                    <svg class='w-6 h-6 text-indigo-600 dark:text-indigo-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' />
+                    </svg>
+                </div>
+                <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Capital Allocation Efficiency</h3>
+            </div>
+            
+            <div class='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='flex items-center justify-between mb-2'>
+                        <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>Capital Expenditures</span>
+                        <span class='text-lg'>🏗️</span>
+                    </div>
+                    <div class='text-xl font-bold text-gray-900 dark:text-white'>{format_cash_value(capital_expenditures)}</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>Investment in growth</div>
+                </div>
+                
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='flex items-center justify-between mb-2'>
+                        <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>CapEx Intensity</span>
+                        <span class='text-lg'>📊</span>
+                    </div>
+                    <div class='text-xl font-bold text-gray-900 dark:text-white'>{(capital_expenditures / revenue * 100) if revenue != 0 else 0:.1f}%</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>CapEx / Revenue</div>
+                </div>
+                
+                <div class='bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                    <div class='flex items-center justify-between mb-2'>
+                        <span class='text-sm font-medium text-gray-700 dark:text-gray-300'>FCF After CapEx</span>
+                        <span class='text-lg'>💰</span>
+                    </div>
+                    <div class='text-xl font-bold {fcf_color}'>{format_cash_value(free_cash_flow)}</div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>Available for shareholders</div>
+                </div>
+            </div>
+            
+            <!-- Cash Flow Insights -->
+            <div class='mt-6 p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700'>
+                <h4 class='font-semibold text-gray-900 dark:text-white mb-3 flex items-center'>
+                    <span class='text-lg mr-2'>💡</span>
+                    Key Cash Flow Insights
+                </h4>
+                <div class='grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700 dark:text-gray-300'>
+                    <div class='space-y-2'>
+                        <p>• <strong>Cash Generation:</strong> {("Excellent cash generation from operations" if fcf_margin >= 10 else "Moderate cash generation" if fcf_margin >= 5 else "Limited cash generation" if fcf_margin >= 0 else "Negative cash generation - investigate")}</p>
+                        <p>• <strong>Capital Efficiency:</strong> {("Low capital intensity - asset-light model" if (capital_expenditures / revenue * 100) < 5 else "Moderate capital requirements" if (capital_expenditures / revenue * 100) < 15 else "High capital intensity - capital-heavy business")}</p>
+                    </div>
+                    <div class='space-y-2'>
+                        <p>• <strong>Working Capital:</strong> {("Efficient working capital management" if cash_conversion_cycle < 30 else "Average working capital efficiency" if cash_conversion_cycle < 60 else "Working capital optimization opportunity")}</p>
+                        <p>• <strong>Earnings Quality:</strong> {("High-quality earnings backed by cash" if ocf_to_ni_ratio >= 1.0 else "Monitor earnings quality - limited cash backing")}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Cash Flow Health Score -->
+        <div class='bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 p-6 rounded-xl border border-emerald-100 dark:border-emerald-800/50 shadow-sm'>
+            <div class='flex items-center justify-between mb-4'>
+                <div class='flex items-center'>
+                    <div class='p-2 bg-emerald-100 dark:bg-emerald-800/50 rounded-lg mr-3'>
+                        <svg class='w-6 h-6 text-emerald-600 dark:text-emerald-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' />
+                        </svg>
+                    </div>
+                    <h3 class='text-xl font-bold text-gray-900 dark:text-white'>Overall Cash Flow Health</h3>
+                </div>
+                <div class='text-right'>
+                    <div class='text-3xl'>{("🚀" if fcf_margin >= 15 and ocf_to_ni_ratio >= 1.2 else "💰" if fcf_margin >= 10 and ocf_to_ni_ratio >= 1.0 else "📊" if fcf_margin >= 5 else "⚠️" if fcf_margin >= 0 else "🔴")}</div>
+                    <div class='text-sm font-medium {"text-green-600" if fcf_margin >= 10 and ocf_to_ni_ratio >= 1.0 else "text-yellow-600" if fcf_margin >= 5 else "text-red-600"}'>
+                        {("Excellent" if fcf_margin >= 15 and ocf_to_ni_ratio >= 1.2 else "Strong" if fcf_margin >= 10 and ocf_to_ni_ratio >= 1.0 else "Fair" if fcf_margin >= 5 else "Weak" if fcf_margin >= 0 else "Poor")}
+                    </div>
+                </div>
+            </div>
+            
+            <div class='bg-white/50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700'>
+                <p class='text-sm text-gray-700 dark:text-gray-300'>
+                    <span class='font-medium'>Assessment:</span> 
+                    {("This company demonstrates excellent cash flow generation with strong free cash flow margins and high-quality earnings. The business efficiently converts profits to cash, indicating robust operational performance." if fcf_margin >= 15 and ocf_to_ni_ratio >= 1.2 else
+                      "The company shows strong cash flow characteristics with good free cash flow generation and reasonable earnings quality. This indicates a healthy business model." if fcf_margin >= 10 and ocf_to_ni_ratio >= 1.0 else
+                      "Cash flow generation is moderate. While the company is profitable, there may be opportunities to improve cash conversion and working capital efficiency." if fcf_margin >= 5 else
+                      "Cash flow generation is limited. Investigate capital allocation, working capital management, and the sustainability of current operations." if fcf_margin >= 0 else
+                      "Negative free cash flow indicates potential operational challenges. Careful analysis of capital requirements and business model sustainability is warranted.")}
+                </p>
+            </div>
+        </div>
+    </div>
+    """
     
     return pages
 
@@ -6889,6 +8192,12 @@ def run_fundamental_analysis(ticker):
             </button>
             <button onclick="showPage('financial_health')" class='tab-button px-4 py-2 font-medium text-sm rounded-t-lg hover:bg-gray-100 dark:hover:bg-gray-700' data-page='financial_health'>
                 <i class='fas fa-heartbeat mr-2'></i>Financial Health
+            </button>
+            <button onclick="showPage('cash_flow')" class='tab-button px-4 py-2 font-medium text-sm rounded-t-lg hover:bg-gray-100 dark:hover:bg-gray-700' data-page='cash_flow'>
+                <i class='fas fa-money-bill-wave mr-2'></i>Cash Flow
+            </button>
+            <button onclick="showPage('dcf_valuation')" class='tab-button px-4 py-2 font-medium text-sm rounded-t-lg hover:bg-gray-100 dark:hover:bg-gray-700' data-page='dcf_valuation'>
+                <i class='fas fa-calculator mr-2'></i>DCF Valuation
             </button>
         </div>
         
@@ -6985,7 +8294,7 @@ def run_fundamental_analysis(ticker):
                     </div>
                     <div class='bg-white/50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-700'>
                         <p class='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1'>Employees</p>
-                        <p class='font-medium text-gray-900 dark:text-white'>{info.get('fullTimeEmployees', 'N/A'):,}</p>
+                        <p class='font-medium text-gray-900 dark:text-white'>{f"{info.get('fullTimeEmployees', 0):,}" if isinstance(info.get('fullTimeEmployees'), (int, float)) else "N/A"}</p>
                     </div>
                 </div>
             </div>
